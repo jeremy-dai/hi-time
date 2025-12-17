@@ -1,0 +1,27 @@
+# Output directory
+time_analysis_output/
+output/
+
+# Raw data
+/raw_data/
+
+# Environment
+.env
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+.trae/
+
+# OS
+.DS_Store

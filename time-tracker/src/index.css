@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: 240 10% 98%;
+  --color-surface: 0 0% 100%;
+  --color-text-primary: 240 10% 10%;
+  --color-text-secondary: 240 5% 40%;
+  --color-border: 240 6% 90%;
+
+  --color-dark-background: 222 47% 11%;
+  --color-dark-surface: 217 33% 17%;
+  --color-dark-surface-elevated: 215 28% 22%;
+  --color-dark-text-primary: 210 20% 98%;
+  --color-dark-text-secondary: 215 16% 65%;
+  --color-dark-border: 217 32% 24%;
+  --color-dark-accent: 217 91% 60%;
+}
+
+:root.dark {
+  background-color: hsl(var(--color-dark-background));
+  color: hsl(var(--color-dark-text-primary));
+}
