@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { TimeBlock } from './types/time'
-import TimeSheetGrid from './components/TimeSheetGrid'
+import CalendarView from './components/calendar/CalendarView'
 import Dashboard from './components/Dashboard'
 import Sidebar from './components/Sidebar'
-import { formatWeekKey, formatWeekRangeLabel } from './utils/date'
+import { formatWeekKey, formatWeekRangeLabel, calculateLastYearWeek } from './utils/date'
 import { listWeeks, getWeek, putWeek, exportCSV as apiExportCSV } from './api'
 import AppLayout from './components/layout/AppLayout'
 import Header from './components/layout/Header'
@@ -19,7 +19,7 @@ function App() {
     const existing = weekStore[key]
     return existing || createEmptyWeekData()
   })
-  const [referenceData] = useState<TimeBlock[][] | null>(null)
+  const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
 
   function createEmptyWeekData(): TimeBlock[][] {
     const timeSlots = 32
@@ -50,6 +50,7 @@ function App() {
 
   useEffect(() => {
     ;(async () => {
+      // Load current week data
       const existing = await getWeek(currentWeekKey)
       if (existing) {
         setWeekStore(prev => ({ ...prev, [currentWeekKey]: existing }))
@@ -60,6 +61,11 @@ function App() {
         setWeekData(empty)
         await putWeek(currentWeekKey, empty)
       }
+
+      // Load ghost data (last year's same week)
+      const lastYearWeekKey = calculateLastYearWeek(currentWeekKey)
+      const ghostData = await getWeek(lastYearWeekKey)
+      setReferenceData(ghostData)
     })()
   }, [currentWeekKey])
 
@@ -132,7 +138,7 @@ function App() {
       </div>
       {activeTab === 'log' && (
         <main>
-          <TimeSheetGrid
+          <CalendarView
             weekData={weekData}
             referenceData={referenceData}
             weekStartDate={currentDate}

@@ -45,3 +45,15 @@ export function formatWeekRangeLabel(date: Date): string {
   const e = `${monthNames[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`
   return `${s} - ${e}`
 }
+
+/**
+ * Calculate last year's same week key for ghost data
+ * @param weekKey - Current week key in format "YYYY-Www" (e.g., "2025-W50")
+ * @returns Last year's week key (e.g., "2024-W50")
+ */
+export function calculateLastYearWeek(weekKey: string): string {
+  const [yearStr, weekStr] = weekKey.split('-W')
+  const year = parseInt(yearStr, 10)
+  const week = weekStr
+  return `${year - 1}-W${week}`
+}

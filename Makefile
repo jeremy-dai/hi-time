@@ -33,10 +33,8 @@ help:
 # ============================================
 
 install:
-	@echo "📦 Installing front-end dependencies..."
-	cd time-tracker && npm install
-	@echo "📦 Installing API dependencies..."
-	cd api && npm install
+	@echo "📦 Installing project dependencies (Workspaces)..."
+	npm install
 	@echo "✅ Dependencies installed successfully!"
 
 setup: install
@@ -53,17 +51,21 @@ dev: setup
 	fi
 	@echo "✅ Development environment ready!"
 
+start:
+	@echo "🚀 Starting both Frontend and Backend..."
+	npm run dev
+
 # ============================================
 # Running the Application
 # ============================================
 
 web:
 	@echo "🌐 Starting React/Vite front-end on http://localhost:5173 ..."
-	cd time-tracker && npm run dev
+	npm run dev --workspace=time-tracker
 
 api:
 	@echo "🛠️  Starting Node.js API on http://localhost:8001 ..."
-	cd api && npm run start
+	npm run start --workspace=api
 
 kill-port-3000:
 	@echo "🔪 Checking for processes on port 3000..."
