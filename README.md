@@ -16,7 +16,6 @@ A modern time logging and analysis application designed to help you track, categ
   - Weekly breakdowns and trends
   - Category distribution charts
   - Productivity scores
-- **Dark Mode First**: Sleek, modern dark-themed UI for comfortable all-day usage.
 - **Data Portability**: Import/Export weekly data via CSV.
 
 ## 🏗️ Architecture
@@ -30,14 +29,14 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
   - Lucide React icons
 - **Backend (`api/`)**:
   - Node.js + Express
-  - MongoDB (Persistence)
+  - Supabase (PostgreSQL) (Persistence)
   - CSV parsing/export logic
 
 ## 🛠️ Setup & Run
 
 ### Prerequisites
 - Node.js (v18+)
-- MongoDB (running locally on port 27017)
+- Supabase Project (PostgreSQL)
 
 ### Quick Start
 
@@ -49,7 +48,7 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
 2.  **Configure Environment**
     ```bash
     make dev
-    # This creates a .env file. Open it and verify the settings.
+    # This creates a .env file. Open it and add your SUPABASE_URL and SUPABASE_KEY.
     ```
 
 3.  **Start Development Servers** ⭐
@@ -96,45 +95,50 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
 1.  **Log Time**: Go to the **Timesheet** tab. Click and drag on the calendar to create time blocks.
 2.  **Categorize**: Right-click a block to assign a category (Work, Rest, etc.).
 3.  **Analyze**: Switch to the **Dashboard** to see your weekly stats and trends.
-4.  **Save**: Data is automatically saved to MongoDB if the backend is running.
+4.  **Save**: Data is automatically saved to Supabase if the backend is running.
 
 ## 🚀 Deployment
 
-### Database Hosting with MongoDB Atlas
+### Database Hosting with Supabase
 
-For production deployment, use MongoDB Atlas (free tier available):
+This project uses Supabase (PostgreSQL) for data storage.
 
-1. **Create MongoDB Atlas Account**
-   - Sign up at [mongodb.com/cloud/atlas/register](https://www.mongodb.com/cloud/atlas/register)
-   - Create a new cluster (M0 Sandbox - Free tier)
+1. **Create Supabase Project**
+   - Sign up at [supabase.com](https://supabase.com)
+   - Create a new project
 
-2. **Configure Database Access**
-   - Go to Database Access → Add New Database User
-   - Create a username and password (save these!)
-   - Set permissions to "Read and write to any database"
+2. **Run Schema SQL**
+   - Go to the SQL Editor in Supabase.
+   - Run the following SQL to create the table:
 
-3. **Configure Network Access**
-   - Go to Network Access → Add IP Address
-   - For development: Click "Allow Access from Anywhere" (0.0.0.0/0)
-   - For production: Add your specific IP addresses
+   ```sql
+   create table weeks (
+     id uuid default gen_random_uuid() primary key,
+     user_id text not null,
+     year integer not null,
+     week_number integer not null,
+     week_data jsonb not null default '[]'::jsonb,
+     updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
+     unique (user_id, year, week_number)
+   );
+   
+   create index idx_weeks_user_year_week on weeks(user_id, year, week_number);
+   ```
 
-4. **Get Connection String**
-   - Go to Database → Connect → Connect your application
-   - Select "Driver: Node.js"
-   - Copy the connection string:
+3. **Get Credentials**
+   - Go to Project Settings -> API.
+   - Copy the **Project URL** (`SUPABASE_URL`).
+   - Copy the **Publishable Key** (`SUPABASE_PUBLISHABLE_KEY`) for client-side use.
+   - Copy the **Secret Key** (`SUPABASE_SECRET_KEY`) for server-side use.
+
+4. **Update Environment Variables**
+   - **Local `.env`**:
      ```
-     mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+     SUPABASE_URL=https://<your-project>.supabase.co
+     SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+     SUPABASE_SECRET_KEY=sb_secret_...
      ```
-   - Replace `<username>` and `<password>` with your credentials
-
-5. **Update Environment Variables**
-   - **Local `.env`**: Keep using `mongodb://localhost:27017/` for development
-   - **Production (Vercel)**: Add environment variables in Vercel dashboard:
-     ```
-     MONGO_URL=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/
-     DB_NAME=kevin_db
-     COLLECTION=time_tracker_weeks
-     ```
+   - **Production (Vercel)**: Add these environment variables in the Vercel dashboard.
 
 ### Deploy to Vercel
 
@@ -148,7 +152,20 @@ npm i -g vercel
 vercel
 
 # Set environment variables in Vercel dashboard:
-# Settings → Environment Variables → Add MONGO_URL, DB_NAME, etc.
+# Settings → Environment Variables → Add SUPABASE_URL and SUPABASE_SECRET_KEY
 ```
 
 Your app will be live at `https://your-project.vercel.app`
+
+### Populate Supabase database with CSV files.
+Run the script :
+```
+node api/scripts/import-local-data.js
+```
+
+- Read CSV files from raw_data/ .
+- Parse filenames like 2025 Time-10.3.csv .
+  - It interprets this as Year 2025, Month 10, Week 3 .
+  - It converts this into an approximate ISO Week Number (e.g., Week 42) for the database.
+- Parse the CSV content using the existing parseTimeCSV logic.
+- Upsert the data into your Supabase weeks table.

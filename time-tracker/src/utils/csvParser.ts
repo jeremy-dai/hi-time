@@ -76,7 +76,8 @@ export function parseTimeCSV(csvContent: string): ParsedCSVData {
         const match = cellData.match(/^([A-Z]):\s*(.*)$/)
         if (match) {
           category = match[1]
-          subcategory = match[2] || ''
+          // Subcategory does not exist in CSV (per user request)
+          subcategory = ''
           notes = match[2] || ''
         } else {
           // Handle cases where it's just the category letter

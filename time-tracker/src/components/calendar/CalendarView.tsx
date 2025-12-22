@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { TimeBlock, CategoryKey } from '../../types/time'
 import type { CalendarEvent } from '../../utils/eventTransform'
+import type { UserSettings } from '../../api'
 import { blocksToEvents } from '../../utils/eventTransform'
 import { CalendarHeader } from './CalendarHeader'
 import { CalendarGrid } from './CalendarGrid'
@@ -13,9 +14,10 @@ interface CalendarViewProps {
   onUpdateBlock: (day: number, timeIndex: number, block: TimeBlock) => void
   referenceData?: TimeBlock[][] | null
   weekStartDate?: Date
+  userSettings?: UserSettings
 }
 
-export function CalendarView({ weekData, onUpdateBlock, referenceData, weekStartDate }: CalendarViewProps) {
+export function CalendarView({ weekData, onUpdateBlock, referenceData, weekStartDate, userSettings }: CalendarViewProps) {
   // State management
   const [selectedBlocks, setSelectedBlocks] = useState<Set<string>>(new Set())
   const [copiedBlocks, setCopiedBlocks] = useState<TimeBlock[]>([])
@@ -50,7 +52,11 @@ export function CalendarView({ weekData, onUpdateBlock, referenceData, weekStart
 
   // Get subcategories for a category (for context menu)
   const getSubcategoriesFor = (category: string) => {
-    const set = new Set<string>()
+    // Start with user defined settings
+    const defined = userSettings?.subcategories?.[category] || []
+    const set = new Set<string>(defined)
+    
+    // Also include existing data to avoid hiding used subcategories
     weekData.forEach(dayArr => {
       dayArr.forEach(b => {
         if (b.category === category && b.subcategory) set.add(b.subcategory)
@@ -63,7 +69,7 @@ export function CalendarView({ weekData, onUpdateBlock, referenceData, weekStart
         })
       })
     }
-    return Array.from(set).slice(0, 12)
+    return Array.from(set).sort().slice(0, 20)
   }
 
   // Event handlers

@@ -1,26 +1,26 @@
 import type { TimeBlock } from './types/time'
 import { ApiError } from './utils/errorHandler'
+import { getAuthToken } from './lib/supabase'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8001/api'
 
-interface AuthHeaders {
-  'X-User-Id': string
-  'X-Auth-Email': string
-  'X-Auth-Token': string
+interface AuthHeaders extends Record<string, string> {
+  Authorization: string
 }
 
 interface ApiResponse<T> {
   [key: string]: T
 }
 
-function authHeaders(): AuthHeaders {
-  const userId = import.meta.env.VITE_TEST_USER_ID || 'local-user'
-  const email = import.meta.env.VITE_TEST_USER_EMAIL || ''
-  const token = import.meta.env.VITE_TEST_USER_TOKEN || ''
+async function authHeaders(): Promise<AuthHeaders> {
+  const token = await getAuthToken()
+
+  if (!token) {
+    throw new Error('No authentication token available')
+  }
+
   return {
-    'X-User-Id': userId,
-    'X-Auth-Email': email,
-    'X-Auth-Token': token,
+    Authorization: `Bearer ${token}`
   }
 }
 
@@ -34,8 +34,9 @@ async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
 
 export async function listWeeks(): Promise<string[]> {
   try {
+    const headers = await authHeaders()
     const res = await fetch(`${API_BASE}/weeks`, {
-      headers: { ...authHeaders() },
+      headers,
     })
     const data = await handleResponse<ApiResponse<string[]>>(res, '/weeks')
     return data.weeks || []
@@ -47,8 +48,9 @@ export async function listWeeks(): Promise<string[]> {
 
 export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
   try {
+    const headers = await authHeaders()
     const res = await fetch(`${API_BASE}/weeks/${weekKey}`, {
-      headers: { ...authHeaders() },
+      headers,
     })
     const data = await handleResponse<ApiResponse<TimeBlock[][]>>(res, `/weeks/${weekKey}`)
     return data.weekData || null
@@ -60,9 +62,10 @@ export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
 
 export async function putWeek(weekKey: string, weekData: TimeBlock[][]): Promise<boolean> {
   try {
+    const headers = await authHeaders()
     const res = await fetch(`${API_BASE}/weeks/${weekKey}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify({ weekData }),
     })
     await handleResponse<ApiResponse<unknown>>(res, `/weeks/${weekKey}`)
@@ -81,9 +84,10 @@ export async function putWeek(weekKey: string, weekData: TimeBlock[][]): Promise
  */
 export async function importCSV(weekKey: string, csvText: string): Promise<TimeBlock[][] | null> {
   try {
+    const headers = await authHeaders()
     const res = await fetch(`${API_BASE}/weeks/${weekKey}/import`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify({ csv_text: csvText }),
     })
     const data = await handleResponse<ApiResponse<TimeBlock[][]>>(res, `/weeks/${weekKey}/import`)
@@ -96,14 +100,52 @@ export async function importCSV(weekKey: string, csvText: string): Promise<TimeB
 
 export async function exportCSV(weekKey: string): Promise<string> {
   try {
+    const headers = await authHeaders()
     const res = await fetch(`${API_BASE}/weeks/${weekKey}/export`, {
-      headers: { ...authHeaders() },
+      headers,
     })
     const data = await handleResponse<ApiResponse<string>>(res, `/weeks/${weekKey}/export`)
     return data.csv_text || ''
   } catch (error) {
     console.error(`Failed to export CSV for week ${weekKey}:`, error)
     throw error // Re-throw to let caller handle CSV export errors
+  }
+}
+
+export interface UserSettings {
+  subcategories: Record<string, string[]>
+}
+
+export async function getSettings(): Promise<UserSettings> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/settings`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<UserSettings>>(res, '/settings')
+    const settings = data.settings || {}
+    return {
+      subcategories: settings.subcategories || {}
+    }
+  } catch (error) {
+    console.error('Failed to get settings:', error)
+    return { subcategories: {} }
+  }
+}
+
+export async function saveSettings(settings: UserSettings): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ settings }),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, '/settings')
+    return true
+  } catch (error) {
+    console.error('Failed to save settings:', error)
+    return false
   }
 }
 

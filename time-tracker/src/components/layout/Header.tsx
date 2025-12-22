@@ -1,5 +1,6 @@
 import { addWeeks, startOfISOWeek } from '../../utils/date'
 import { cn } from '../../utils/classNames'
+import { useAuth } from '../../hooks/useAuth'
 
 interface HeaderProps {
   currentDate: Date
@@ -16,11 +17,15 @@ function toInputDate(d: Date): string {
 }
 
 export default function Header({ currentDate, onChangeDate, onExportCSV, onImportCSVFile }: HeaderProps) {
+  const { user, signOut } = useAuth()
+
   return (
     <div className="flex items-center justify-between">
       <div>
         <h1 className={cn('text-2xl font-bold', 'text-gray-900 dark:text-gray-100')}>Time Tracker</h1>
-        <p className={cn('text-sm mt-1', 'text-gray-600 dark:text-gray-300')}>Log time, analyze patterns, import CSV</p>
+        <p className={cn('text-sm mt-1', 'text-gray-600 dark:text-gray-300')}>
+          {user?.email || 'Log time, analyze patterns, import CSV'}
+        </p>
       </div>
       <div className="flex gap-2 items-center">
         <label
@@ -86,6 +91,17 @@ export default function Header({ currentDate, onChangeDate, onExportCSV, onImpor
             Next
           </button>
         </div>
+        <button
+          className={cn(
+            'px-4 py-2 rounded-md text-sm font-medium',
+            'bg-red-600 text-white hover:bg-red-700',
+            'dark:bg-red-700 dark:hover:bg-red-800'
+          )}
+          onClick={signOut}
+          title="Sign out"
+        >
+          Logout
+        </button>
       </div>
     </div>
   )

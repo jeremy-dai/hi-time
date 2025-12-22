@@ -1,38 +1,101 @@
 import express from 'express';
 import cors from 'cors';
-import { MongoClient } from 'mongodb';
+import { createClient } from '@supabase/supabase-js';
 import { parseTimeCSV, exportTimeCSV } from './csv.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
 
-const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017/';
-const DB_NAME = process.env.DB_NAME || 'kevin_db';
-const COLLECTION = process.env.COLLECTION || 'time_tracker_weeks';
+// Load .env from root directory before reading environment variables
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootEnvPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: rootEnvPath });
+
 const ALLOW_ORIGIN = process.env.ALLOW_ORIGIN || 'http://localhost:5173';
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 
 const app = express();
 app.use(cors({ origin: ALLOW_ORIGIN }));
 app.use(express.json({ limit: '2mb' }));
 
-let db;
-let collection;
+// Init Supabase
+// Note: We need SUPABASE_URL and SUPABASE_SECRET_KEY in environment variables
+let supabase;
 
-// Exportable init function for Serverless environments
-export async function initMongo() {
-  if (db && collection) return;
-  
-  const client = new MongoClient(MONGO_URL);
-  await client.connect();
-  db = client.db(DB_NAME);
-  collection = db.collection(COLLECTION);
+// Initialize admin Supabase client (for scripts/imports only)
+export function initSupabase() {
+  if (supabase) return;
+  if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) {
+    console.error('Missing SUPABASE_URL or SUPABASE_SECRET_KEY env vars');
+    return;
+  }
+  supabase = createClient(SUPABASE_URL, SUPABASE_SECRET_KEY);
 }
 
-function getUserId(req) {
-  return req.header('X-User-Id') || 'local-user';
+// Create authenticated Supabase client from user's JWT token
+function getAuthenticatedClient(authToken) {
+  if (!authToken || !SUPABASE_PUBLISHABLE_KEY) return null;
+
+  // Create client with user's token (respects RLS)
+  return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    global: {
+      headers: { Authorization: `Bearer ${authToken}` }
+    }
+  });
 }
 
-// Middleware to ensure DB is connected
+function parseWeekKey(weekKey) {
+  // Format: "YYYY-Www" e.g., "2023-W40"
+  const match = weekKey.match(/^(\d{4})-W(\d{1,2})$/);
+  if (!match) return null;
+  return {
+    year: parseInt(match[1], 10),
+    week: parseInt(match[2], 10),
+  };
+}
+
+// Authentication middleware
 app.use(async (req, res, next) => {
-    if (!db) await initMongo();
+  // Public routes (no auth needed)
+  const publicRoutes = ['/api/health', '/api/weeks/.*/import'];
+  const isPublicRoute = publicRoutes.some(route => {
+    const regex = new RegExp(`^${route}$`);
+    return regex.test(req.path);
+  }) || req.path === '/api/health';
+
+  if (isPublicRoute) {
+    return next();
+  }
+
+  try {
+    // Get auth token from header
+    const authToken = req.header('Authorization')?.replace('Bearer ', '');
+    if (!authToken) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    // Create authenticated client
+    const authenticatedClient = getAuthenticatedClient(authToken);
+    if (!authenticatedClient) {
+      return res.status(401).json({ error: 'Invalid authentication' });
+    }
+
+    // Verify user
+    const { data: { user }, error } = await authenticatedClient.auth.getUser();
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Attach to request for use in route handlers
+    req.user = user;
+    req.supabase = authenticatedClient;
+
     next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
 });
 
 app.get('/api/health', (_req, res) => {
@@ -40,40 +103,79 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/weeks', async (req, res) => {
-  const userId = getUserId(req);
-  const docs = await collection
-    .find({ user_id: userId }, { projection: { week_key: 1 } })
-    .toArray();
-  const weeks = Array.from(new Set(docs.map((d) => d.week_key))).filter(Boolean);
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('weeks')
+    .select('year, week_number');
+
+  if (error) {
+    console.error('Error fetching weeks:', error);
+    return res.status(500).json({ error: 'Failed to fetch weeks' });
+  }
+
+  // Convert back to "YYYY-Www" format for frontend compatibility
+  const weeks = data.map(d =>
+    `${d.year}-W${String(d.week_number).padStart(2, '0')}`
+  );
+
   res.json({ weeks });
 });
 
 app.get('/api/weeks/:week_key', async (req, res) => {
-  const userId = getUserId(req);
   const { week_key } = req.params;
-  const doc = await collection.findOne({ user_id: userId, week_key });
-  res.json({ weekData: doc?.weekData || null });
+  const parsed = parseWeekKey(week_key);
+
+  if (!parsed) {
+    return res.status(400).json({ error: 'Invalid week key format' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('weeks')
+    .select('week_data')
+    .eq('year', parsed.year)
+    .eq('week_number', parsed.week)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found"
+    console.error('Error fetching week data:', error);
+    return res.status(500).json({ error: 'Failed to fetch week data' });
+  }
+
+  res.json({ weekData: data?.week_data || null });
 });
 
 app.put('/api/weeks/:week_key', async (req, res) => {
-  const userId = getUserId(req);
   const { week_key } = req.params;
   const { weekData } = req.body || {};
+
   if (!weekData) {
     return res.status(400).json({ error: 'weekData is required' });
   }
-  await collection.updateOne(
-    { user_id: userId, week_key },
-    {
-      $set: {
-        user_id: userId,
-        week_key,
-        weekData,
-        updated_at: new Date(),
-      },
-    },
-    { upsert: true }
-  );
+
+  const parsed = parseWeekKey(week_key);
+  if (!parsed) {
+    return res.status(400).json({ error: 'Invalid week key format' });
+  }
+
+  // RLS requires user_id to match authenticated user
+  const { error } = await req.supabase
+    .from('weeks')
+    .upsert({
+      user_id: req.user.id,
+      year: parsed.year,
+      week_number: parsed.week,
+      week_data: weekData,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,year,week_number'
+    });
+
+  if (error) {
+    console.error('Error saving week data:', error);
+    return res.status(500).json({ error: 'Failed to save week data' });
+  }
+
   res.json({ ok: true });
 });
 
@@ -91,12 +193,69 @@ app.post('/api/weeks/:week_key/import', async (req, res) => {
 });
 
 app.get('/api/weeks/:week_key/export', async (req, res) => {
-  const userId = getUserId(req);
   const { week_key } = req.params;
-  const doc = await collection.findOne({ user_id: userId, week_key });
-  const weekData = doc?.weekData || [];
+  const parsed = parseWeekKey(week_key);
+
+  if (!parsed) {
+    return res.status(400).json({ error: 'Invalid week key format' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('weeks')
+    .select('week_data')
+    .eq('year', parsed.year)
+    .eq('week_number', parsed.week)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching week data for export:', error);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
+
+  const weekData = data?.week_data || [];
   const csv_text = exportTimeCSV(weekData);
   res.json({ csv_text });
+});
+
+// Settings API
+app.get('/api/settings', async (req, res) => {
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('user_settings')
+    .select('settings')
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching settings:', error);
+    return res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+
+  res.json({ settings: data?.settings || {} });
+});
+
+app.put('/api/settings', async (req, res) => {
+  const { settings } = req.body || {};
+
+  if (!settings) {
+    return res.status(400).json({ error: 'settings is required' });
+  }
+
+  // RLS requires user_id to match authenticated user
+  const { error } = await req.supabase
+    .from('user_settings')
+    .upsert({
+      user_id: req.user.id,
+      settings,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error('Error saving settings:', error);
+    return res.status(500).json({ error: 'Failed to save settings' });
+  }
+
+  res.json({ ok: true });
 });
 
 export default app;

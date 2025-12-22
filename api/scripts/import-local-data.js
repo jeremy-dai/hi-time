@@ -1,0 +1,126 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import { parseTimeCSV } from '../src/csv.js';
+
+// Setup environment
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '../../.env') });
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+// Get auth token from command line argument
+const AUTH_TOKEN = process.argv[2];
+
+if (!AUTH_TOKEN) {
+  console.error('❌ Usage: node import-local-data.js <auth-token>');
+  console.error('   Get your token by running: node get-auth-token.js <email> <password>');
+  console.error('   Or copy it from your .env file (VITE_AUTH_TOKEN)\n');
+  process.exit(1);
+}
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error('❌ Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY in .env file');
+  process.exit(1);
+}
+
+// Create client with auth token (respects RLS)
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  global: {
+    headers: { Authorization: `Bearer ${AUTH_TOKEN}` }
+  }
+});
+
+const RAW_DATA_DIR = path.join(__dirname, '../../raw_data');
+
+async function importLocalData() {
+  // Verify auth token and get user ID
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    console.error('❌ Invalid auth token');
+    process.exit(1);
+  }
+
+  const USER_ID = user.id;
+  console.log('🚀 Starting local data import...');
+  console.log(`👤 Importing for user: ${user.email} (${USER_ID})`);
+  console.log(`📂 Reading from: ${RAW_DATA_DIR}`);
+
+  if (!fs.existsSync(RAW_DATA_DIR)) {
+    console.error(`❌ Directory not found: ${RAW_DATA_DIR}`);
+    return;
+  }
+
+  const files = fs.readdirSync(RAW_DATA_DIR).filter(f => f.endsWith('.csv'));
+  console.log(`📊 Found ${files.length} CSV files.`);
+
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const file of files) {
+    console.log(`\nProcessing ${file}...`);
+    
+    // Parse filename: "2025_01.csv" -> Year 2025, Week 01
+    const match = file.match(/^(\d{4})_(\d{2})\.csv$/);
+    
+    let year, weekNumber;
+
+    if (match) {
+      year = parseInt(match[1], 10);
+      weekNumber = parseInt(match[2], 10);
+      
+      console.log(`   -> Parsed: Year ${year}, Week ${weekNumber}`);
+    } else {
+       // Fallback or ignore other files
+       console.warn(`   ⚠️ Filename format not recognized (expected YYYY_WW.csv): ${file}. Skipping.`);
+       // Don't count as error if it's just a sample or other file
+       continue;
+    }
+
+    try {
+      const filePath = path.join(RAW_DATA_DIR, file);
+      const csvContent = fs.readFileSync(filePath, 'utf-8');
+      
+      // Parse CSV to JSON structure
+      const { weekData } = parseTimeCSV(csvContent);
+      
+      // Insert into Supabase
+      const { error } = await supabase
+        .from('weeks')
+        .upsert({
+          user_id: USER_ID,
+          year: year,
+          week_number: weekNumber,
+          week_data: weekData,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,year,week_number'
+        });
+
+      if (error) {
+        console.error(`   ❌ DB Insert failed:`, error.message);
+        errorCount++;
+      } else {
+        console.log(`   ✅ Imported successfully!`);
+        successCount++;
+      }
+
+    } catch (err) {
+      console.error(`   ❌ Error processing file:`, err.message);
+      errorCount++;
+    }
+  }
+
+  console.log('\n==========================================');
+  console.log('🎉 Import finished!');
+  console.log(`✅ Success: ${successCount}`);
+  console.log(`❌ Failed: ${errorCount}`);
+  console.log('==========================================');
+}
+
+importLocalData();

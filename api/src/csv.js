@@ -1,79 +1,102 @@
 export function parseTimeCSV(csvContent) {
-  const lines = csvContent.split('\n');
+  // Robust line splitting handling different line endings
+  const lines = csvContent.split(/\r?\n/).filter(line => line.trim().length > 0);
   const weekData = Array.from({ length: 7 }, () => []);
   const categoryCounts = {};
   let totalBlocks = 0;
 
+  // 1. Find the "Time" row
   let timeRowIndex = -1;
+  let headerRow = [];
+  
   for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith('Time,')) {
+    const tokens = parseCSVLine(lines[i]);
+    if (tokens[0] && tokens[0].trim() === 'Time') {
       timeRowIndex = i;
+      headerRow = tokens;
       break;
     }
   }
+
   if (timeRowIndex === -1) {
     throw new Error('Invalid CSV format: Time row not found');
   }
 
-  const timeRow = lines[timeRowIndex].split(',');
-  const timeSlots = [];
-  for (let i = 1; i < timeRow.length; i++) {
-    const token = (timeRow[i] || '').trim();
-    if (token && !isNaN(Number(token))) {
-      const excelDate = Number(token);
-      const hours = Math.floor(excelDate * 24);
-      const minutes = Math.round((excelDate * 24 - hours) * 60);
-      timeSlots.push(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`);
+  // 2. Map Columns to Days (Mon=0, ..., Sun=6)
+  // We expect columns 1..7 to contain dates.
+  const colToDayIndex = {}; // colIndex -> 0..6
+  
+  for (let c = 1; c < headerRow.length; c++) {
+    const dateStr = headerRow[c].trim();
+    if (!dateStr) continue;
+
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+       // date.getDay(): 0=Sun, 1=Mon, ..., 6=Sat
+       // App expects: 0=Mon, 1=Tue, ..., 5=Sat, 6=Sun
+       const jsDay = date.getDay();
+       const appDay = (jsDay + 6) % 7;
+       colToDayIndex[c] = appDay;
     }
   }
 
-  for (let day = 0; day < 7; day++) {
-    const dayRowIndex = timeRowIndex + day + 1;
-    if (dayRowIndex >= lines.length) break;
+  // 3. Parse Time Rows
+  for (let i = timeRowIndex + 1; i < lines.length; i++) {
+    const row = parseCSVLine(lines[i]);
+    const timeLabel = row[0] ? row[0].trim() : '';
 
-    const dayRow = lines[dayRowIndex].split(',');
-    const dayData = [];
+    // Validate time format (e.g. "08:00")
+    if (!/^\d{1,2}:\d{2}$/.test(timeLabel)) continue;
 
-    for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
-      const cellIndex = timeIndex + 1;
-      const cellData = (dayRow[cellIndex] || '').trim();
-
-      let category = '';
-      let subcategory = '';
-      let notes = '';
-
-      if (cellData) {
-        const match = cellData.match(/^([A-Z]):\s*(.*)$/);
-        if (match) {
-          category = match[1];
-          subcategory = match[2] || '';
-          notes = match[2] || '';
-        } else {
-          if (cellData.length === 1 && /[A-Z]/.test(cellData)) {
-            category = cellData;
-          } else {
-            notes = cellData;
-          }
+    // For each day (0..6), find the corresponding column and parse it
+    for (let day = 0; day < 7; day++) {
+        // Find which column corresponds to this 'day'
+        // We look for key in colToDayIndex where value === day
+        const colIndexStr = Object.keys(colToDayIndex).find(key => colToDayIndex[key] === day);
+        
+        let category = '';
+        let subcategory = '';
+        let notes = '';
+        
+        if (colIndexStr) {
+            const colIndex = parseInt(colIndexStr, 10);
+            if (row[colIndex]) {
+                const cellData = row[colIndex].trim();
+                
+                if (cellData) {
+                    // Parse "C: Notes" format
+                    const match = cellData.match(/^([A-Z]):\s*(.*)$/);
+                    if (match) {
+                        category = match[1];
+                        // Subcategory not used per user request
+                        notes = match[2] || '';
+                    } else if (cellData.length === 1 && /[A-Z]/.test(cellData)) {
+                        // Just Category Letter
+                        category = cellData;
+                    } else {
+                        // Just Notes
+                        notes = cellData;
+                    }
+                }
+            }
         }
-      }
 
-      const block = {
-        id: `${day}-${timeIndex}`,
-        time: timeSlots[timeIndex] || `${String(8 + Math.floor(timeIndex / 2)).padStart(2, '0')}:${timeIndex % 2 === 0 ? '00' : '30'}`,
-        day,
-        category,
-        subcategory,
-        notes,
-      };
+        const block = {
+            id: `${day}-${weekData[day].length}`,
+            time: timeLabel,
+            day,
+            category,
+            subcategory,
+            notes,
+        };
 
-      dayData.push(block);
-      if (category) {
-        categoryCounts[category] = (categoryCounts[category] || 0) + 1;
-        totalBlocks++;
-      }
+        weekData[day].push(block);
+        
+        if (category) {
+            categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+            totalBlocks++;
+        }
     }
-
-    weekData[day] = dayData;
   }
 
   return {
@@ -86,9 +109,15 @@ export function parseTimeCSV(csvContent) {
 }
 
 export function exportTimeCSV(weekData) {
+  // This export function attempts to replicate the NEW transposed format.
+  // Header: Time, DateMon, DateTue... (We might not have dates in weekData, just Mon/Tue)
+  // So we stick to Mon, Tue headers.
+  
   const timeSlots = (weekData[0] || []).map((block) => block.time);
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+  // Note: We don't have the specific dates in weekData, so we just use Day Names in header.
+  // If strict date preservation is needed, we'd need to store dates in weekData.
   let csv = 'Time,' + days.join(',') + '\n';
 
   for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
@@ -96,13 +125,55 @@ export function exportTimeCSV(weekData) {
 
     for (let day = 0; day < 7; day++) {
       const block = (weekData[day] || [])[timeIndex];
-      if (block && block.category) {
-        csv += `${block.category}:${block.subcategory || ''}`;
+      let cell = '';
+      if (block) {
+        if (block.category) {
+            cell = `${block.category}: ${block.notes || ''}`;
+            // If notes are empty, maybe just "C:" or "C"? 
+            // Previous parser handled "C" or "C: Note".
+            if (!block.notes) cell = block.category;
+        } else if (block.notes) {
+            cell = block.notes;
+        }
       }
-      csv += ',';
+      
+      // Escape commas if needed
+      if (cell.includes(',')) {
+          cell = `"${cell}"`;
+      }
+      
+      csv += cell + ',';
     }
+    // Remove trailing comma? standard CSV usually keeps it if there's a column for it, 
+    // but here we have 7 fixed columns.
+    // The loop adds a comma after each day.
+    // 08:00, MonData, TueData, ..., SunData, 
+    // We can trim the last comma if we want clean output, but usually CSV allows trailing empty col or requires exact col count.
+    // Let's remove the very last comma of the line.
+    csv = csv.slice(0, -1);
     csv += '\n';
   }
 
   return csv;
+}
+
+// Helper: Basic CSV Line Parser handling quotes
+function parseCSVLine(text) {
+    const result = [];
+    let cell = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            result.push(cell);
+            cell = '';
+        } else {
+            cell += char;
+        }
+    }
+    result.push(cell);
+    return result;
 }

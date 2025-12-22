@@ -1,9 +1,9 @@
-import { LayoutDashboard, Calendar } from 'lucide-react'
+import { LayoutDashboard, Calendar, Settings } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 
 interface SidebarProps {
-  active: 'log' | 'dashboard'
-  onNavigate: (tab: 'log' | 'dashboard') => void
+  active: 'log' | 'dashboard' | 'settings'
+  onNavigate: (tab: 'log' | 'dashboard' | 'settings') => void
 }
 
 export default function Sidebar({ active, onNavigate }: SidebarProps) {
@@ -24,6 +24,13 @@ export default function Sidebar({ active, onNavigate }: SidebarProps) {
         label="Timesheet"
         active={active === 'log'}
         onClick={() => onNavigate('log')}
+      />
+      <div className="mt-4 text-xs uppercase text-gray-500 mb-3 dark:text-gray-400">System</div>
+      <SidebarItem
+        icon={<Settings size={18} />}
+        label="Settings"
+        active={active === 'settings'}
+        onClick={() => onNavigate('settings')}
       />
     </nav>
   )

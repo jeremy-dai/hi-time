@@ -2,15 +2,19 @@ import { useState, useEffect, useMemo } from 'react'
 import type { TimeBlock } from './types/time'
 import CalendarView from './components/calendar/CalendarView'
 import Dashboard from './components/Dashboard'
+import { Settings } from './components/Settings'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, formatWeekRangeLabel, calculateLastYearWeek } from './utils/date'
-import { listWeeks, getWeek, putWeek, exportCSV as apiExportCSV } from './api'
+import { listWeeks, getWeek, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
 import AppLayout from './components/layout/AppLayout'
 import Header from './components/layout/Header'
 import { parseTimeCSV } from './utils/csvParser'
+import { Login } from './components/Login'
+import { useAuth } from './hooks/useAuth'
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'log' | 'dashboard'>('log')
+  const { isAuthenticated, loading: authLoading } = useAuth()
+  const [activeTab, setActiveTab] = useState<'log' | 'dashboard' | 'settings'>('log')
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date())
   const currentWeekKey = useMemo(() => formatWeekKey(currentDate), [currentDate])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
@@ -20,6 +24,14 @@ function App() {
     return existing || createEmptyWeekData()
   })
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
+  const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })
+
+  useEffect(() => {
+    ;(async () => {
+      const s = await getSettings()
+      if (s) setUserSettings(s)
+    })()
+  }, [])
 
   function createEmptyWeekData(): TimeBlock[][] {
     const timeSlots = 32
@@ -121,15 +133,41 @@ function App() {
     document.body.removeChild(link)
   }
 
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <Login />
+  }
+
   return (
     <AppLayout
       sidebar={<Sidebar active={activeTab} onNavigate={setActiveTab} />}
       header={
-        <Header
-          currentDate={currentDate}
+        <Header 
+          currentDate={currentDate} 
           onChangeDate={(d) => setCurrentDate(d)}
-          onExportCSV={handleExportCSV}
           onImportCSVFile={handleImportCSVFile}
+          onExportCSV={() => {
+            apiExportCSV(currentWeekKey).then(csv => {
+              const blob = new Blob([csv], { type: 'text/csv' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `${currentWeekKey}.csv`
+              a.click()
+            })
+          }}
         />
       }
     >
@@ -137,20 +175,16 @@ function App() {
         {formatWeekRangeLabel(currentDate)}
       </div>
       {activeTab === 'log' && (
-        <main>
-          <CalendarView
-            weekData={weekData}
-            referenceData={referenceData}
-            weekStartDate={currentDate}
-            onUpdateBlock={handleUpdateBlock}
-          />
-        </main>
+        <CalendarView
+          weekData={weekData}
+          onUpdateBlock={handleUpdateBlock}
+          referenceData={referenceData}
+          weekStartDate={new Date(currentDate.setDate(currentDate.getDate() - currentDate.getDay() + 1))}
+          userSettings={userSettings}
+        />
       )}
-      {activeTab === 'dashboard' && (
-        <main>
-          <Dashboard weekData={weekData} weeksStore={weekStore} />
-        </main>
-      )}
+      {activeTab === 'dashboard' && <Dashboard weekData={weekData} weeksStore={weekStore} />}
+      {activeTab === 'settings' && <Settings />}
     </AppLayout>
   )
 }
