@@ -1,12 +1,18 @@
-import { addWeeks, startOfISOWeek } from '../../utils/date'
+import { addWeeks, startOfISOWeek, formatMonthWeekTitle, formatWeekRangeLabel } from '../../utils/date'
 import { cn } from '../../utils/classNames'
-import { useAuth } from '../../hooks/useAuth'
+import { SyncStatusIndicator } from '../SyncStatusIndicator'
+import type { SyncStatus } from '../../hooks/useLocalStorageSync'
 
 interface HeaderProps {
   currentDate: Date
   onChangeDate: (d: Date) => void
   onExportCSV: () => void
   onImportCSVFile: (file: File) => void
+  syncStatus?: SyncStatus
+  lastSynced?: Date | null
+  hasUnsavedChanges?: boolean
+  syncError?: Error | null
+  onSyncNow?: () => Promise<void>
 }
 
 function toInputDate(d: Date): string {
@@ -16,49 +22,27 @@ function toInputDate(d: Date): string {
   return `${y}-${m}-${dd}`
 }
 
-export default function Header({ currentDate, onChangeDate, onExportCSV, onImportCSVFile }: HeaderProps) {
-  const { user, signOut } = useAuth()
-
+export default function Header({ currentDate, onChangeDate, onExportCSV: _onExportCSV, onImportCSVFile: _onImportCSVFile, syncStatus, lastSynced, hasUnsavedChanges, syncError, onSyncNow }: HeaderProps) {
   return (
     <div className="flex items-center justify-between">
       <div>
-        <h1 className={cn('text-2xl font-bold', 'text-gray-900 dark:text-gray-100')}>Time Tracker</h1>
-        <p className={cn('text-sm mt-1', 'text-gray-600 dark:text-gray-300')}>
-          {user?.email || 'Log time, analyze patterns, import CSV'}
+        <h1 className={cn('text-2xl font-bold', 'text-gray-900 dark:text-gray-100')}>
+          {formatMonthWeekTitle(currentDate)}
+        </h1>
+        <p className={cn('text-sm mt-1', 'text-gray-600 dark:text-gray-400')}>
+          {formatWeekRangeLabel(currentDate)}
         </p>
       </div>
-      <div className="flex gap-2 items-center">
-        <label
-          className={cn(
-            'px-4 py-2 rounded-md text-sm font-medium cursor-pointer',
-            'bg-white text-gray-700 border hover:bg-gray-50',
-            'dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-700'
-          )}
-        >
-          Import CSV
-          <input
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => {
-              const files = e.target.files
-              if (files && files.length > 0) {
-                onImportCSVFile(files[0])
-                e.currentTarget.value = ''
-              }
-            }}
+      <div className="flex gap-4 items-center">
+        {syncStatus && (
+          <SyncStatusIndicator
+            status={syncStatus}
+            lastSynced={lastSynced}
+            hasUnsavedChanges={hasUnsavedChanges || false}
+            error={syncError}
+            onSyncNow={onSyncNow}
           />
-        </label>
-        <button
-          className={cn(
-            'px-4 py-2 rounded-md text-sm font-medium',
-            'bg-white text-gray-700 border hover:bg-gray-50',
-            'dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700 dark:hover:bg-gray-700'
-          )}
-          onClick={onExportCSV}
-        >
-          Export CSV
-        </button>
+        )}
         <div className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-md',
           'bg-white border',
@@ -79,8 +63,8 @@ export default function Header({ currentDate, onChangeDate, onExportCSV, onImpor
               const parts = val.split('-').map(Number)
               if (parts.length === 3) {
                 const dt = new Date(parts[0], parts[1] - 1, parts[2])
-                const monday = startOfISOWeek(dt)
-                onChangeDate(monday)
+                const sunday = startOfISOWeek(dt)
+                onChangeDate(sunday)
               }
             }}
           />
@@ -90,18 +74,17 @@ export default function Header({ currentDate, onChangeDate, onExportCSV, onImpor
           >
             Next
           </button>
+          <button
+            className={cn(
+              'px-2 py-1 rounded border text-sm font-medium',
+              'bg-blue-600 text-white hover:bg-blue-700',
+              'dark:bg-blue-700 dark:hover:bg-blue-800 dark:border-blue-600'
+            )}
+            onClick={() => onChangeDate(new Date())}
+          >
+            Now
+          </button>
         </div>
-        <button
-          className={cn(
-            'px-4 py-2 rounded-md text-sm font-medium',
-            'bg-red-600 text-white hover:bg-red-700',
-            'dark:bg-red-700 dark:hover:bg-red-800'
-          )}
-          onClick={signOut}
-          title="Sign out"
-        >
-          Logout
-        </button>
       </div>
     </div>
   )

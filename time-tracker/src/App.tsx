@@ -1,37 +1,70 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import type { TimeBlock } from './types/time'
-import CalendarView from './components/calendar/CalendarView'
+import HandsontableCalendar from './components/calendar/HandsontableCalendar'
 import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
 import Sidebar from './components/Sidebar'
-import { formatWeekKey, formatWeekRangeLabel, calculateLastYearWeek } from './utils/date'
+import { formatWeekKey, calculateLastYearWeek } from './utils/date'
 import { listWeeks, getWeek, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
 import AppLayout from './components/layout/AppLayout'
 import Header from './components/layout/Header'
 import { parseTimeCSV } from './utils/csvParser'
 import { Login } from './components/Login'
 import { useAuth } from './hooks/useAuth'
+import { useLocalStorageSync } from './hooks/useLocalStorageSync'
 
 function App() {
-  const { isAuthenticated, loading: authLoading } = useAuth()
+  const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState<'log' | 'dashboard' | 'settings'>('log')
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date())
   const currentWeekKey = useMemo(() => formatWeekKey(currentDate), [currentDate])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
-  const [weekData, setWeekData] = useState<TimeBlock[][]>(() => {
-    const key = formatWeekKey(new Date())
-    const existing = weekStore[key]
-    return existing || createEmptyWeekData()
-  })
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
   const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })
 
+  // Memoize sync functions to prevent recreating on every render
+  const syncToDatabase = useCallback(async (data: TimeBlock[][]) => {
+    return await putWeek(currentWeekKey, data);
+  }, [currentWeekKey]);
+
+  const loadFromDatabase = useCallback(async () => {
+    return await getWeek(currentWeekKey);
+  }, [currentWeekKey]);
+
+  // Local storage sync for current week data
+  const {
+    data: weekData,
+    setData: setWeekData,
+    syncStatus: weekSyncStatus,
+    lastSynced: weekLastSynced,
+    hasUnsavedChanges: weekHasUnsavedChanges,
+    syncNow: syncWeekNow,
+    error: weekSyncError
+  } = useLocalStorageSync({
+    storageKey: `week-${currentWeekKey}`,
+    syncInterval: 30000, // Sync every 30 seconds
+    syncToDatabase,
+    loadFromDatabase
+  })
+
+  const loadUserSettings = async () => {
+    const s = await getSettings()
+    if (s) setUserSettings(s)
+  }
+
   useEffect(() => {
-    ;(async () => {
-      const s = await getSettings()
-      if (s) setUserSettings(s)
-    })()
+    loadUserSettings()
   }, [])
+
+  // Reload settings when navigating to log tab to pick up any changes from settings page
+  useEffect(() => {
+    if (activeTab === 'log') {
+      loadUserSettings()
+    }
+  }, [activeTab])
+
+  // Initialize weekData with empty data if null
+  const currentWeekData = weekData || createEmptyWeekData()
 
   function createEmptyWeekData(): TimeBlock[][] {
     const timeSlots = 32
@@ -87,21 +120,33 @@ function App() {
   }, [weekStore, currentWeekKey])
 
   const handleUpdateBlock = (day: number, timeIndex: number, block: TimeBlock) => {
-    setWeekStore(prev => {
-      const current = prev[currentWeekKey] || createEmptyWeekData()
-      const newWeek = [...current]
-      newWeek[day] = [...newWeek[day]]
+    const current = currentWeekData
+    const newWeek = [...current]
+    newWeek[day] = [...newWeek[day]]
+    newWeek[day][timeIndex] = block
+    // Save to localStorage immediately, will sync to DB periodically
+    setWeekData(newWeek)
+    setWeekStore(prev => ({ ...prev, [currentWeekKey]: newWeek }))
+  }
+
+  const handleUpdateBlocks = (updates: { day: number, timeIndex: number, block: TimeBlock }[]) => {
+    const current = currentWeekData
+    // Deep copy enough to be safe
+    const newWeek = current.map(dayArr => [...dayArr])
+    
+    updates.forEach(({ day, timeIndex, block }) => {
       newWeek[day][timeIndex] = block
-      // optimistic update
-      putWeek(currentWeekKey, newWeek)
-      return { ...prev, [currentWeekKey]: newWeek }
     })
+    
+    // Save to localStorage immediately, will sync to DB periodically
+    setWeekData(newWeek)
+    setWeekStore(prev => ({ ...prev, [currentWeekKey]: newWeek }))
   }
 
   const handleImportCSV = (importedData: TimeBlock[][]) => {
-    setWeekStore(prev => ({ ...prev, [currentWeekKey]: importedData }))
+    // Save to localStorage immediately
     setWeekData(importedData)
-    putWeek(currentWeekKey, importedData)
+    setWeekStore(prev => ({ ...prev, [currentWeekKey]: importedData }))
   }
   // keep referenceData state to support future look-back imports
   const handleImportCSVFile = (file: File) => {
@@ -119,18 +164,6 @@ function App() {
       }
     }
     reader.readAsText(file)
-  }
-
-  const handleExportCSV = async () => {
-    const csvContent = await apiExportCSV(currentWeekKey)
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.setAttribute('download', `timesheet_${new Date().toISOString().split('T')[0]}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
   }
 
   // Show loading while checking authentication
@@ -152,10 +185,10 @@ function App() {
 
   return (
     <AppLayout
-      sidebar={<Sidebar active={activeTab} onNavigate={setActiveTab} />}
+      sidebar={<Sidebar active={activeTab} onNavigate={setActiveTab} userEmail={user?.email} onLogout={signOut} />}
       header={
-        <Header 
-          currentDate={currentDate} 
+        <Header
+          currentDate={currentDate}
           onChangeDate={(d) => setCurrentDate(d)}
           onImportCSVFile={handleImportCSVFile}
           onExportCSV={() => {
@@ -168,23 +201,25 @@ function App() {
               a.click()
             })
           }}
+          syncStatus={weekSyncStatus}
+          lastSynced={weekLastSynced}
+          hasUnsavedChanges={weekHasUnsavedChanges}
+          syncError={weekSyncError}
+          onSyncNow={syncWeekNow}
         />
       }
     >
-      <div className="mb-4 text-sm font-medium text-gray-700 dark:text-gray-300">
-        {formatWeekRangeLabel(currentDate)}
-      </div>
       {activeTab === 'log' && (
-        <CalendarView
-          weekData={weekData}
+        <HandsontableCalendar
+          weekData={currentWeekData}
           onUpdateBlock={handleUpdateBlock}
+          onUpdateBlocks={handleUpdateBlocks}
           referenceData={referenceData}
-          weekStartDate={new Date(currentDate.setDate(currentDate.getDate() - currentDate.getDay() + 1))}
           userSettings={userSettings}
         />
       )}
-      {activeTab === 'dashboard' && <Dashboard weekData={weekData} weeksStore={weekStore} />}
-      {activeTab === 'settings' && <Settings />}
+      {activeTab === 'dashboard' && <Dashboard weekData={currentWeekData} weeksStore={weekStore} />}
+      {activeTab === 'settings' && <Settings onSettingsSaved={loadUserSettings} />}
     </AppLayout>
   )
 }

@@ -2,7 +2,7 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 
 export function startOfISOWeek(date: Date): Date {
   const d = new Date(date)
-  const day = (d.getDay() + 6) % 7
+  const day = d.getDay() // 0 is Sunday
   d.setDate(d.getDate() - day)
   d.setHours(0, 0, 0, 0)
   return d
@@ -44,6 +44,12 @@ export function formatWeekRangeLabel(date: Date): string {
   const s = `${monthNames[start.getMonth()]} ${start.getDate()}`
   const e = `${monthNames[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`
   return `${s} - ${e}`
+}
+
+export function formatMonthWeekTitle(date: Date): string {
+  const { isoWeek } = getISOWeekYear(date)
+  const month = monthNames[date.getMonth()]
+  return `${month}, Week ${isoWeek}`
 }
 
 /**

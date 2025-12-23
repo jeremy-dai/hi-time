@@ -18,19 +18,9 @@ export const CATEGORY_BORDER_COLORS = {
 
 export const CATEGORY_LABELS = {
   R: 'Rest',
-  W: 'Productive Work',
-  G: 'Guilty Free Play',
-  P: 'Procrastination',
-  M: 'Mandatory Work',
-  '': 'Empty'
-} as const
-
-// Short names for CSV and compact displays
-export const CATEGORY_SHORT_NAMES = {
-  R: 'Rest',
   W: 'Work',
-  G: 'Growth',
-  P: 'Personal',
+  G: 'Play',
+  P: 'Procrastination',
   M: 'Mandatory',
   '': ''
 } as const

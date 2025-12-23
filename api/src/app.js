@@ -218,6 +218,78 @@ app.get('/api/weeks/:week_key/export', async (req, res) => {
   res.json({ csv_text });
 });
 
+// Bulk Export API
+app.get('/api/export/bulk', async (req, res) => {
+  const { start, end } = req.query;
+
+  if (!start || !end) {
+    return res.status(400).json({ error: 'start and end week keys are required (YYYY-Www)' });
+  }
+
+  const startParsed = parseWeekKey(start);
+  const endParsed = parseWeekKey(end);
+
+  if (!startParsed || !endParsed) {
+    return res.status(400).json({ error: 'Invalid week key format' });
+  }
+
+  // Determine year range and week range
+  // This logic is simple if within same year, but complex if crossing years.
+  // We can query Supabase for all weeks between these keys.
+  // Since we store year and week_number as integers, we can filter easily.
+  
+  // Construct a query to get all weeks in range.
+  // Logic: 
+  // (year > startYear OR (year == startYear AND week >= startWeek))
+  // AND
+  // (year < endYear OR (year == endYear AND week <= endWeek))
+  
+  const { data: weeks, error } = await req.supabase
+    .from('weeks')
+    .select('year, week_number, week_data')
+    .or(`year.gt.${startParsed.year},and(year.eq.${startParsed.year},week_number.gte.${startParsed.week})`)
+    .or(`year.lt.${endParsed.year},and(year.eq.${endParsed.year},week_number.lte.${endParsed.week})`)
+    .order('year', { ascending: true })
+    .order('week_number', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching bulk export data:', error);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
+
+  // Now verify the AND condition manually if OR query returned too much (Supabase OR syntax can be tricky combined)
+  // Actually, the above query structure might be misinterpreted by PostgREST as (A OR B) AND (C OR D) if we chain .or().
+  // Let's filter in memory if the dataset isn't huge, or refine the query.
+  // Given user scale, in-memory filtering is fine.
+  
+  const filteredWeeks = weeks.filter(w => {
+    const isAfterStart = w.year > startParsed.year || (w.year === startParsed.year && w.week_number >= startParsed.week);
+    const isBeforeEnd = w.year < endParsed.year || (w.year === endParsed.year && w.week_number <= endParsed.week);
+    return isAfterStart && isBeforeEnd;
+  });
+
+  // Combine CSVs
+  // Strategy: We can either zip them, or combine into one big CSV if format allows?
+  // The user asked for "export csv", usually meaning one file. 
+  // If we concatenate weeks, we need to handle headers.
+  // Option 1: One big CSV with "Week" column?
+  // Option 2: Just concatenate with headers repeated (simple but messy).
+  // Option 3: Return a JSON with map of filename -> content (frontend zips it)?
+  // Let's try to make one big CSV with a "Week" column added to the header?
+  // Or just concatenate them with a blank line in between.
+  
+  let combinedCSV = '';
+  
+  for (const week of filteredWeeks) {
+      const weekKey = `${week.year}-W${String(week.week_number).padStart(2, '0')}`;
+      combinedCSV += `Week: ${weekKey}\n`;
+      combinedCSV += exportTimeCSV(week.week_data);
+      combinedCSV += '\n\n';
+  }
+
+  res.json({ csv_text: combinedCSV });
+});
+
 // Settings API
 app.get('/api/settings', async (req, res) => {
   // RLS automatically filters by authenticated user

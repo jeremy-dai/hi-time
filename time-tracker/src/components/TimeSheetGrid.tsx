@@ -3,7 +3,7 @@ import type { TimeBlock, CategoryKey } from '../types/time'
 import { TimeBlock as TimeBlockComponent } from './TimeBlock'
 import { cn } from '../utils/classNames'
 import { TIME_SLOTS, DAYS_SHORT } from '../constants/timesheet'
-import { CATEGORY_SHORT_NAMES } from '../constants/colors'
+import { CATEGORY_LABELS } from '../constants/colors'
 
 interface TimeSheetGridProps {
   weekData: TimeBlock[][]
@@ -103,7 +103,7 @@ export function TimeSheetGrid({ weekData, onUpdateBlock, referenceData, weekStar
         time: timeSlots[timeIndex],
         day,
         category: category as CategoryKey,
-        subcategory: category ? CATEGORY_SHORT_NAMES[category as CategoryKey] : '',
+        subcategory: category ? CATEGORY_LABELS[category as CategoryKey] : '',
         notes: base?.notes || ''
       }
       onUpdateBlock(day, timeIndex, updated)
@@ -140,7 +140,7 @@ export function TimeSheetGrid({ weekData, onUpdateBlock, referenceData, weekStar
         time: timeSlots[timeIndex],
         day,
         category: category as CategoryKey,
-        subcategory: category ? CATEGORY_SHORT_NAMES[category as CategoryKey] : '',
+        subcategory: category ? CATEGORY_LABELS[category as CategoryKey] : '',
         notes: weekData[day]?.[timeIndex]?.notes || ''
       }
       onUpdateBlock(day, timeIndex, updated)
@@ -359,26 +359,18 @@ export function TimeSheetGrid({ weekData, onUpdateBlock, referenceData, weekStar
       <div className={cn('mt-6 p-4 rounded-lg border', 'bg-gray-50 dark:bg-gray-900', 'dark:border-[hsl(var(--color-dark-border))]')}>
         <h3 className={cn('text-sm font-medium mb-2', 'text-gray-900 dark:text-gray-100')}>Category Legend</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-500 dark:bg-green-600 rounded"></div>
-            <span>Rest</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-yellow-400 dark:bg-yellow-500 rounded"></div>
-            <span>Productive Work</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-blue-500 dark:bg-blue-600 rounded"></div>
-            <span>Guilty Free Play</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-500 dark:bg-red-600 rounded"></div>
-            <span>Procrastination</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-orange-700 dark:bg-orange-600 rounded"></div>
-            <span>Mandatory Work</span>
-          </div>
+          {[
+            { key: 'R' as CategoryKey, colorClass: 'bg-green-500 dark:bg-green-600' },
+            { key: 'W' as CategoryKey, colorClass: 'bg-yellow-400 dark:bg-yellow-500' },
+            { key: 'G' as CategoryKey, colorClass: 'bg-blue-500 dark:bg-blue-600' },
+            { key: 'P' as CategoryKey, colorClass: 'bg-red-500 dark:bg-red-600' },
+            { key: 'M' as CategoryKey, colorClass: 'bg-orange-700 dark:bg-orange-600' }
+          ].map(({ key, colorClass }) => (
+            <div key={key} className="flex items-center gap-2">
+              <div className={`w-4 h-4 ${colorClass} rounded`}></div>
+              <span>{CATEGORY_LABELS[key]}</span>
+            </div>
+          ))}
         </div>
       </div>
 

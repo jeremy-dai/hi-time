@@ -15,7 +15,7 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
       'dark:bg-[hsl(var(--color-dark-background))]'
     )}>
       <div className="max-w-7xl mx-auto p-6 flex gap-6">
-        <aside className="w-[280px] sticky top-6 self-start h-[calc(100vh-3rem)]">{sidebar}</aside>
+        <aside className="w-[200px] sticky top-6 self-start h-[calc(100vh-3rem)]">{sidebar}</aside>
         <div className="flex-1">
           {header && (
             <div className={cn(

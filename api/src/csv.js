@@ -110,11 +110,15 @@ export function parseTimeCSV(csvContent) {
 
 export function exportTimeCSV(weekData) {
   // This export function attempts to replicate the NEW transposed format.
-  // Header: Time, DateMon, DateTue... (We might not have dates in weekData, just Mon/Tue)
-  // So we stick to Mon, Tue headers.
+  // Header: Time, DateSun, DateMon... (We might not have dates in weekData, just Sun/Mon)
+  // So we stick to Sun, Mon headers.
   
   const timeSlots = (weekData[0] || []).map((block) => block.time);
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Change to Sun..Sat to match UI preference
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Map Sun..Sat to DB indices (6, 0, 1, 2, 3, 4, 5)
+  // DB stores [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  const dayIndices = [6, 0, 1, 2, 3, 4, 5];
 
   // Note: We don't have the specific dates in weekData, so we just use Day Names in header.
   // If strict date preservation is needed, we'd need to store dates in weekData.
@@ -123,7 +127,8 @@ export function exportTimeCSV(weekData) {
   for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
     csv += timeSlots[timeIndex] + ',';
 
-    for (let day = 0; day < 7; day++) {
+    for (let i = 0; i < 7; i++) {
+      const day = dayIndices[i];
       const block = (weekData[day] || [])[timeIndex];
       let cell = '';
       if (block) {
@@ -147,7 +152,7 @@ export function exportTimeCSV(weekData) {
     // Remove trailing comma? standard CSV usually keeps it if there's a column for it, 
     // but here we have 7 fixed columns.
     // The loop adds a comma after each day.
-    // 08:00, MonData, TueData, ..., SunData, 
+    // 08:00, SunData, MonData, ..., SatData, 
     // We can trim the last comma if we want clean output, but usually CSV allows trailing empty col or requires exact col count.
     // Let's remove the very last comma of the line.
     csv = csv.slice(0, -1);

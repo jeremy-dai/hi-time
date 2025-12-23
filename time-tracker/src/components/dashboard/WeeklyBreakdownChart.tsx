@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { WeekStats } from '../../utils/analytics'
 import { CATEGORY_LABELS } from '../../constants/colors'
@@ -7,16 +8,18 @@ interface WeeklyBreakdownChartProps {
 }
 
 export default function WeeklyBreakdownChart({ stats }: WeeklyBreakdownChartProps) {
-  const data = stats.dailyByCategory
-    ? Array.from({ length: 7 }, (_, i) => ({
-        day: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i],
-        R: stats.dailyByCategory[i]?.R || 0,
-        W: stats.dailyByCategory[i]?.W || 0,
-        M: stats.dailyByCategory[i]?.M || 0,
-        G: stats.dailyByCategory[i]?.G || 0,
-        P: stats.dailyByCategory[i]?.P || 0,
-      }))
-    : []
+  const data = useMemo(() =>
+    stats.dailyByCategory
+      ? Array.from({ length: 7 }, (_, i) => ({
+          day: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][i],
+          R: stats.dailyByCategory[i]?.R || 0,
+          W: stats.dailyByCategory[i]?.W || 0,
+          M: stats.dailyByCategory[i]?.M || 0,
+          G: stats.dailyByCategory[i]?.G || 0,
+          P: stats.dailyByCategory[i]?.P || 0,
+        }))
+      : []
+  , [stats])
 
   return (
     <div style={{ width: '100%', height: 300 }}>

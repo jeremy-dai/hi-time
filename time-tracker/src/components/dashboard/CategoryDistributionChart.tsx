@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import type { WeekStats } from '../../utils/analytics'
 import { CATEGORY_LABELS } from '../../constants/colors'
@@ -16,11 +17,13 @@ const colors: Record<string, string> = {
 }
 
 export default function CategoryDistributionChart({ stats }: CategoryDistributionChartProps) {
-  const data = order.map(k => ({
-    name: CATEGORY_LABELS[k],
-    key: k,
-    value: stats.categoryHours[k] || 0
-  }))
+  const data = useMemo(() =>
+    order.map(k => ({
+      name: CATEGORY_LABELS[k],
+      key: k,
+      value: stats.categoryHours[k] || 0
+    }))
+  , [stats])
 
   return (
     <div style={{ width: '100%', height: 300 }}>

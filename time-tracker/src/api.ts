@@ -46,6 +46,26 @@ export async function listWeeks(): Promise<string[]> {
   }
 }
 
+// Helper to transform Mon-Sun (DB) to Sun-Sat (UI)
+function transformWeekDataFromDb(weekData: TimeBlock[][]): TimeBlock[][] {
+  if (!weekData || weekData.length !== 7) return weekData
+  // DB: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  // UI: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+  const sun = weekData[6]
+  const rest = weekData.slice(0, 6)
+  return [sun, ...rest]
+}
+
+// Helper to transform Sun-Sat (UI) to Mon-Sun (DB)
+function transformWeekDataToDb(weekData: TimeBlock[][]): TimeBlock[][] {
+  if (!weekData || weekData.length !== 7) return weekData
+  // UI: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+  // DB: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  const sun = weekData[0]
+  const rest = weekData.slice(1)
+  return [...rest, sun]
+}
+
 export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
   try {
     const headers = await authHeaders()
@@ -53,7 +73,7 @@ export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
       headers,
     })
     const data = await handleResponse<ApiResponse<TimeBlock[][]>>(res, `/weeks/${weekKey}`)
-    return data.weekData || null
+    return data.weekData ? transformWeekDataFromDb(data.weekData) : null
   } catch (error) {
     console.error(`Failed to get week ${weekKey}:`, error)
     return null
@@ -63,10 +83,11 @@ export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
 export async function putWeek(weekKey: string, weekData: TimeBlock[][]): Promise<boolean> {
   try {
     const headers = await authHeaders()
+    const dbWeekData = transformWeekDataToDb(weekData)
     const res = await fetch(`${API_BASE}/weeks/${weekKey}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify({ weekData }),
+      body: JSON.stringify({ weekData: dbWeekData }),
     })
     await handleResponse<ApiResponse<unknown>>(res, `/weeks/${weekKey}`)
     return true
@@ -91,7 +112,7 @@ export async function importCSV(weekKey: string, csvText: string): Promise<TimeB
       body: JSON.stringify({ csv_text: csvText }),
     })
     const data = await handleResponse<ApiResponse<TimeBlock[][]>>(res, `/weeks/${weekKey}/import`)
-    return data.weekData || null
+    return data.weekData ? transformWeekDataFromDb(data.weekData) : null
   } catch (error) {
     console.error(`Failed to import CSV for week ${weekKey}:`, error)
     throw error // Re-throw to let caller handle CSV import errors
@@ -109,6 +130,24 @@ export async function exportCSV(weekKey: string): Promise<string> {
   } catch (error) {
     console.error(`Failed to export CSV for week ${weekKey}:`, error)
     throw error // Re-throw to let caller handle CSV export errors
+  }
+}
+
+export async function exportBulkCSV(startWeek: string, endWeek: string): Promise<string> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/export/bulk?start=${startWeek}&end=${endWeek}`, {
+      headers,
+    })
+    // For bulk export, we might receive the raw CSV text directly or as JSON
+    // Assuming backend returns JSON with csv_text like single export for consistency,
+    // OR we could adjust backend to stream the file. 
+    // Let's assume standard JSON response pattern first.
+    const data = await handleResponse<ApiResponse<string>>(res, `/export/bulk`)
+    return data.csv_text || ''
+  } catch (error) {
+    console.error(`Failed to export bulk CSV:`, error)
+    throw error
   }
 }
 
