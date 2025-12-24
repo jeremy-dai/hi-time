@@ -80,6 +80,35 @@ export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
   }
 }
 
+/**
+ * Fetch multiple weeks in parallel (batch operation)
+ * Returns a record mapping week keys to their data
+ * Weeks that fail to load will have null values
+ */
+export async function getWeeksBatch(weekKeys: string[]): Promise<Record<string, TimeBlock[][] | null>> {
+  try {
+    // Fetch all weeks in parallel using Promise.all
+    const results = await Promise.all(
+      weekKeys.map(async (weekKey) => {
+        const weekData = await getWeek(weekKey)
+        return { weekKey, weekData }
+      })
+    )
+
+    // Convert array to record
+    const batchResult: Record<string, TimeBlock[][] | null> = {}
+    results.forEach(({ weekKey, weekData }) => {
+      batchResult[weekKey] = weekData
+    })
+
+    return batchResult
+  } catch (error) {
+    console.error('Failed to batch fetch weeks:', error)
+    // Return empty result on error
+    return {}
+  }
+}
+
 export async function putWeek(weekKey: string, weekData: TimeBlock[][]): Promise<boolean> {
   try {
     const headers = await authHeaders()
@@ -151,8 +180,13 @@ export async function exportBulkCSV(startWeek: string, endWeek: string): Promise
   }
 }
 
+export interface SubcategoryDef {
+  index: number
+  name: string
+}
+
 export interface UserSettings {
-  subcategories: Record<string, string[]>
+  subcategories: Record<string, SubcategoryDef[]>
 }
 
 export async function getSettings(): Promise<UserSettings> {

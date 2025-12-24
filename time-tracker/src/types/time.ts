@@ -1,9 +1,14 @@
+export interface SubcategoryRef {
+  index: number
+  name: string
+}
+
 export interface TimeBlock {
   id: string
   time: string
   day: number
   category: CategoryKey
-  subcategory: string
+  subcategory?: SubcategoryRef | null
   notes: string
 }
 

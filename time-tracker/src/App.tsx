@@ -4,8 +4,8 @@ import HandsontableCalendar from './components/calendar/HandsontableCalendar'
 import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
 import Sidebar from './components/Sidebar'
-import { formatWeekKey, calculateLastYearWeek } from './utils/date'
-import { listWeeks, getWeek, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
+import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
+import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
 import AppLayout from './components/layout/AppLayout'
 import Header from './components/layout/Header'
 import { parseTimeCSV } from './utils/csvParser'
@@ -81,17 +81,31 @@ function App() {
     )
   }
 
-  useEffect(() => {
-    ;(async () => {
-      const keys = await listWeeks()
-      const store: Record<string, TimeBlock[][]> = {}
-      for (const k of keys) {
-        const wd = await getWeek(k)
-        if (wd) store[k] = wd
-      }
-      setWeekStore(store)
-    })()
-  }, [])
+  // Lazy loading functions for dashboard views
+  const loadWeeksForRange = useCallback(async (weekKeys: string[]) => {
+    // Filter out weeks already in store
+    const missingKeys = weekKeys.filter(key => !weekStore[key])
+
+    if (missingKeys.length === 0) {
+      return // All weeks already loaded
+    }
+
+    // Fetch missing weeks in batch
+    const batchResult = await getWeeksBatch(missingKeys)
+
+    // Update weekStore with fetched weeks
+    setWeekStore(prev => ({
+      ...prev,
+      ...Object.fromEntries(
+        Object.entries(batchResult).filter(([_, data]) => data !== null)
+      ) as Record<string, TimeBlock[][]>
+    }))
+  }, [weekStore])
+
+  const loadYearWeeks = useCallback(async (year: number) => {
+    const yearKeys = getCurrentYearWeeks().filter(key => key.startsWith(`${year}-W`))
+    await loadWeeksForRange(yearKeys)
+  }, [loadWeeksForRange])
 
   useEffect(() => {
     ;(async () => {
@@ -218,7 +232,16 @@ function App() {
           userSettings={userSettings}
         />
       )}
-      {activeTab === 'dashboard' && <Dashboard weekData={currentWeekData} weeksStore={weekStore} />}
+      {activeTab === 'dashboard' && (
+        <Dashboard
+          weekData={currentWeekData}
+          weeksStore={weekStore}
+          currentWeekKey={currentWeekKey}
+          currentDate={currentDate}
+          loadWeeksForRange={loadWeeksForRange}
+          loadYearWeeks={loadYearWeeks}
+        />
+      )}
       {activeTab === 'settings' && <Settings onSettingsSaved={loadUserSettings} />}
     </AppLayout>
   )

@@ -18,7 +18,7 @@ export default function WeeklyTrendChart({ current, previous }: WeeklyTrendChart
   , [current, previous])
 
   return (
-    <div style={{ width: '100%', height: 280 }}>
+    <div style={{ width: '100%', height: 280, minWidth: 0 }}>
       <ResponsiveContainer>
         <LineChart data={data}>
           <XAxis dataKey="day" />

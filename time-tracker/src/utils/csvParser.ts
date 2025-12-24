@@ -67,21 +67,45 @@ export function parseTimeCSV(csvContent: string): ParsedCSVData {
       const cellIndex = timeIndex + 1 // Skip first column (time header)
       const cellData = dayRow[cellIndex]?.trim() || ''
       
-      // Parse cell data (e.g., "W: meeting" or "R:")
+      // Parse cell data
+      // Format:
+      // "R:" -> category only
+      // "R:subcategory:" -> category + subcategory
+      // "R:subcategory:notes" -> category + subcategory + notes
+      // "R:notes" -> category + notes
       let category = ''
       let subcategory = ''
       let notes = ''
 
       if (cellData) {
-        const match = cellData.match(/^([A-Z]):\s*(.*)$/)
-        if (match) {
-          category = match[1]
-          // Subcategory does not exist in CSV (per user request)
-          subcategory = ''
-          notes = match[2] || ''
+        const parts = cellData.split(':')
+
+        if (parts.length >= 1 && parts[0].length === 1 && /[A-Z]/.test(parts[0])) {
+          // Starts with category letter
+          category = parts[0]
+
+          if (parts.length === 2) {
+            // "R:" or "R:notes"
+            const rest = parts[1].trim()
+            if (rest) {
+              notes = rest
+            }
+          } else if (parts.length === 3) {
+            // "R:subcategory:" or "R:subcategory:notes"
+            subcategory = parts[1].trim()
+            notes = parts[2].trim()
+          } else if (parts.length > 3) {
+            // "R:subcategory:notes:with:colons"
+            subcategory = parts[1].trim()
+            notes = parts.slice(2).join(':').trim()
+          }
         } else {
-          // Handle cases where it's just the category letter
-          if (cellData.length === 1 && /[A-Z]/.test(cellData)) {
+          // Old format fallback or just notes
+          const match = cellData.match(/^([A-Z]):\s*(.*)$/)
+          if (match) {
+            category = match[1]
+            notes = match[2] || ''
+          } else if (cellData.length === 1 && /[A-Z]/.test(cellData)) {
             category = cellData
           } else {
             notes = cellData
@@ -119,23 +143,51 @@ export function parseTimeCSV(csvContent: string): ParsedCSVData {
 }
 
 export function exportTimeCSV(weekData: TimeBlock[][]): string {
+  // Export format:
+  // - "R:" for category only
+  // - "R:subcategory:" for category with subcategory
+  // - "R:subcategory:notes" for category with subcategory and notes
+  // - "R:notes" for category with notes but no subcategory
+
   const timeSlots = weekData[0]?.map(block => block.time) || []
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  
+
   let csv = 'Time,' + days.join(',') + '\n'
-  
+
   for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
     csv += timeSlots[timeIndex] + ','
-    
+
     for (let day = 0; day < 7; day++) {
       const block = weekData[day]?.[timeIndex]
+      let cell = ''
+
       if (block && block.category) {
-        csv += `${block.category}:${block.subcategory || ''}`
+        // Start with category
+        cell = block.category + ':'
+
+        // Add subcategory if present
+        if (block.subcategory) {
+          cell += block.subcategory + ':'
+        }
+
+        // Add notes if present
+        if (block.notes) {
+          cell += block.notes
+        }
       }
-      csv += ','
+
+      // Escape commas if needed
+      if (cell.includes(',')) {
+        cell = `"${cell}"`
+      }
+
+      csv += cell + ','
     }
+
+    // Remove trailing comma
+    csv = csv.slice(0, -1)
     csv += '\n'
   }
-  
+
   return csv
 }

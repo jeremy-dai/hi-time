@@ -79,3 +79,207 @@ function isoWeekToDate(isoYear: number, isoWeek: number): Date {
   return ISOweekStart
 }
 
+// New interfaces for enhanced analytics
+
+export interface MultiWeekStats {
+  weeks: Array<{
+    weekKey: string
+    stats: WeekStats
+  }>
+  totalHours: number
+  categoryTotals: Record<string, number>
+  averagePerWeek: number
+}
+
+export interface YTDStats {
+  year: number
+  totalHours: number
+  totalWeeks: number
+  averagePerWeek: number
+  highestWeek: { weekKey: string; hours: number } | null
+  lowestWeek: { weekKey: string; hours: number } | null
+  monthlyBreakdown: Array<{
+    month: string
+    hours: number
+    categoryHours: Record<string, number>
+  }>
+  weeklyData: Array<{
+    weekKey: string
+    hours: number
+    categoryHours: Record<string, number>
+  }>
+}
+
+export interface WeekDelta {
+  totalDelta: number
+  totalPercentChange: number
+  categoryDeltas: Record<string, {
+    delta: number
+    percentChange: number
+  }>
+}
+
+// New aggregation functions
+
+/**
+ * Aggregate data for multiple weeks (e.g., last 4 weeks for trend analysis)
+ */
+export function aggregateMultiWeekData(
+  weeksStore: Record<string, TimeBlock[][]>,
+  weekKeys: string[]
+): MultiWeekStats {
+  const weeks = weekKeys
+    .filter(key => weeksStore[key]) // Only include weeks that exist
+    .map(weekKey => ({
+      weekKey,
+      stats: aggregateWeekData(weeksStore[weekKey])
+    }))
+
+  const categoryTotals: Record<string, number> = {}
+  let totalHours = 0
+
+  weeks.forEach(({ stats }) => {
+    totalHours += stats.totalHours
+    Object.entries(stats.categoryHours).forEach(([cat, hours]) => {
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + hours
+    })
+  })
+
+  const averagePerWeek = weeks.length > 0 ? totalHours / weeks.length : 0
+
+  return {
+    weeks,
+    totalHours,
+    categoryTotals,
+    averagePerWeek
+  }
+}
+
+/**
+ * Calculate deltas between two weeks with percentage changes
+ */
+export function calculateWeekDelta(
+  currentWeekData: TimeBlock[][],
+  previousWeekData: TimeBlock[][]
+): WeekDelta {
+  const current = aggregateWeekData(currentWeekData)
+  const previous = aggregateWeekData(previousWeekData)
+
+  const totalDelta = current.totalHours - previous.totalHours
+  const totalPercentChange = previous.totalHours > 0
+    ? (totalDelta / previous.totalHours) * 100
+    : 0
+
+  const categoryDeltas: Record<string, { delta: number; percentChange: number }> = {}
+  const allCategories = new Set([
+    ...Object.keys(current.categoryHours),
+    ...Object.keys(previous.categoryHours)
+  ])
+
+  allCategories.forEach(cat => {
+    const currentHours = current.categoryHours[cat] || 0
+    const previousHours = previous.categoryHours[cat] || 0
+    const delta = currentHours - previousHours
+    const percentChange = previousHours > 0 ? (delta / previousHours) * 100 : 0
+
+    categoryDeltas[cat] = { delta, percentChange }
+  })
+
+  return {
+    totalDelta,
+    totalPercentChange,
+    categoryDeltas
+  }
+}
+
+/**
+ * Aggregate year-to-date statistics with detailed breakdowns
+ */
+export function aggregateYTDData(
+  weeksStore: Record<string, TimeBlock[][]>,
+  year: number
+): YTDStats {
+  // Filter weeks for the specified year
+  const yearWeeks = Object.keys(weeksStore)
+    .filter(key => key.startsWith(`${year}-W`))
+    .sort()
+
+  const weeklyData: YTDStats['weeklyData'] = []
+  const monthlyMap: Record<string, { hours: number; categoryHours: Record<string, number> }> = {}
+
+  let totalHours = 0
+  let highestWeek: { weekKey: string; hours: number } | null = null
+  let lowestWeek: { weekKey: string; hours: number } | null = null
+
+  yearWeeks.forEach(weekKey => {
+    const stats = aggregateWeekData(weeksStore[weekKey])
+    const hours = stats.totalHours
+
+    weeklyData.push({
+      weekKey,
+      hours,
+      categoryHours: stats.categoryHours
+    })
+
+    totalHours += hours
+
+    // Track highest/lowest weeks (only for weeks with data)
+    if (hours > 0) {
+      if (!highestWeek || hours > highestWeek.hours) {
+        highestWeek = { weekKey, hours }
+      }
+      if (!lowestWeek || hours < lowestWeek.hours) {
+        lowestWeek = { weekKey, hours }
+      }
+    }
+
+    // Aggregate by month
+    const [yearStr, weekStr] = weekKey.split('-W')
+    const weekNum = Number(weekStr)
+    const approxDate = isoWeekToDate(Number(yearStr), weekNum)
+    const monthKey = `${approxDate.getFullYear()}-${String(approxDate.getMonth() + 1).padStart(2, '0')}`
+
+    if (!monthlyMap[monthKey]) {
+      monthlyMap[monthKey] = { hours: 0, categoryHours: {} }
+    }
+
+    monthlyMap[monthKey].hours += hours
+    Object.entries(stats.categoryHours).forEach(([cat, catHours]) => {
+      monthlyMap[monthKey].categoryHours[cat] =
+        (monthlyMap[monthKey].categoryHours[cat] || 0) + catHours
+    })
+  })
+
+  const monthlyBreakdown = Object.keys(monthlyMap)
+    .sort()
+    .map(month => ({
+      month,
+      hours: monthlyMap[month].hours,
+      categoryHours: monthlyMap[month].categoryHours
+    }))
+
+  const averagePerWeek = yearWeeks.length > 0 ? totalHours / yearWeeks.length : 0
+
+  return {
+    year,
+    totalHours,
+    totalWeeks: yearWeeks.length,
+    averagePerWeek,
+    highestWeek,
+    lowestWeek,
+    monthlyBreakdown,
+    weeklyData
+  }
+}
+
+/**
+ * Get monthly aggregates with category breakdown
+ */
+export function getMonthlyAggregates(
+  weeksStore: Record<string, TimeBlock[][]>,
+  year: number
+): YTDStats['monthlyBreakdown'] {
+  const ytdStats = aggregateYTDData(weeksStore, year)
+  return ytdStats.monthlyBreakdown
+}
+

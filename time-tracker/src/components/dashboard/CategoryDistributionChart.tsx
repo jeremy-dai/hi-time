@@ -26,7 +26,7 @@ export default function CategoryDistributionChart({ stats }: CategoryDistributio
   , [stats])
 
   return (
-    <div style={{ width: '100%', height: 300 }}>
+    <div style={{ width: '100%', height: 300, minWidth: 0 }}>
       <ResponsiveContainer>
         <PieChart>
           <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={2}>

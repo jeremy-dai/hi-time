@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { getSettings, saveSettings, type UserSettings } from '../api'
-import { CATEGORY_LABELS } from '../constants/colors'
+import { getSettings, saveSettings, type UserSettings, type SubcategoryDef } from '../api'
+import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX } from '../constants/colors'
 import { CATEGORY_KEYS } from '../types/time'
 import Card from './shared/Card'
 import { cn } from '../utils/classNames'
 import { useLocalStorageSync } from '../hooks/useLocalStorageSync'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
+import { normalizeSubcategories } from '../utils/subcategoryHelpers'
 
 interface SettingsProps {
   onSettingsSaved?: () => void
@@ -73,48 +74,57 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
     }
   }
 
-  function addSubcategory(category: string, value: string) {
-    if (!value.trim() || !settings) return
-    const current = settings.subcategories[category] || []
-    if (current.includes(value.trim())) return
-
-    const updated = {
-      ...settings,
-      subcategories: {
-        ...settings.subcategories,
-        [category]: [...current, value.trim()].sort()
-      }
-    }
-    // Save to localStorage immediately, will sync to DB periodically
-    setSettings(updated)
-  }
-
-  function removeSubcategory(category: string, value: string) {
+  function updateSubcategory(category: string, slotIndex: number, value: string) {
     if (!settings) return
+
     const current = settings.subcategories[category] || []
+    // Normalize to new format
+    const normalized = normalizeSubcategories(current)
+
+    // Find or create subcategory at this slot
+    const trimmedValue = value.trim()
+
+    if (trimmedValue === '') {
+      // Remove subcategory at this slot
+      const filtered = normalized.filter((_, idx) => idx !== slotIndex)
+      const updated = {
+        ...settings,
+        subcategories: {
+          ...settings.subcategories,
+          [category]: filtered
+        }
+      }
+      setSettings(updated)
+      return
+    }
+
+    // Update or add subcategory
+    const newSubcategories = [...normalized]
+
+    // Extend array if needed
+    while (newSubcategories.length <= slotIndex) {
+      newSubcategories.push({ index: newSubcategories.length, name: '' })
+    }
+
+    // Preserve the index, update the name
+    const existingIndex = newSubcategories[slotIndex]?.index ?? slotIndex
+    newSubcategories[slotIndex] = {
+      index: existingIndex,
+      name: trimmedValue
+    }
+
+    // Filter out empty names
+    const filtered = newSubcategories.filter(s => s.name.length > 0)
+
     const updated = {
       ...settings,
       subcategories: {
         ...settings.subcategories,
-        [category]: current.filter(item => item !== value)
+        [category]: filtered
       }
     }
     // Save to localStorage immediately, will sync to DB periodically
     setSettings(updated)
-  }
-
-  // Get variant color for a subcategory based on its index
-  function getSubcategoryColor(category: string, index: number) {
-    const shades = {
-      'R': ['bg-green-300', 'bg-green-400', 'bg-green-500', 'bg-green-600', 'bg-green-700'],
-      'W': ['bg-yellow-200', 'bg-yellow-300', 'bg-yellow-400', 'bg-yellow-500', 'bg-yellow-600'],
-      'G': ['bg-blue-300', 'bg-blue-400', 'bg-blue-500', 'bg-blue-600', 'bg-blue-700'],
-      'P': ['bg-red-300', 'bg-red-400', 'bg-red-500', 'bg-red-600', 'bg-red-700'],
-      'M': ['bg-orange-400', 'bg-orange-500', 'bg-orange-600', 'bg-orange-700', 'bg-orange-800'],
-      '': ['bg-gray-200', 'bg-gray-300', 'bg-gray-400', 'bg-gray-500', 'bg-gray-600']
-    }
-    const categoryShades = shades[category as keyof typeof shades] || shades['']
-    return categoryShades[index % categoryShades.length]
   }
 
   if (loading || !settings) return <div className="p-8">Loading settings...</div>
@@ -174,73 +184,92 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
         </Card>
 
         <Card className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Subcategories Management</h2>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Subcategories</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  // Clear localStorage and reload from database
+                  localStorage.removeItem('user-settings')
+                  const freshSettings = await getSettings()
+                  setSettings(freshSettings)
+                  setMessage('Reloaded from database!')
+                  setTimeout(() => setMessage(''), 2000)
+                }}
+                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
+              >
+                Reload
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm('Clear all subcategories? This will remove all subcategories from all categories.')) {
+                    setSettings({
+                      ...settings,
+                      subcategories: {}
+                    })
+                    setMessage('Subcategories cleared!')
+                    setTimeout(() => setMessage(''), 2000)
+                  }
+                }}
+                className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Define subcategories for each category. These will appear in the context menu when editing time blocks. Changes are saved automatically after you stop editing. Each subcategory gets a variant color shade automatically.
+            Define up to 5 subcategories for each category. Just type to enable a subcategory. Changes are saved automatically.
           </p>
-          
+
           <div className="space-y-6">
-            {CATEGORY_KEYS.filter(k => k !== '').map(category => (
-              <div key={category} className="border-b pb-4 last:border-0 dark:border-gray-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={cn(
-                    "w-6 h-6 flex items-center justify-center rounded text-xs font-bold text-white",
-                    category === 'R' ? "bg-green-500" :
-                    category === 'W' ? "bg-yellow-400" :
-                    category === 'G' ? "bg-blue-500" :
-                    category === 'P' ? "bg-red-500" :
-                    category === 'M' ? "bg-orange-700" : "bg-gray-400"
-                  )}>
-                    {category}
-                  </span>
-                  <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                    {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
-                  </h3>
-                </div>
+            {CATEGORY_KEYS.filter(k => k !== '').map(category => {
+              const currentSubs = settings.subcategories[category] || []
+              const normalizedSubs = normalizeSubcategories(currentSubs)
 
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {(settings.subcategories[category] || []).map((sub, idx) => (
-                    <span key={sub} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded text-sm text-gray-700 dark:text-gray-300">
-                      <span className={`w-3 h-3 ${getSubcategoryColor(category, idx)} rounded flex-shrink-0`}></span>
-                      {sub}
-                      <button
-                        onClick={() => removeSubcategory(category, sub)}
-                        className="text-gray-400 hover:text-red-500 ml-1"
-                      >
-                        ×
-                      </button>
+              return (
+                <div key={category} className="border-b pb-4 last:border-0 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={cn(
+                      "w-6 h-6 flex items-center justify-center rounded text-xs font-bold text-white",
+                      category === 'R' ? "bg-green-500" :
+                      category === 'W' ? "bg-yellow-400" :
+                      category === 'G' ? "bg-blue-500" :
+                      category === 'P' ? "bg-red-500" :
+                      category === 'M' ? "bg-orange-700" : "bg-gray-400"
+                    )}>
+                      {category}
                     </span>
-                  ))}
-                  {(settings.subcategories[category] || []).length === 0 && (
-                    <span className="text-sm text-gray-400 italic">No subcategories defined</span>
-                  )}
-                </div>
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                      {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
+                    </h3>
+                  </div>
 
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={`Add subcategory for ${category}...`}
-                    className="flex-1 px-3 py-1 border rounded text-sm dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        addSubcategory(category, e.currentTarget.value)
-                        e.currentTarget.value = ''
-                      }
-                    }}
-                  />
-                  <button
-                    className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
-                    onClick={(e) => {
-                      const input = e.currentTarget.previousElementSibling as HTMLInputElement
-                      addSubcategory(category, input.value)
-                      input.value = ''
-                    }}
-                  >
-                    Add
-                  </button>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                    {[0, 1, 2, 3, 4].map((slotIndex) => {
+                      const subcategory = normalizedSubs[slotIndex]
+                      const value = subcategory?.name || ''
+                      const shades = SUBCATEGORY_SHADES_HEX[category as keyof typeof SUBCATEGORY_SHADES_HEX]
+                      const bgColor = shades[slotIndex % shades.length]
+
+                      return (
+                        <input
+                          key={slotIndex}
+                          type="text"
+                          value={value}
+                          placeholder={`Subcategory ${slotIndex + 1}`}
+                          style={{
+                            backgroundColor: bgColor,
+                            color: '#1f2937', // dark gray text for readability
+                          }}
+                          className="px-3 py-2 border-2 border-transparent rounded text-sm font-medium placeholder:text-gray-400 placeholder:opacity-60 placeholder:font-normal focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          onChange={(e) => updateSubcategory(category, slotIndex, e.target.value)}
+                        />
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </Card>
       </div>

@@ -53,29 +53,63 @@ export function parseTimeCSV(csvContent) {
         // Find which column corresponds to this 'day'
         // We look for key in colToDayIndex where value === day
         const colIndexStr = Object.keys(colToDayIndex).find(key => colToDayIndex[key] === day);
-        
+
         let category = '';
         let subcategory = '';
         let notes = '';
-        
+
         if (colIndexStr) {
             const colIndex = parseInt(colIndexStr, 10);
             if (row[colIndex]) {
                 const cellData = row[colIndex].trim();
-                
+
                 if (cellData) {
-                    // Parse "C: Notes" format
-                    const match = cellData.match(/^([A-Z]):\s*(.*)$/);
-                    if (match) {
-                        category = match[1];
-                        // Subcategory not used per user request
-                        notes = match[2] || '';
-                    } else if (cellData.length === 1 && /[A-Z]/.test(cellData)) {
-                        // Just Category Letter
-                        category = cellData;
+                    // Parse new format:
+                    // "R:" -> category only
+                    // "R:subcategory:" -> category + subcategory
+                    // "R:subcategory:notes" -> category + subcategory + notes
+                    // "R:notes" -> category + notes (no subcategory, but has colon)
+
+                    const parts = cellData.split(':');
+
+                    if (parts.length >= 1 && parts[0].length === 1 && /[A-Z]/.test(parts[0])) {
+                        // Starts with category letter
+                        category = parts[0];
+
+                        if (parts.length === 2) {
+                            // "R:" or "R:notes"
+                            const rest = parts[1].trim();
+                            if (rest) {
+                                // Could be subcategory or notes
+                                // Heuristic: if it's a single word without spaces, likely subcategory
+                                // Otherwise, it's notes
+                                // Actually, let's be more specific:
+                                // If there's a third part, parts[1] is subcategory
+                                // If there's no third part but parts[1] exists, it's notes
+                                notes = rest;
+                            }
+                        } else if (parts.length === 3) {
+                            // "R:subcategory:" or "R:subcategory:notes"
+                            subcategory = parts[1].trim();
+                            notes = parts[2].trim();
+                        } else if (parts.length > 3) {
+                            // "R:subcategory:notes:with:colons"
+                            subcategory = parts[1].trim();
+                            notes = parts.slice(2).join(':').trim();
+                        }
                     } else {
-                        // Just Notes
-                        notes = cellData;
+                        // Old format or just notes without category
+                        const match = cellData.match(/^([A-Z]):\s*(.*)$/);
+                        if (match) {
+                            category = match[1];
+                            notes = match[2] || '';
+                        } else if (cellData.length === 1 && /[A-Z]/.test(cellData)) {
+                            // Just Category Letter
+                            category = cellData;
+                        } else {
+                            // Just Notes
+                            notes = cellData;
+                        }
                     }
                 }
             }
@@ -91,7 +125,7 @@ export function parseTimeCSV(csvContent) {
         };
 
         weekData[day].push(block);
-        
+
         if (category) {
             categoryCounts[category] = (categoryCounts[category] || 0) + 1;
             totalBlocks++;
@@ -109,10 +143,12 @@ export function parseTimeCSV(csvContent) {
 }
 
 export function exportTimeCSV(weekData) {
-  // This export function attempts to replicate the NEW transposed format.
-  // Header: Time, DateSun, DateMon... (We might not have dates in weekData, just Sun/Mon)
-  // So we stick to Sun, Mon headers.
-  
+  // Export format:
+  // - "R:" for category only
+  // - "R:subcategory:" for category with subcategory
+  // - "R:subcategory:notes" for category with subcategory and notes
+  // - "R:notes" for category with notes but no subcategory
+
   const timeSlots = (weekData[0] || []).map((block) => block.time);
   // Change to Sun..Sat to match UI preference
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -120,8 +156,6 @@ export function exportTimeCSV(weekData) {
   // DB stores [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
   const dayIndices = [6, 0, 1, 2, 3, 4, 5];
 
-  // Note: We don't have the specific dates in weekData, so we just use Day Names in header.
-  // If strict date preservation is needed, we'd need to store dates in weekData.
   let csv = 'Time,' + days.join(',') + '\n';
 
   for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
@@ -131,30 +165,31 @@ export function exportTimeCSV(weekData) {
       const day = dayIndices[i];
       const block = (weekData[day] || [])[timeIndex];
       let cell = '';
-      if (block) {
-        if (block.category) {
-            cell = `${block.category}: ${block.notes || ''}`;
-            // If notes are empty, maybe just "C:" or "C"? 
-            // Previous parser handled "C" or "C: Note".
-            if (!block.notes) cell = block.category;
-        } else if (block.notes) {
-            cell = block.notes;
+
+      if (block && block.category) {
+        // Start with category
+        cell = block.category + ':';
+
+        // Add subcategory if present
+        if (block.subcategory) {
+          cell += block.subcategory + ':';
+        }
+
+        // Add notes if present
+        if (block.notes) {
+          cell += block.notes;
         }
       }
-      
+
       // Escape commas if needed
       if (cell.includes(',')) {
-          cell = `"${cell}"`;
+        cell = `"${cell}"`;
       }
-      
+
       csv += cell + ',';
     }
-    // Remove trailing comma? standard CSV usually keeps it if there's a column for it, 
-    // but here we have 7 fixed columns.
-    // The loop adds a comma after each day.
-    // 08:00, SunData, MonData, ..., SatData, 
-    // We can trim the last comma if we want clean output, but usually CSV allows trailing empty col or requires exact col count.
-    // Let's remove the very last comma of the line.
+
+    // Remove trailing comma
     csv = csv.slice(0, -1);
     csv += '\n';
   }

@@ -63,3 +63,48 @@ export function calculateLastYearWeek(weekKey: string): string {
   const week = weekStr
   return `${year - 1}-W${week}`
 }
+
+/**
+ * Generate array of week keys for a given year range
+ * @param year - ISO year
+ * @param startWeek - Starting week number (1-based, inclusive)
+ * @param endWeek - Ending week number (1-based, inclusive)
+ * @returns Array of week keys (e.g., ["2025-W01", "2025-W02", ...])
+ */
+export function generateWeekKeysForYear(year: number, startWeek: number, endWeek: number): string[] {
+  const keys: string[] = []
+  for (let week = startWeek; week <= endWeek; week++) {
+    const w = String(week).padStart(2, '0')
+    keys.push(`${year}-W${w}`)
+  }
+  return keys
+}
+
+/**
+ * Get all week keys from week 1 up to the current week of the current year
+ * @returns Array of week keys for the current year up to now
+ */
+export function getCurrentYearWeeks(): string[] {
+  const now = new Date()
+  const { isoWeek, isoYear } = getISOWeekYear(now)
+  return generateWeekKeysForYear(isoYear, 1, isoWeek)
+}
+
+/**
+ * Get all week keys between two dates (inclusive)
+ * @param startDate - Start date
+ * @param endDate - End date
+ * @returns Array of week keys in the range
+ */
+export function getWeeksInRange(startDate: Date, endDate: Date): string[] {
+  const keys: string[] = []
+  const current = new Date(startOfISOWeek(startDate))
+  const end = startOfISOWeek(endDate)
+
+  while (current <= end) {
+    keys.push(formatWeekKey(current))
+    current.setDate(current.getDate() + 7)
+  }
+
+  return keys
+}
