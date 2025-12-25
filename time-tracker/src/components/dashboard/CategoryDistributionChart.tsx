@@ -37,9 +37,6 @@ export default function CategoryDistributionChart({ stats }: CategoryDistributio
           <Tooltip />
         </PieChart>
       </ResponsiveContainer>
-      <div className="mt-2 text-center text-sm">
-        Total {stats.totalHours.toFixed(1)}h
-      </div>
     </div>
   )
 }

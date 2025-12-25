@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import type { TimeBlock } from './types/time'
 import HandsontableCalendar from './components/calendar/HandsontableCalendar'
 import Dashboard from './components/Dashboard'
@@ -15,12 +15,14 @@ import { useLocalStorageSync } from './hooks/useLocalStorageSync'
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState<'log' | 'dashboard' | 'settings'>('log')
+  const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'settings'>('log')
   const [currentDate, setCurrentDate] = useState<Date>(() => new Date())
   const currentWeekKey = useMemo(() => formatWeekKey(currentDate), [currentDate])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
+  const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
   const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })
+  const fetchingWeeks = useRef<Set<string>>(new Set())
 
   // Memoize sync functions to prevent recreating on every render
   const syncToDatabase = useCallback(async (data: TimeBlock[][]) => {
@@ -74,8 +76,8 @@ function App() {
         id: `${day}-${timeIndex}`,
         time: `${String(8 + Math.floor(timeIndex / 2)).padStart(2, '0')}:${timeIndex % 2 === 0 ? '00' : '30'}`,
         day,
-        category: '',
-        subcategory: '',
+        category: '' as any,
+        subcategory: null,
         notes: ''
       }))
     )
@@ -83,24 +85,56 @@ function App() {
 
   // Lazy loading functions for dashboard views
   const loadWeeksForRange = useCallback(async (weekKeys: string[]) => {
-    // Filter out weeks already in store
-    const missingKeys = weekKeys.filter(key => !weekStore[key])
+    try {
+      console.log('loadWeeksForRange - START, weekKeys:', weekKeys)
+      console.log('loadWeeksForRange - current store:', Object.keys(weekStoreRef.current))
+      console.log('loadWeeksForRange - currently fetching:', Array.from(fetchingWeeks.current))
 
-    if (missingKeys.length === 0) {
-      return // All weeks already loaded
+      // Filter out weeks that are already in store OR currently being fetched
+      const keysToFetch = weekKeys.filter(key => !weekStoreRef.current[key] && !fetchingWeeks.current.has(key))
+
+      console.log('loadWeeksForRange - keys to fetch:', keysToFetch)
+
+      if (keysToFetch.length === 0) {
+        console.log('loadWeeksForRange - early return, all weeks already loaded or being fetched')
+        return // All weeks already loaded or being fetched
+      }
+
+      console.log('loadWeeksForRange - PAST THE CHECK, about to mark as fetching')
+
+      // Mark these weeks as being fetched
+      keysToFetch.forEach(key => fetchingWeeks.current.add(key))
+      console.log('loadWeeksForRange - FETCHING weeks:', keysToFetch)
+
+      try {
+        // Fetch missing weeks in batch
+        const batchResult = await getWeeksBatch(keysToFetch)
+        console.log('loadWeeksForRange - Batch result:', Object.keys(batchResult), 'with data:', Object.entries(batchResult).map(([k, v]) => ({ key: k, hasData: v !== null, dataLength: v?.length })))
+
+        // Update weekStore with fetched weeks (or empty data for weeks that don't exist)
+        const newEntries = Object.fromEntries(
+          Object.entries(batchResult).map(([key, data]) => [
+            key,
+            data || createEmptyWeekData()
+          ])
+        ) as Record<string, TimeBlock[][]>
+
+        console.log('loadWeeksForRange - Adding to store:', Object.keys(newEntries))
+
+        const updated = { ...weekStoreRef.current, ...newEntries }
+        weekStoreRef.current = updated
+        setWeekStore(updated)
+        console.log('loadWeeksForRange - Updated store keys:', Object.keys(updated))
+      } finally {
+        // Remove from fetching set
+        keysToFetch.forEach(key => fetchingWeeks.current.delete(key))
+        console.log('loadWeeksForRange - Finished fetching, removed from set')
+      }
+    } catch (error) {
+      console.error('loadWeeksForRange - ERROR:', error)
+      throw error
     }
-
-    // Fetch missing weeks in batch
-    const batchResult = await getWeeksBatch(missingKeys)
-
-    // Update weekStore with fetched weeks
-    setWeekStore(prev => ({
-      ...prev,
-      ...Object.fromEntries(
-        Object.entries(batchResult).filter(([_, data]) => data !== null)
-      ) as Record<string, TimeBlock[][]>
-    }))
-  }, [weekStore])
+  }, []) // No dependencies - uses refs
 
   const loadYearWeeks = useCallback(async (year: number) => {
     const yearKeys = getCurrentYearWeeks().filter(key => key.startsWith(`${year}-W`))
@@ -112,11 +146,15 @@ function App() {
       // Load current week data
       const existing = await getWeek(currentWeekKey)
       if (existing) {
-        setWeekStore(prev => ({ ...prev, [currentWeekKey]: existing }))
+        const updated = { ...weekStoreRef.current, [currentWeekKey]: existing }
+        weekStoreRef.current = updated
+        setWeekStore(updated)
         setWeekData(existing)
       } else {
         const empty = createEmptyWeekData()
-        setWeekStore(prev => ({ ...prev, [currentWeekKey]: empty }))
+        const updated = { ...weekStoreRef.current, [currentWeekKey]: empty }
+        weekStoreRef.current = updated
+        setWeekStore(updated)
         setWeekData(empty)
         await putWeek(currentWeekKey, empty)
       }
@@ -140,27 +178,33 @@ function App() {
     newWeek[day][timeIndex] = block
     // Save to localStorage immediately, will sync to DB periodically
     setWeekData(newWeek)
-    setWeekStore(prev => ({ ...prev, [currentWeekKey]: newWeek }))
+    const updated = { ...weekStoreRef.current, [currentWeekKey]: newWeek }
+    weekStoreRef.current = updated
+    setWeekStore(updated)
   }
 
   const handleUpdateBlocks = (updates: { day: number, timeIndex: number, block: TimeBlock }[]) => {
     const current = currentWeekData
     // Deep copy enough to be safe
     const newWeek = current.map(dayArr => [...dayArr])
-    
+
     updates.forEach(({ day, timeIndex, block }) => {
       newWeek[day][timeIndex] = block
     })
-    
+
     // Save to localStorage immediately, will sync to DB periodically
     setWeekData(newWeek)
-    setWeekStore(prev => ({ ...prev, [currentWeekKey]: newWeek }))
+    const updated = { ...weekStoreRef.current, [currentWeekKey]: newWeek }
+    weekStoreRef.current = updated
+    setWeekStore(updated)
   }
 
   const handleImportCSV = (importedData: TimeBlock[][]) => {
     // Save to localStorage immediately
     setWeekData(importedData)
-    setWeekStore(prev => ({ ...prev, [currentWeekKey]: importedData }))
+    const updated = { ...weekStoreRef.current, [currentWeekKey]: importedData }
+    weekStoreRef.current = updated
+    setWeekStore(updated)
   }
   // keep referenceData state to support future look-back imports
   const handleImportCSVFile = (file: File) => {
@@ -232,7 +276,7 @@ function App() {
           userSettings={userSettings}
         />
       )}
-      {activeTab === 'dashboard' && (
+      {activeTab === 'trends' && (
         <Dashboard
           weekData={currentWeekData}
           weeksStore={weekStore}
@@ -240,6 +284,18 @@ function App() {
           currentDate={currentDate}
           loadWeeksForRange={loadWeeksForRange}
           loadYearWeeks={loadYearWeeks}
+          viewMode="trends"
+        />
+      )}
+      {activeTab === 'annual' && (
+        <Dashboard
+          weekData={currentWeekData}
+          weeksStore={weekStore}
+          currentWeekKey={currentWeekKey}
+          currentDate={currentDate}
+          loadWeeksForRange={loadWeeksForRange}
+          loadYearWeeks={loadYearWeeks}
+          viewMode="annual"
         />
       )}
       {activeTab === 'settings' && <Settings onSettingsSaved={loadUserSettings} />}

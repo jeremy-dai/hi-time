@@ -13,24 +13,44 @@ interface CurrentWeekDashboardProps {
   weeksStore: Record<string, TimeBlock[][]>
   currentWeekKey: string
   currentDate: Date
+  isCurrentWeekComplete: boolean
 }
 
 export default function CurrentWeekDashboard({
   currentWeekData,
   weeksStore,
   currentWeekKey,
-  currentDate
+  currentDate,
+  isCurrentWeekComplete
 }: CurrentWeekDashboardProps) {
-  // Current week stats
-  const currentStats = useMemo(() => aggregateWeekData(currentWeekData), [currentWeekData])
+  // If current week is complete, show current week stats
+  // Otherwise, show the most recent complete week (last week)
+  const displayWeekKey = isCurrentWeekComplete ? currentWeekKey : formatWeekKey(addWeeks(currentDate, -1))
+  const displayWeekData = isCurrentWeekComplete ? currentWeekData : (weeksStore[formatWeekKey(addWeeks(currentDate, -1))] || currentWeekData)
 
-  // Get last 4 weeks keys (current + previous 3)
-  const last4WeekKeys = useMemo(() => [
-    currentWeekKey,
-    formatWeekKey(addWeeks(currentDate, -1)),
-    formatWeekKey(addWeeks(currentDate, -2)),
-    formatWeekKey(addWeeks(currentDate, -3))
-  ], [currentWeekKey, currentDate])
+  // Current/display week stats
+  const currentStats = useMemo(() => aggregateWeekData(displayWeekData), [displayWeekData])
+
+  // Get last 4 weeks keys
+  // If current week is complete: current + previous 3
+  // If current week is incomplete: previous 4 complete weeks
+  const last4WeekKeys = useMemo(() => {
+    if (isCurrentWeekComplete) {
+      return [
+        currentWeekKey,
+        formatWeekKey(addWeeks(currentDate, -1)),
+        formatWeekKey(addWeeks(currentDate, -2)),
+        formatWeekKey(addWeeks(currentDate, -3))
+      ]
+    } else {
+      return [
+        formatWeekKey(addWeeks(currentDate, -1)),
+        formatWeekKey(addWeeks(currentDate, -2)),
+        formatWeekKey(addWeeks(currentDate, -3)),
+        formatWeekKey(addWeeks(currentDate, -4))
+      ]
+    }
+  }, [currentWeekKey, currentDate, isCurrentWeekComplete])
 
   // Multi-week stats for trend chart
   const multiWeekStats = useMemo(() => {
@@ -38,8 +58,14 @@ export default function CurrentWeekDashboard({
   }, [weeksStore, last4WeekKeys])
 
   // Previous week data for comparison
-  const previousWeekKey = formatWeekKey(addWeeks(currentDate, -1))
+  const previousWeekKey = isCurrentWeekComplete
+    ? formatWeekKey(addWeeks(currentDate, -1))
+    : formatWeekKey(addWeeks(currentDate, -2))
   const previousWeekData = weeksStore[previousWeekKey] || null
+
+  console.log('CurrentWeekDashboard - last4WeekKeys:', last4WeekKeys)
+  console.log('CurrentWeekDashboard - weeksStore keys:', Object.keys(weeksStore))
+  console.log('CurrentWeekDashboard - previousWeekKey:', previousWeekKey, 'has data:', previousWeekData !== null)
 
   return (
     <div className="space-y-6">
@@ -58,10 +84,10 @@ export default function CurrentWeekDashboard({
         </div>
 
         <WeekOverWeekComparison
-          currentWeekData={currentWeekData}
+          currentWeekData={displayWeekData}
           previousWeekData={previousWeekData}
-          currentWeekLabel="This Week"
-          previousWeekLabel="Last Week"
+          currentWeekLabel={isCurrentWeekComplete ? "This Week" : "Last Week"}
+          previousWeekLabel={isCurrentWeekComplete ? "Previous Week" : "2 Weeks Ago"}
         />
       </div>
 

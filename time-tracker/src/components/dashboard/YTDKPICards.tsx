@@ -1,4 +1,4 @@
-import { Clock, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react'
+import { TrendingUp, ArrowUp, ArrowDown } from 'lucide-react'
 import type { YTDStats } from '../../utils/analytics'
 import { cn } from '../../utils/classNames'
 
@@ -8,13 +8,6 @@ interface YTDKPICardsProps {
 
 export default function YTDKPICards({ ytdStats }: YTDKPICardsProps) {
   const cards = [
-    {
-      title: 'Total YTD Hours',
-      value: `${ytdStats.totalHours.toFixed(1)}h`,
-      icon: Clock,
-      gradient: 'bg-gradient-to-br from-blue-500 to-blue-600',
-      subtitle: `Across ${ytdStats.totalWeeks} weeks`
-    },
     {
       title: 'Average per Week',
       value: `${ytdStats.averagePerWeek.toFixed(1)}h`,
@@ -39,7 +32,7 @@ export default function YTDKPICards({ ytdStats }: YTDKPICardsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {cards.map((card, index) => {
         const Icon = card.icon
         return (

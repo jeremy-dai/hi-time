@@ -1,4 +1,3 @@
-import { LayoutDashboard } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { CATEGORY_LABELS, CATEGORY_GRADIENTS } from '../../constants/colors'
 import type { WeekStats } from '../../utils/analytics'
@@ -12,13 +11,6 @@ const order: Array<keyof typeof CATEGORY_LABELS> = ['R', 'W', 'M', 'G', 'P']
 export default function KPICards({ stats }: KPICardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <div className={cn('p-4 rounded-xl border flex items-center gap-3', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-        <LayoutDashboard size={18} className="text-gray-700 dark:text-gray-200" />
-        <div>
-          <div className={cn('text-xs', 'text-gray-500 dark:text-gray-400')}>Total hours</div>
-          <div className={cn('text-3xl font-bold', 'text-gray-900 dark:text-gray-100')}>{stats.totalHours.toFixed(1)}h</div>
-        </div>
-      </div>
       {order.map((cat) => (
         <div key={cat} className={cn('p-4 rounded-xl border', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
           <div className={cn('text-xs mb-2', 'text-gray-500 dark:text-gray-400')}>{CATEGORY_LABELS[cat]}</div>

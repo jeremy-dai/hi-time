@@ -90,6 +90,12 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
 └── .env.example         # Environment variable template
 ```
 
+## 📖 Technical Documentation
+
+- [Authentication Setup](AUTHENTICATION_SETUP.md)
+- [Database Schema](DATABASE_SCHEMA.md)
+- [Database Efficiency Analysis](DATABASE_EFFICIENCY_ANALYSIS.md)
+
 ## 📝 Usage Guide
 
 1.  **Log Time**: Go to the **Timesheet** tab. Click and drag on the calendar to create time blocks.

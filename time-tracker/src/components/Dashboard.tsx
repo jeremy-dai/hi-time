@@ -1,16 +1,10 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { TimeBlock } from '../types/time'
 import { cn } from '../utils/classNames'
-import { aggregateWeekData, aggregateAnnualData } from '../utils/analytics'
 import { formatWeekKey, addWeeks, getISOWeekYear } from '../utils/date'
-import DashboardTabs from './dashboard/DashboardTabs'
+import { aggregateWeekData } from '../utils/analytics'
 import CurrentWeekDashboard from './dashboard/CurrentWeekDashboard'
 import AnnualDashboard from './dashboard/AnnualDashboard'
-import KPICards from './dashboard/KPICards'
-import WeeklyBreakdownChart from './dashboard/WeeklyBreakdownChart'
-import CategoryDistributionChart from './dashboard/CategoryDistributionChart'
-import WeeklyTrendChart from './dashboard/WeeklyTrendChart'
-import AnnualView from './dashboard/AnnualView'
 
 interface DashboardProps {
   weekData: TimeBlock[][]
@@ -19,6 +13,7 @@ interface DashboardProps {
   currentDate: Date
   loadWeeksForRange: (weekKeys: string[]) => Promise<void>
   loadYearWeeks: (year: number) => Promise<void>
+  viewMode: 'trends' | 'annual'
 }
 
 export default function Dashboard({
@@ -27,29 +22,43 @@ export default function Dashboard({
   currentWeekKey,
   currentDate,
   loadWeeksForRange,
-  loadYearWeeks
+  loadYearWeeks,
+  viewMode
 }: DashboardProps) {
-  const [activeView, setActiveView] = useState<'current-week' | 'annual' | 'full'>('current-week')
   const [isLoadingData, setIsLoadingData] = useState(false)
 
-  const stats = useMemo(() => aggregateWeekData(weekData), [weekData])
-  const annual = useMemo(() => weeksStore ? aggregateAnnualData(weeksStore) : null, [weeksStore])
+  // Check if current week is complete (has ~168 hours total)
+  const isCurrentWeekComplete = useMemo(() => {
+    const stats = aggregateWeekData(weekData)
+    // Allow for small rounding errors - consider complete if >= 167 hours
+    return stats.totalHours >= 167
+  }, [weekData])
 
   // Load data when switching views
   useEffect(() => {
     const loadDataForView = async () => {
       setIsLoadingData(true)
       try {
-        if (activeView === 'current-week') {
-          // Load current week + last 3 weeks (total 4 weeks)
-          const weekKeys = [
-            currentWeekKey,
-            formatWeekKey(addWeeks(currentDate, -1)),
-            formatWeekKey(addWeeks(currentDate, -2)),
-            formatWeekKey(addWeeks(currentDate, -3))
-          ]
+        if (viewMode === 'trends') {
+          // If current week is complete, load current week + last 3 weeks
+          // Otherwise, load last 4 complete weeks (excluding current)
+          const weekKeys = isCurrentWeekComplete
+            ? [
+                currentWeekKey,
+                formatWeekKey(addWeeks(currentDate, -1)),
+                formatWeekKey(addWeeks(currentDate, -2)),
+                formatWeekKey(addWeeks(currentDate, -3))
+              ]
+            : [
+                formatWeekKey(addWeeks(currentDate, -1)),
+                formatWeekKey(addWeeks(currentDate, -2)),
+                formatWeekKey(addWeeks(currentDate, -3)),
+                formatWeekKey(addWeeks(currentDate, -4))
+              ]
+          console.log('Dashboard loading weeks:', weekKeys, 'isComplete:', isCurrentWeekComplete)
           await loadWeeksForRange(weekKeys)
-        } else if (activeView === 'annual') {
+          console.log('Dashboard weeksStore after load:', Object.keys(weeksStore))
+        } else if (viewMode === 'annual') {
           // Load all weeks for current year
           const { isoYear } = getISOWeekYear(new Date())
           await loadYearWeeks(isoYear)
@@ -60,13 +69,13 @@ export default function Dashboard({
     }
 
     loadDataForView()
-  }, [activeView, currentWeekKey, currentDate, loadWeeksForRange, loadYearWeeks])
+  }, [viewMode, currentWeekKey, currentDate, loadWeeksForRange, loadYearWeeks, isCurrentWeekComplete])
 
   return (
     <div className={cn('rounded-xl border p-6', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-      <div className={cn('text-2xl font-bold mb-6', 'text-gray-900 dark:text-gray-100')}>Dashboard</div>
-
-      <DashboardTabs activeView={activeView} onViewChange={setActiveView} />
+      <div className={cn('text-2xl font-bold mb-6', 'text-gray-900 dark:text-gray-100')}>
+        {viewMode === 'trends' ? 'Trends' : 'Annual'}
+      </div>
 
       {isLoadingData && (
         <div className="flex items-center justify-center py-12">
@@ -75,16 +84,17 @@ export default function Dashboard({
         </div>
       )}
 
-      {!isLoadingData && activeView === 'current-week' && (
+      {!isLoadingData && viewMode === 'trends' && (
         <CurrentWeekDashboard
           currentWeekData={weekData}
           weeksStore={weeksStore}
           currentWeekKey={currentWeekKey}
           currentDate={currentDate}
+          isCurrentWeekComplete={isCurrentWeekComplete}
         />
       )}
 
-      {!isLoadingData && activeView === 'annual' && (
+      {!isLoadingData && viewMode === 'annual' && (
         <AnnualDashboard
           weeksStore={weeksStore}
           year={getISOWeekYear(new Date()).isoYear}
@@ -93,32 +103,6 @@ export default function Dashboard({
             await loadYearWeeks(isoYear)
           }}
         />
-      )}
-
-      {!isLoadingData && activeView === 'full' && (
-        <>
-          <div className="mb-8">
-            <KPICards stats={stats} />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className={cn('rounded-xl border p-4', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-              <div className={cn('text-lg font-semibold mb-3', 'text-gray-900 dark:text-gray-100')}>Weekly Breakdown</div>
-              <WeeklyBreakdownChart stats={stats} />
-            </div>
-            <div className={cn('rounded-xl border p-4', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-              <div className={cn('text-lg font-semibold mb-3', 'text-gray-900 dark:text-gray-100')}>Category Distribution</div>
-              <CategoryDistributionChart stats={stats} />
-            </div>
-          </div>
-
-          <div className={cn('rounded-xl border p-4 mb-8', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900 dark:text-gray-100')}>Weekly Trend</div>
-            <WeeklyTrendChart current={stats} />
-          </div>
-
-          {annual && <AnnualView annual={annual} />}
-        </>
       )}
     </div>
   )

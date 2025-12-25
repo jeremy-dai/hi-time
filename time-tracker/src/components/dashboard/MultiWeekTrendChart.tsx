@@ -16,7 +16,6 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
 
       return {
         week: weekLabel,
-        Total: Number(stats.totalHours.toFixed(1)),
         Rest: Number((stats.categoryHours['R'] || 0).toFixed(1)),
         Work: Number((stats.categoryHours['W'] || 0).toFixed(1)),
         Play: Number((stats.categoryHours['G'] || 0).toFixed(1)),
@@ -66,44 +65,36 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
             />
             <Line
               type="monotone"
-              dataKey="Total"
-              stroke="#3b82f6"
-              strokeWidth={3}
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-            <Line
-              type="monotone"
               dataKey="Rest"
-              stroke={CATEGORY_COLORS_HEX['R'].bg}
+              stroke={CATEGORY_COLORS_HEX['R'].text}
               strokeWidth={2}
               dot={{ r: 3 }}
             />
             <Line
               type="monotone"
               dataKey="Work"
-              stroke={CATEGORY_COLORS_HEX['W'].bg}
+              stroke={CATEGORY_COLORS_HEX['W'].text}
               strokeWidth={2}
               dot={{ r: 3 }}
             />
             <Line
               type="monotone"
               dataKey="Play"
-              stroke={CATEGORY_COLORS_HEX['G'].bg}
+              stroke={CATEGORY_COLORS_HEX['G'].text}
               strokeWidth={2}
               dot={{ r: 3 }}
             />
             <Line
               type="monotone"
               dataKey="Procrastination"
-              stroke={CATEGORY_COLORS_HEX['P'].bg}
+              stroke={CATEGORY_COLORS_HEX['P'].text}
               strokeWidth={2}
               dot={{ r: 3 }}
             />
             <Line
               type="monotone"
               dataKey="Mandatory"
-              stroke={CATEGORY_COLORS_HEX['M'].bg}
+              stroke={CATEGORY_COLORS_HEX['M'].text}
               strokeWidth={2}
               dot={{ r: 3 }}
             />
@@ -113,20 +104,14 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
 
       {/* Summary stats */}
       <div className={cn('mt-6 p-4 rounded-lg', 'bg-gray-50 dark:bg-gray-800/50')}>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <div className="text-gray-600 dark:text-gray-400">Total Hours</div>
-            <div className={cn('text-lg font-semibold', 'text-gray-900 dark:text-gray-100')}>
-              {multiWeekStats.totalHours.toFixed(1)}h
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <div className="text-gray-600 dark:text-gray-400">Avg per Week</div>
             <div className={cn('text-lg font-semibold', 'text-gray-900 dark:text-gray-100')}>
               {multiWeekStats.averagePerWeek.toFixed(1)}h
             </div>
           </div>
-          <div className="col-span-2 md:col-span-1">
+          <div>
             <div className="text-gray-600 dark:text-gray-400">Weeks Tracked</div>
             <div className={cn('text-lg font-semibold', 'text-gray-900 dark:text-gray-100')}>
               {multiWeekStats.weeks.length}

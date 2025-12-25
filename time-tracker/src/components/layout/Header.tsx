@@ -49,7 +49,7 @@ export default function Header({ currentDate, onChangeDate, onExportCSV: _onExpo
           'dark:bg-gray-800 dark:border-gray-700'
         )}>
           <button
-            className={cn('px-2 py-1 rounded border text-sm', 'dark:border-gray-600')}
+            className={cn('px-2 py-1 rounded border text-sm', 'dark:border-gray-600 dark:text-gray-100')}
             onClick={() => onChangeDate(addWeeks(currentDate, -1))}
           >
             Prev
@@ -69,7 +69,7 @@ export default function Header({ currentDate, onChangeDate, onExportCSV: _onExpo
             }}
           />
           <button
-            className={cn('px-2 py-1 rounded border text-sm', 'dark:border-gray-600')}
+            className={cn('px-2 py-1 rounded border text-sm', 'dark:border-gray-600 dark:text-gray-100')}
             onClick={() => onChangeDate(addWeeks(currentDate, 1))}
           >
             Next

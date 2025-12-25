@@ -1,10 +1,10 @@
-import { LayoutDashboard, Calendar, Settings, LogOut } from 'lucide-react'
+import { TrendingUp, Calendar, Settings, LogOut, CalendarDays } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 import { cn } from '../utils/classNames'
 
 interface SidebarProps {
-  active: 'log' | 'dashboard' | 'settings'
-  onNavigate: (tab: 'log' | 'dashboard' | 'settings') => void
+  active: 'log' | 'trends' | 'annual' | 'settings'
+  onNavigate: (tab: 'log' | 'trends' | 'annual' | 'settings') => void
   userEmail?: string
   onLogout: () => void
 }
@@ -24,10 +24,16 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout }: Sid
           onClick={() => onNavigate('log')}
         />
         <SidebarItem
-          icon={<LayoutDashboard size={18} />}
-          label="Dashboard"
-          active={active === 'dashboard'}
-          onClick={() => onNavigate('dashboard')}
+          icon={<TrendingUp size={18} />}
+          label="Trends"
+          active={active === 'trends'}
+          onClick={() => onNavigate('trends')}
+        />
+        <SidebarItem
+          icon={<CalendarDays size={18} />}
+          label="Annual"
+          active={active === 'annual'}
+          onClick={() => onNavigate('annual')}
         />
         <div className="mt-4 text-xs uppercase text-gray-500 mb-3 dark:text-gray-400">System</div>
         <SidebarItem

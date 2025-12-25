@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { WeekStats } from '../../utils/analytics'
-import { CATEGORY_LABELS } from '../../constants/colors'
+import { CATEGORY_LABELS, CATEGORY_COLORS_HEX } from '../../constants/colors'
 
 interface WeeklyBreakdownChartProps {
   stats: WeekStats
@@ -28,11 +28,11 @@ export default function WeeklyBreakdownChart({ stats }: WeeklyBreakdownChartProp
           <XAxis dataKey="day" />
           <YAxis />
           <Tooltip />
-          <Bar dataKey="R" stackId="a" fill="#22c55e" name={CATEGORY_LABELS.R} />
-          <Bar dataKey="W" stackId="a" fill="#f59e0b" name={CATEGORY_LABELS.W} />
-          <Bar dataKey="M" stackId="a" fill="#ea580c" name={CATEGORY_LABELS.M} />
-          <Bar dataKey="G" stackId="a" fill="#3b82f6" name={CATEGORY_LABELS.G} />
-          <Bar dataKey="P" stackId="a" fill="#ef4444" name={CATEGORY_LABELS.P} />
+          <Bar dataKey="R" stackId="a" fill={CATEGORY_COLORS_HEX.R.bg} name={CATEGORY_LABELS.R} />
+          <Bar dataKey="W" stackId="a" fill={CATEGORY_COLORS_HEX.W.bg} name={CATEGORY_LABELS.W} />
+          <Bar dataKey="M" stackId="a" fill={CATEGORY_COLORS_HEX.M.bg} name={CATEGORY_LABELS.M} />
+          <Bar dataKey="G" stackId="a" fill={CATEGORY_COLORS_HEX.G.bg} name={CATEGORY_LABELS.G} />
+          <Bar dataKey="P" stackId="a" fill={CATEGORY_COLORS_HEX.P.bg} name={CATEGORY_LABELS.P} />
         </BarChart>
       </ResponsiveContainer>
     </div>

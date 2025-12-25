@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getSettings, saveSettings, type UserSettings, type SubcategoryDef } from '../api'
-import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX } from '../constants/colors'
+import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX, CATEGORY_COLORS_HEX } from '../constants/colors'
 import { CATEGORY_KEYS } from '../types/time'
 import Card from './shared/Card'
 import { cn } from '../utils/classNames'
@@ -19,6 +19,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
   const [exportStartWeek, setExportStartWeek] = useState('')
   const [exportEndWeek, setExportEndWeek] = useState('')
   const [exporting, setExporting] = useState(false)
+  const hasMigratedRef = useRef(false)
 
   // Local storage sync for settings
   const {
@@ -45,10 +46,48 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
 
   useEffect(() => {
     // Loading is handled by the hook
-    if (settings !== null) {
+    if (settings !== null && !hasMigratedRef.current) {
+      // Migrate old string format to new object format
+      let needsMigration = false
+      const migratedSubcategories: Record<string, SubcategoryDef[]> = {}
+
+      Object.entries(settings.subcategories).forEach(([category, subs]) => {
+        if (Array.isArray(subs) && subs.length > 0) {
+          // Check if any items are strings (old format)
+          const hasStrings = subs.some(sub => typeof sub === 'string')
+          if (hasStrings) {
+            needsMigration = true
+            // Convert strings to objects
+            migratedSubcategories[category] = subs
+              .map((sub, index) => {
+                if (typeof sub === 'string') {
+                  return { index, name: sub }
+                }
+                return sub as SubcategoryDef
+              })
+              .filter(sub => sub.name && sub.name.trim().length > 0)
+          } else {
+            migratedSubcategories[category] = subs as SubcategoryDef[]
+          }
+        } else {
+          migratedSubcategories[category] = subs as SubcategoryDef[]
+        }
+      })
+
+      if (needsMigration) {
+        console.log('Migrating old subcategory format to new format')
+        hasMigratedRef.current = true
+        setSettings({
+          ...settings,
+          subcategories: migratedSubcategories
+        })
+      }
+
+      setLoading(false)
+    } else if (settings !== null) {
       setLoading(false)
     }
-  }, [settings])
+  }, [settings, setSettings])
 
   async function handleBulkExport() {
     if (!exportStartWeek || !exportEndWeek) {
@@ -189,6 +228,22 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
             <div className="flex gap-2">
               <button
                 onClick={async () => {
+                  await syncSettingsNow()
+                  setMessage('Subcategories saved to database!')
+                  setTimeout(() => setMessage(''), 3000)
+                }}
+                disabled={!settingsHasUnsavedChanges}
+                className={cn(
+                  "px-4 py-1.5 text-sm font-medium rounded transition-all",
+                  settingsHasUnsavedChanges
+                    ? "bg-green-600 text-white hover:bg-green-700 shadow-md"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
+                )}
+              >
+                {settingsHasUnsavedChanges ? '💾 Save Changes' : '✓ Saved'}
+              </button>
+              <button
+                onClick={async () => {
                   // Clear localStorage and reload from database
                   localStorage.removeItem('user-settings')
                   const freshSettings = await getSettings()
@@ -218,7 +273,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
             </div>
           </div>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Define up to 5 subcategories for each category. Just type to enable a subcategory. Changes are saved automatically.
+            Define up to 5 subcategories for each category. Click <strong>Save Changes</strong> to make them available in the timesheet.
           </p>
 
           <div className="space-y-6">
@@ -229,14 +284,13 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
               return (
                 <div key={category} className="border-b pb-4 last:border-0 dark:border-gray-700">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className={cn(
-                      "w-6 h-6 flex items-center justify-center rounded text-xs font-bold text-white",
-                      category === 'R' ? "bg-green-500" :
-                      category === 'W' ? "bg-yellow-400" :
-                      category === 'G' ? "bg-blue-500" :
-                      category === 'P' ? "bg-red-500" :
-                      category === 'M' ? "bg-orange-700" : "bg-gray-400"
-                    )}>
+                    <span
+                      className="w-6 h-6 flex items-center justify-center rounded text-xs font-bold"
+                      style={{
+                        backgroundColor: CATEGORY_COLORS_HEX[category as keyof typeof CATEGORY_COLORS_HEX].bg,
+                        color: CATEGORY_COLORS_HEX[category as keyof typeof CATEGORY_COLORS_HEX].text
+                      }}
+                    >
                       {category}
                     </span>
                     <h3 className="font-medium text-gray-900 dark:text-gray-100">
