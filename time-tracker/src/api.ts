@@ -32,20 +32,6 @@ async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   return await res.json() as T
 }
 
-export async function listWeeks(): Promise<string[]> {
-  try {
-    const headers = await authHeaders()
-    const res = await fetch(`${API_BASE}/weeks`, {
-      headers,
-    })
-    const data = await handleResponse<ApiResponse<string[]>>(res, '/weeks')
-    return data.weeks || []
-  } catch (error) {
-    console.error('Failed to list weeks:', error)
-    return []
-  }
-}
-
 // Helper to transform Mon-Sun (DB) to Sun-Sat (UI)
 function transformWeekDataFromDb(weekData: TimeBlock[][]): TimeBlock[][] {
   if (!weekData || weekData.length !== 7) return weekData
@@ -109,21 +95,27 @@ export async function getWeek(weekKey: string): Promise<WeekMetadata | null> {
  */
 export async function getWeeksBatch(weekKeys: string[]): Promise<Record<string, WeekMetadata | null>> {
   try {
-    // Fetch all weeks in parallel using Promise.all
-    const results = await Promise.all(
-      weekKeys.map(async (weekKey) => {
-        const weekMetadata = await getWeek(weekKey)
-        return { weekKey, weekMetadata }
-      })
-    )
+    if (weekKeys.length === 0) return {}
 
-    // Convert array to record
-    const batchResult: Record<string, WeekMetadata | null> = {}
-    results.forEach(({ weekKey, weekMetadata }) => {
-      batchResult[weekKey] = weekMetadata
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/weeks/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ weekKeys }),
+    })
+    
+    const data = await handleResponse<ApiResponse<Record<string, WeekMetadata | null>>>(res, '/weeks/batch')
+    const result = data.weeks || {}
+    
+    // Transform data format (Mon-Sun <-> Sun-Sat)
+    Object.keys(result).forEach(key => {
+      const metadata = result[key]
+      if (metadata && metadata.weekData) {
+        metadata.weekData = transformWeekDataFromDb(metadata.weekData)
+      }
     })
 
-    return batchResult
+    return result
   } catch (error) {
     console.error('Failed to batch fetch weeks:', error)
     // Return empty result on error
@@ -159,28 +151,6 @@ export async function putWeek(
   } catch (error) {
     console.error(`Failed to save week ${weekKey}:`, error)
     return false
-  }
-}
-
-/**
- * Import CSV via backend parsing
- *
- * NOTE: Currently not used - frontend uses client-side parseTimeCSV() from utils/csvParser.ts
- * See csvParser.ts for details on duplication and TODO to consolidate.
- */
-export async function importCSV(weekKey: string, csvText: string): Promise<TimeBlock[][] | null> {
-  try {
-    const headers = await authHeaders()
-    const res = await fetch(`${API_BASE}/weeks/${weekKey}/import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify({ csv_text: csvText }),
-    })
-    const data = await handleResponse<ApiResponse<TimeBlock[][]>>(res, `/weeks/${weekKey}/import`)
-    return data.weekData ? transformWeekDataFromDb(data.weekData) : null
-  } catch (error) {
-    console.error(`Failed to import CSV for week ${weekKey}:`, error)
-    throw error // Re-throw to let caller handle CSV import errors
   }
 }
 

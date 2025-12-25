@@ -20,7 +20,6 @@ function App() {
   const currentWeekKey = useMemo(() => formatWeekKey(currentDate), [currentDate])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // Initialize metadata synchronously from localStorage for faster loading
   const initialMetadata = useMemo(() => {
     const cached: Record<string, { startingHour: number; theme: string | null }> = {}
@@ -42,7 +41,7 @@ function App() {
     return cached
   }, [])
 
-  const [_weekMetadataStore, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
+  const [, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
   const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })

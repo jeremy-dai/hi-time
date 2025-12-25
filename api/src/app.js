@@ -149,6 +149,69 @@ app.get('/api/weeks/:week_key', async (req, res) => {
   });
 });
 
+app.post('/api/weeks/batch', async (req, res) => {
+  const { weekKeys } = req.body;
+
+  if (!Array.isArray(weekKeys) || weekKeys.length === 0) {
+    return res.json({ weeks: {} });
+  }
+
+  // Parse keys to get years and week numbers
+  const parsedKeys = weekKeys.map(key => {
+    const parsed = parseWeekKey(key);
+    return parsed ? { ...parsed, key } : null;
+  }).filter(Boolean);
+
+  if (parsedKeys.length === 0) {
+    return res.json({ weeks: {} });
+  }
+
+  // Construct query
+  // Since we need to match (year, week) pairs, we can use the .or() syntax with multiple conditions
+  // format: year.eq.2024,week_number.eq.1,year.eq.2024,week_number.eq.2...
+  // But Supabase/PostgREST 'or' syntax is tricky for pairs.
+  // Alternative: Fetch all weeks for the years involved and filter in memory (efficient if not too many years)
+  // OR use a custom RPC if we had one.
+  // OR just loop if it's small batch? No, that defeats the purpose.
+  // Best approach for PostgREST: use 'in' for years and then filter?
+  // Actually, constructing a long OR string is standard for this:
+  // or=(and(year.eq.2024,week_number.eq.1),and(year.eq.2024,week_number.eq.2))
+  
+  const orConditions = parsedKeys
+    .map(p => `and(year.eq.${p.year},week_number.eq.${p.week})`)
+    .join(',');
+
+  const { data, error } = await req.supabase
+    .from('weeks')
+    .select('year, week_number, week_data, starting_hour, theme')
+    .or(orConditions);
+
+  if (error) {
+    console.error('Error batch fetching weeks:', error);
+    return res.status(500).json({ error: 'Failed to fetch weeks' });
+  }
+
+  // Map back to response format
+  const result = {};
+  
+  // Initialize all requested keys as null first
+  weekKeys.forEach(key => {
+    result[key] = null;
+  });
+
+  // Fill in found data
+  data.forEach(d => {
+    const key = `${d.year}-W${String(d.week_number).padStart(2, '0')}`;
+    result[key] = {
+      weekData: d.week_data,
+      startingHour: d.starting_hour ?? 8,
+      theme: d.theme || null
+    };
+  });
+
+  res.json({ weeks: result });
+});
+
 app.put('/api/weeks/:week_key', async (req, res) => {
   const { week_key } = req.params;
   const { weekData, startingHour, theme } = req.body || {};
