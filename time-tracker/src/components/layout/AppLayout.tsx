@@ -10,19 +10,18 @@ interface AppLayoutProps {
 export default function AppLayout({ sidebar, header, children }: AppLayoutProps) {
   return (
     <div className={cn(
-      'min-h-screen',
-      'bg-gray-100',
-      'dark:bg-[hsl(var(--color-dark-background))]'
+      'min-h-screen transition-colors duration-300',
+      'bg-gray-50 text-gray-900'
     )}>
-      <div className="max-w-7xl mx-auto p-6 flex gap-6">
-        <aside className="w-[200px] sticky top-6 self-start h-[calc(100vh-3rem)]">{sidebar}</aside>
-        <div className="flex-1">
+      <div className="max-w-[1920px] mx-auto p-2 md:p-4 flex flex-col md:flex-row gap-4">
+        <aside className="w-full md:w-[200px] md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
+          {sidebar}
+        </aside>
+        <div className="flex-1 min-w-0 flex flex-col h-full">
           {header && (
             <div className={cn(
-              'mb-6',
-              'bg-white border rounded-xl p-4',
-              'dark:bg-[hsl(var(--color-dark-surface))]',
-              'dark:border-[hsl(var(--color-dark-border))]'
+              'mb-4',
+              'bg-white rounded-3xl p-6 shadow-sm'
             )}>
               {header}
             </div>

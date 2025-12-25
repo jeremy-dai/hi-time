@@ -13,31 +13,38 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout }: Sid
   return (
     <nav
       aria-label="Primary"
-      className="h-full bg-white rounded-xl border p-4 flex flex-col dark:bg-[hsl(var(--color-dark-surface))] dark:border-[hsl(var(--color-dark-border))]"
+      className="h-full bg-white md:bg-transparent rounded-3xl border border-gray-200 md:border-none p-4 flex flex-col"
     >
-      <div className="flex-1">
-        <div className="text-xs uppercase text-gray-500 mb-3 dark:text-gray-400">Management</div>
+      <div className="flex items-center gap-2 mb-8 px-2">
+        <div className="w-10 h-10 rounded-full bg-[hsl(var(--color-brand-primary))] flex items-center justify-center text-black font-bold text-xl shadow-lg shadow-lime-900/20 shrink-0">
+          H
+        </div>
+        <div className="font-bold text-lg tracking-tight text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis">Hi-Time</div>
+      </div>
+
+      <div className="flex-1 space-y-1">
+        <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2 mt-2">Menu</div>
         <SidebarItem
-          icon={<Calendar size={18} />}
+          icon={<Calendar size={20} />}
           label="Timesheet"
           active={active === 'log'}
           onClick={() => onNavigate('log')}
         />
         <SidebarItem
-          icon={<TrendingUp size={18} />}
-          label="Trends"
+          icon={<TrendingUp size={20} />}
+          label="Reports"
           active={active === 'trends'}
           onClick={() => onNavigate('trends')}
         />
         <SidebarItem
-          icon={<CalendarDays size={18} />}
+          icon={<CalendarDays size={20} />}
           label="Annual"
           active={active === 'annual'}
           onClick={() => onNavigate('annual')}
         />
-        <div className="mt-4 text-xs uppercase text-gray-500 mb-3 dark:text-gray-400">System</div>
+        <div className="mt-8 text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">System</div>
         <SidebarItem
-          icon={<Settings size={18} />}
+          icon={<Settings size={20} />}
           label="Settings"
           active={active === 'settings'}
           onClick={() => onNavigate('settings')}
@@ -46,12 +53,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout }: Sid
 
       <div className={cn(
         'mt-4 pt-4 border-t',
-        'border-gray-200 dark:border-gray-700'
+        'border-white/10'
       )}>
         {userEmail && (
           <div className={cn(
-            'text-xs mb-2 px-2 py-1 truncate',
-            'text-gray-600 dark:text-gray-400'
+            'text-xs mb-3 px-2 py-1 truncate font-medium',
+            'text-gray-500'
           )}>
             {userEmail}
           </div>
@@ -59,12 +66,11 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout }: Sid
         <button
           onClick={onLogout}
           className={cn(
-            'w-full flex items-center gap-2 px-2 py-2 rounded-lg text-sm font-medium transition-colors',
-            'text-red-600 hover:bg-red-50',
-            'dark:text-red-400 dark:hover:bg-red-950/30'
+            'w-full flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold transition-all',
+            'text-gray-400 hover:bg-red-500/10 hover:text-red-400'
           )}
         >
-          <LogOut size={18} />
+          <LogOut size={20} />
           <span>Logout</span>
         </button>
       </div>

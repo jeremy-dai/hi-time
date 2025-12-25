@@ -4,16 +4,15 @@ import type { SubcategoryRef } from '../types/time'
 /**
  * Normalize subcategory array to always use {index, name} format
  */
-export function normalizeSubcategories(subs: SubcategoryDef[]): SubcategoryDef[] {
+export function normalizeSubcategories(subs: unknown): SubcategoryDef[] {
   if (!Array.isArray(subs)) return []
-  return subs.filter(sub => {
-    // Runtime safety: filter out non-objects (like old strings) or nulls
-    if (typeof sub !== 'object' || sub === null) return false
-    // Ensure name exists and is a string
-    const name = (sub as any).name
-    if (typeof name !== 'string') return false
-    return name.trim().length > 0
-  })
+  return subs
+    .filter((sub): sub is SubcategoryDef => {
+      if (typeof sub !== 'object' || sub === null) return false
+      const candidate = sub as { index?: unknown; name?: unknown }
+      return typeof candidate.index === 'number' && typeof candidate.name === 'string'
+    })
+    .filter(sub => sub.name.trim().length > 0)
 }
 
 /**

@@ -31,8 +31,10 @@ export function Login() {
         // Session is automatically handled by Supabase
         // App will re-render when session changes
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred')
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : typeof err === 'string' ? err : 'An error occurred'
+      setError(message)
     } finally {
       setLoading(false)
     }

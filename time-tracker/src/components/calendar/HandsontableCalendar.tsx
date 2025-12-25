@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useRef, useMemo, useState } from 'react'
 import { HotTable } from '@handsontable/react-wrapper'
 import { registerAllModules } from 'handsontable/registry'
 import Handsontable from 'handsontable'
 import 'handsontable/styles/handsontable.min.css'
 import 'handsontable/styles/ht-theme-main.min.css'
-import type { CellProperties } from 'handsontable/settings'
 import type { TimeBlock, CategoryKey, SubcategoryRef } from '../../types/time'
 import type { UserSettings } from '../../api'
 import { TIME_SLOTS } from '../../constants/timesheet'
@@ -105,27 +105,29 @@ export function HandsontableCalendar({
     _row: number,
     col: number,
     _prop: string | number,
-    value: any,
-    _cellProperties: CellProperties
+    value: any
   ) => {
     // Clear existing content
     td.innerHTML = ''
     td.className = 'htCustomCell'
-    td.style.padding = '4px'
+    td.style.padding = '2px' // Reduced padding to allow inner container to fill more
     td.style.position = 'relative'
     td.style.verticalAlign = 'middle'
-    td.style.height = '28px'
-    td.style.minHeight = '28px'
-    td.style.maxHeight = '28px'
+    td.style.height = '32px' // Slightly taller for block look
+    td.style.minHeight = '32px'
+    td.style.maxHeight = '32px'
     td.style.overflow = 'hidden'
+    td.style.border = 'none' // Remove cell borders for cleaner look
 
     if (col === 0) {
       // Time column
       td.textContent = value
       td.style.fontWeight = '500'
-      td.style.color = '#6b7280'
-      td.style.backgroundColor = '#f9fafb'
+      td.style.color = '#9ca3af' // lighter gray
+      td.style.backgroundColor = 'transparent'
       td.style.fontSize = '10px'
+      td.style.textAlign = 'right'
+      td.style.paddingRight = '12px'
       return td
     }
 
@@ -140,83 +142,107 @@ export function HandsontableCalendar({
     const subcategory = getSubcategoryName(subcategoryRaw)
     const subcategoryIndex = getSubcategoryIndex(subcategoryRaw)
 
-    // Apply background color - use ghost colors for ghost cells
+    // Colors
     const colorMap = isGhost ? GHOST_CATEGORY_COLORS_HEX : CATEGORY_COLORS_HEX
     const colors = colorMap[category as keyof typeof CATEGORY_COLORS_HEX] || colorMap['']
-    td.style.backgroundColor = colors.bg
-    td.style.color = colors.text
-
-    // Ghost cells have dashed border to differentiate them
-    if (isGhost) {
-      td.style.borderStyle = 'dashed'
-      td.style.borderWidth = '1px'
-      td.style.borderColor = colors.text
+    
+    // Create inner block container
+    const block = document.createElement('div')
+    block.style.width = '100%'
+    block.style.height = '100%'
+    block.style.borderRadius = '6px' // Rounded corners for block look
+    block.style.display = 'flex'
+    block.style.alignItems = 'center'
+    block.style.overflow = 'hidden'
+    block.style.position = 'relative'
+    
+    // Apply background only if there is a category
+    if (category) {
+      block.style.backgroundColor = colors.bg
+      block.style.color = colors.text
+      // Add subtle shadow for "card" effect
+      block.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)'
+    } else {
+      block.style.backgroundColor = 'transparent'
     }
 
-    // Add left border for subcategory - use index for consistent colors
+    // Ghost styling
+    if (isGhost) {
+      block.style.border = `1px dashed ${colors.text}`
+      block.style.opacity = '0.7'
+    }
+
+    // Subcategory Indicator (Thick bar on left)
     if (category && subcategory) {
       const shades = SUBCATEGORY_SHADES_HEX[category as keyof typeof SUBCATEGORY_SHADES_HEX] || SUBCATEGORY_SHADES_HEX['']
-      td.style.borderLeft = `4px solid ${shades[subcategoryIndex % shades.length]}`
+      const indicatorColor = shades[subcategoryIndex % shades.length]
+      
+      const indicator = document.createElement('div')
+      indicator.style.position = 'absolute'
+      indicator.style.left = '0'
+      indicator.style.top = '0'
+      indicator.style.bottom = '0'
+      indicator.style.width = '33%'
+      indicator.style.backgroundColor = indicatorColor
+      indicator.style.zIndex = '1' // Indicator ON TOP of background but BELOW text
+      indicator.style.opacity = '0.45'
+      block.appendChild(indicator)
     }
 
-    // Build tooltip content for full text
+    // Content container
+    const content = document.createElement('div')
+    content.style.flex = '1'
+    content.style.minWidth = '0' // Allow truncation
+    content.style.fontSize = '11px'
+    content.style.whiteSpace = 'nowrap'
+    content.style.overflow = 'hidden'
+    content.style.textOverflow = 'ellipsis'
+    content.style.position = 'relative'
+    content.style.zIndex = '2' // Text sits ON TOP of everything
+    content.style.paddingLeft = (category && subcategory) ? '10px' : (category ? '8px' : '0')
+    
+    if (subcategory && notes) {
+      // Bold subcategory, normal notes
+      const b = document.createElement('strong')
+      b.textContent = subcategory
+      content.appendChild(b)
+      content.appendChild(document.createTextNode(` - ${notes}`))
+    } else if (subcategory) {
+      const b = document.createElement('strong')
+      b.textContent = subcategory
+      content.appendChild(b)
+    } else if (notes) {
+      content.textContent = notes
+    }
+
+    if (category) {
+       block.appendChild(content)
+       td.appendChild(block)
+    }
+    
+    // Tooltip
     const tooltipParts = []
     if (subcategory) tooltipParts.push(subcategory)
     if (notes) tooltipParts.push(notes)
     const tooltipText = tooltipParts.join(' - ')
+    if (tooltipText) td.title = tooltipText
 
-    if (tooltipText) {
-      td.title = tooltipText
-    }
-
-    // Content container - single row with subcategory and notes
-    const container = document.createElement('div')
-    container.style.display = 'flex'
-    container.style.alignItems = 'center'
-    container.style.height = '100%'
-    container.style.fontSize = '11px'  // Slightly larger for better readability
-    container.style.overflow = 'hidden'
-
-    if (subcategory || notes) {
-      const contentDiv = document.createElement('div')
-      contentDiv.style.overflow = 'hidden'
-      contentDiv.style.textOverflow = 'ellipsis'
-      contentDiv.style.whiteSpace = 'nowrap'
-      contentDiv.style.width = '100%'
-
-      if (subcategory && notes) {
-        // Both subcategory and notes: show as "subcategory - notes"
-        const subSpan = document.createElement('span')
-        subSpan.textContent = subcategory
-        subSpan.style.fontWeight = '600'  // Bold for all cells (ghost distinction is via border)
-        contentDiv.appendChild(subSpan)
-
-        const separator = document.createElement('span')
-        separator.textContent = ' - '
-        separator.style.opacity = '0.7'
-        separator.style.fontWeight = '400'
-        contentDiv.appendChild(separator)
-
-        const noteSpan = document.createElement('span')
-        noteSpan.textContent = notes
-        noteSpan.style.opacity = '0.9'  // Slightly more opaque for better readability
-        noteSpan.style.fontWeight = '400'
-        contentDiv.appendChild(noteSpan)
-      } else if (subcategory) {
-        // Only subcategory
-        contentDiv.textContent = subcategory
-        contentDiv.style.fontWeight = '600'  // Bold for all cells
-      } else if (notes) {
-        // Only notes
-        contentDiv.textContent = notes
-        contentDiv.style.opacity = '0.9'  // Slightly more opaque for better readability
-      }
-
-      container.appendChild(contentDiv)
-    }
-
-    td.appendChild(container)
     return td
+  }
+
+  const afterGetColHeader = (col: number, th: HTMLTableCellElement) => {
+    if (!th) return
+    th.classList.add('hiTimeColHeader')
+    if (col === 0) {
+      th.classList.add('hiTimeColHeaderTime')
+    } else {
+      th.classList.add('hiTimeColHeaderDay')
+    }
+    if (th.textContent?.includes('✓')) {
+      th.classList.add('hiTimeColHeaderComplete')
+    } else {
+      th.classList.remove('hiTimeColHeaderComplete')
+    }
   }
 
   // Column configuration
@@ -224,9 +250,9 @@ export function HandsontableCalendar({
     const cols: any[] = [
       {
         data: 'time',
-        title: 'Time',
+        title: ' ', // Empty space to prevent default 'A'
         readOnly: true,
-        width: 70,
+        width: 45,
         renderer: customRenderer
       }
     ]
@@ -249,7 +275,7 @@ export function HandsontableCalendar({
 
     const updates: { day: number; timeIndex: number; block: TimeBlock }[] = []
 
-    changes.forEach(([row, prop, _oldValue, newValue]: any) => {
+    changes.forEach(([row, prop, , newValue]: any) => {
       if (prop === 'time' || !prop.startsWith('day')) return
 
       const day = parseInt(prop.replace('day', ''))
@@ -412,9 +438,9 @@ export function HandsontableCalendar({
   }
 
   return (
-    <div className="rounded-xl shadow-lg p-6 border bg-white dark:bg-[hsl(var(--color-dark-surface))] dark:border-[hsl(var(--color-dark-border))]">
+    <div className="flex flex-col h-full">
       {/* Handsontable */}
-      <div>
+      <div className="flex-1">
         <HotTable
           ref={hotRef}
           themeName="ht-theme-main"
@@ -431,7 +457,8 @@ export function HandsontableCalendar({
           contextMenu={false} // We'll use custom context menu
           afterChange={handleAfterChange}
           afterOnCellContextMenu={handleContextMenu}
-          className="htCenter"
+          afterGetColHeader={afterGetColHeader}
+          className="htCenter hiTimeHandsontable"
           stretchH="all"
           rowHeights={28}
         />
@@ -449,7 +476,7 @@ export function HandsontableCalendar({
       </div>
 
       {/* Legend */}
-      <div className="mt-6 p-4 rounded-lg border bg-gray-50 dark:bg-gray-900 dark:border-[hsl(var(--color-dark-border))]">
+      <div className="mt-6 p-4 rounded-lg border border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-[hsl(var(--color-dark-border))]">
         <h3 className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">Category Legend</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
           {Object.entries(CATEGORY_LABELS).map(([key, label]) => {

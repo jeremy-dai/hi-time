@@ -14,15 +14,15 @@ export default function SidebarItem({ icon, label, active, onClick }: SidebarIte
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg mb-2 border transition text-left',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60',
+        'w-full flex items-center gap-2 px-4 py-3 rounded-full mb-1 transition-all text-left border',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60',
         active
-          ? 'bg-white shadow-sm border-gray-200 dark:bg-[hsl(var(--color-dark-surface))] dark:border-[hsl(var(--color-dark-border))]'
-          : 'hover:bg-gray-100 dark:hover:bg-gray-700 border-transparent'
+          ? 'bg-[hsl(var(--color-brand-primary))] text-black border-transparent shadow-md shadow-lime-900/20'
+          : 'text-gray-600 border-transparent hover:bg-gray-100 hover:text-gray-900'
       )}
     >
-      <span className="text-gray-700 dark:text-gray-200">{icon}</span>
-      <span className={cn('text-sm font-medium', 'text-gray-800 dark:text-gray-100')}>{label}</span>
+      <span className={cn(active ? 'text-black' : 'text-current')}>{icon}</span>
+      <span className="text-sm font-bold">{label}</span>
     </button>
   )
 }

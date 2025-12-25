@@ -139,7 +139,7 @@ export async function putWeek(
   try {
     const headers = await authHeaders()
     const dbWeekData = transformWeekDataToDb(weekData)
-    const body: any = { weekData: dbWeekData }
+    const body: { weekData: TimeBlock[][]; startingHour?: number; theme?: string | null } = { weekData: dbWeekData }
 
     // Add optional metadata fields if provided
     if (metadata?.startingHour !== undefined) {
@@ -257,4 +257,3 @@ export async function saveSettings(settings: UserSettings): Promise<boolean> {
     return false
   }
 }
-

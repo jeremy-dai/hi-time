@@ -108,11 +108,7 @@ export default function Dashboard({
   }, [viewMode, trendsWeekKeys, annualWeekKeys, loadWeeksForRange, weeksStore])
 
   return (
-    <div className={cn('rounded-xl border p-6', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-      <div className={cn('text-2xl font-bold mb-6', 'text-gray-900 dark:text-gray-100')}>
-        {viewMode === 'trends' ? 'Trends' : 'Annual'}
-      </div>
-
+    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
       {isLoadingData && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>

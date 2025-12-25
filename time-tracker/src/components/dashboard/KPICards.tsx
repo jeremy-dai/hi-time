@@ -12,16 +12,16 @@ export default function KPICards({ stats }: KPICardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
       {order.map((cat) => (
-        <div key={cat} className={cn('p-4 rounded-xl border', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
-          <div className={cn('text-xs mb-2', 'text-gray-500 dark:text-gray-400')}>{CATEGORY_LABELS[cat]}</div>
-          <div className="h-10 w-full rounded-md overflow-hidden">
+        <div key={cat} className={cn('p-4 rounded-3xl bg-white shadow-sm')}>
+          <div className="text-xs font-medium mb-3 text-gray-500 uppercase tracking-wide">{CATEGORY_LABELS[cat]}</div>
+          <div className="h-10 w-full rounded-xl overflow-hidden shadow-sm">
             <div className={cn('h-full w-full', CATEGORY_GRADIENTS[cat])} />
           </div>
-          <div className={cn('mt-2 flex items-baseline justify-between', 'text-gray-900 dark:text-gray-100')}>
-            <span className="text-2xl font-semibold">
-              {(stats.categoryHours[cat] || 0).toFixed(1)}h
+          <div className="mt-4 flex items-baseline justify-between">
+            <span className="text-3xl font-bold text-gray-900 tracking-tight">
+              {(stats.categoryHours[cat] || 0).toFixed(1)}<span className="text-lg font-medium text-gray-500 ml-0.5">h</span>
             </span>
-            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span className="text-sm font-bold text-gray-500">
               {stats.totalHours > 0 
                 ? `${(((stats.categoryHours[cat] || 0) / stats.totalHours) * 100).toFixed(1)}%` 
                 : '0%'}

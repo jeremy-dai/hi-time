@@ -26,7 +26,7 @@ export default function WeekOverWeekComparison({
 
   if (!previousStats || !delta) {
     return (
-      <div className={cn('rounded-xl border p-6', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
+      <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
         <div className={cn('text-lg font-semibold mb-4', 'text-gray-900 dark:text-gray-100')}>Week Over Week</div>
         <div className="text-gray-500 dark:text-gray-400 text-center py-8">
           No previous week data available for comparison
@@ -55,7 +55,7 @@ export default function WeekOverWeekComparison({
   const categories = ['R', 'W', 'G', 'P', 'M'] as const
 
   return (
-    <div className={cn('rounded-xl border p-6', 'bg-white dark:bg-[hsl(var(--color-dark-surface))]', 'dark:border-[hsl(var(--color-dark-border))]')}>
+    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
       <div className={cn('text-lg font-semibold mb-4', 'text-gray-900 dark:text-gray-100')}>Week Over Week</div>
 
       {/* Category Deltas */}

@@ -53,7 +53,7 @@ export default function YTDKPICards({ ytdStats }: YTDKPICardsProps) {
           <div
             key={index}
             className={cn(
-              'rounded-xl p-6 text-white',
+              'rounded-3xl p-6 text-white',
               card.gradient,
               'shadow-lg hover:shadow-xl transition-shadow duration-200'
             )}

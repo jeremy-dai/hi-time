@@ -90,7 +90,7 @@ function App() {
           id: `${day}-${timeIndex}`,
           time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
           day,
-          category: '' as any,
+          category: '',
           subcategory: null,
           notes: ''
         }
@@ -133,11 +133,17 @@ function App() {
         Object.entries(batchResult).forEach(([key, metadata]) => {
           if (metadata) {
             newWeekData[key] = metadata.weekData
-            newMetadata[key] = { startingHour: metadata.startingHour, theme: metadata.theme }
+            const weekMetadata = { startingHour: metadata.startingHour, theme: metadata.theme }
+            newMetadata[key] = weekMetadata
+            // Cache metadata to localStorage
+            localStorage.setItem(`week-metadata-${key}`, JSON.stringify(weekMetadata))
           } else {
             const defaultStartingHour = 8
+            const weekMetadata = { startingHour: defaultStartingHour, theme: null }
             newWeekData[key] = createEmptyWeekData(defaultStartingHour)
-            newMetadata[key] = { startingHour: defaultStartingHour, theme: null }
+            newMetadata[key] = weekMetadata
+            // Cache metadata to localStorage
+            localStorage.setItem(`week-metadata-${key}`, JSON.stringify(weekMetadata))
           }
         })
 
@@ -175,6 +181,18 @@ function App() {
     ;(async () => {
       console.log('[App] Loading week:', currentWeekKey)
 
+      // Try to load metadata from localStorage first
+      let cachedMetadata: { startingHour: number; theme: string | null } | null = null
+      try {
+        const localMetadata = localStorage.getItem(`week-metadata-${currentWeekKey}`)
+        if (localMetadata) {
+          cachedMetadata = JSON.parse(localMetadata)
+          console.log('[App] Loaded metadata from localStorage:', cachedMetadata)
+        }
+      } catch (err) {
+        console.error('[App] Failed to parse localStorage metadata:', err)
+      }
+
       // Load current week data
       const existing = await getWeek(currentWeekKey)
 
@@ -184,12 +202,14 @@ function App() {
 
       if (existing) {
         const updatedWeeks = { ...weekStoreRef.current, [currentWeekKey]: existing.weekData }
+        // Use cached metadata if available, otherwise use database metadata
+        const metadata = cachedMetadata || {
+          startingHour: existing.startingHour ?? 8,
+          theme: existing.theme ?? null
+        }
         const updatedMetadata = {
           ...weekMetadataStoreRef.current,
-          [currentWeekKey]: {
-            startingHour: existing.startingHour ?? 8,
-            theme: existing.theme ?? null
-          }
+          [currentWeekKey]: metadata
         }
 
         weekStoreRef.current = updatedWeeks
@@ -198,10 +218,15 @@ function App() {
         setWeekStore(updatedWeeks)
         setWeekMetadataStore(updatedMetadata)
         setWeekData(existing.weekData)
+
+        // Save metadata to localStorage if we got it from database
+        if (!cachedMetadata) {
+          localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(metadata))
+        }
       } else {
         const defaultStartingHour = 8
         const empty = createEmptyWeekData(defaultStartingHour)
-        const emptyMetadata = { startingHour: defaultStartingHour, theme: null }
+        const emptyMetadata = cachedMetadata || { startingHour: defaultStartingHour, theme: null }
 
         weekStoreRef.current = { ...weekStoreRef.current, [currentWeekKey]: empty }
         weekMetadataStoreRef.current = { ...weekMetadataStoreRef.current, [currentWeekKey]: emptyMetadata }
@@ -209,6 +234,9 @@ function App() {
         setWeekStore(weekStoreRef.current)
         setWeekMetadataStore(weekMetadataStoreRef.current)
         setWeekData(empty)
+
+        // Save to localStorage and database
+        localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(emptyMetadata))
         await putWeek(currentWeekKey, empty, emptyMetadata)
       }
 
@@ -305,25 +333,22 @@ function App() {
     weekMetadataStoreRef.current = updated
     setWeekMetadataStore(updated)
 
-    // Save to database immediately
-    try {
-      await putWeek(currentWeekKey, currentWeekData, updatedMetadata)
-    } catch (error) {
-      console.error('Failed to save metadata:', error)
-      alert('Failed to save changes. Please try again.')
-    }
+    // Cache metadata to localStorage for consistency with weekData
+    localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(updatedMetadata))
+
+    // Trigger the sync hook by updating weekData to mark as "unsaved changes"
+    // This ensures metadata changes go through the same sync mechanism as timesheet data
+    setWeekData(currentWeekData)
   }
+
+  useEffect(() => {
+    // Force light mode by removing dark class if present
+    document.documentElement.classList.remove('dark')
+  }, [])
 
   // Show loading while checking authentication
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
-        </div>
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-900">Loading...</div>
   }
 
   // Show login if not authenticated
@@ -358,24 +383,24 @@ function App() {
       }
     >
       {activeTab === 'log' && currentWeekData && (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-white rounded-3xl p-6 shadow-sm overflow-hidden">
           {/* Week Theme and Settings */}
-          <div className="flex items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-6 mb-6">
             <input
               type="text"
               value={currentWeekMetadata?.theme || ''}
               onChange={(e) => handleMetadataChange({ theme: e.target.value })}
-              placeholder="Week theme or title..."
-              className="flex-1 text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+              placeholder="What are you working on this week?"
+              className="flex-1 text-2xl font-bold bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-gray-900 placeholder-gray-300"
             />
 
             {/* Starting Hour Selector */}
-            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <span className="text-xs">Start:</span>
+            <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-2 border border-gray-100">
+              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Start</span>
               <select
                 value={currentWeekMetadata?.startingHour || 8}
                 onChange={(e) => handleMetadataChange({ startingHour: parseInt(e.target.value) })}
-                className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="text-sm font-semibold bg-transparent border-none text-gray-700 focus:outline-none cursor-pointer hover:text-gray-900"
               >
                 {[5, 6, 7, 8, 9, 10].map(hour => (
                   <option key={hour} value={hour}>
@@ -387,7 +412,7 @@ function App() {
           </div>
 
           {/* Timesheet Grid */}
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto bg-white rounded-2xl">
             <HandsontableCalendar
               weekData={currentWeekData}
               onUpdateBlock={handleUpdateBlock}

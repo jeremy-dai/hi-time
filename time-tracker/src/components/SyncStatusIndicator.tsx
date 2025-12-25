@@ -33,7 +33,7 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
           {onSyncNow && (
             <button
               onClick={onSyncNow}
-              className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="px-3 py-1 text-xs font-bold bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-sm"
             >
               Save Now
             </button>

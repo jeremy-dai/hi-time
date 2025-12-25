@@ -364,7 +364,7 @@ export function TimeSheetGrid({ weekData, onUpdateBlock, referenceData, weekStar
       </div>
 
       {/* Legend */}
-      <div className={cn('mt-6 p-4 rounded-lg border', 'bg-gray-50 dark:bg-gray-900', 'dark:border-[hsl(var(--color-dark-border))]')}>
+      <div className={cn('mt-6 p-4 rounded-lg', 'bg-gray-50 dark:bg-gray-900')}>
         <h3 className={cn('text-sm font-medium mb-2', 'text-gray-900 dark:text-gray-100')}>Category Legend</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
           {[

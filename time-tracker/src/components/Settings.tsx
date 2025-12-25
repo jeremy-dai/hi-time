@@ -3,7 +3,6 @@ import { getSettings, saveSettings, type UserSettings, type SubcategoryDef } fro
 import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX, CATEGORY_COLORS_HEX } from '../constants/colors'
 import { CATEGORY_KEYS } from '../types/time'
 import Card from './shared/Card'
-import { cn } from '../utils/classNames'
 import { useLocalStorageSync } from '../hooks/useLocalStorageSync'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { normalizeSubcategories } from '../utils/subcategoryHelpers'
@@ -169,164 +168,127 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
   if (loading || !settings) return <div className="p-8">Loading settings...</div>
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
-        <div className="flex items-center gap-4">
-          <SyncStatusIndicator
-            status={settingsSyncStatus}
-            lastSynced={settingsLastSynced}
-            hasUnsavedChanges={settingsHasUnsavedChanges}
-            onSyncNow={syncSettingsNow}
-          />
-          {message && <span className="text-sm text-green-600 dark:text-green-400">{message}</span>}
-        </div>
-      </div>
-
-      <div className="grid gap-6">
-        <Card className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Bulk Export</h2>
-          <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Export timesheet data for a range of weeks.
-          </p>
-          <div className="flex flex-wrap items-end gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Start Week
-              </label>
+    <div className="space-y-6">
+      <Card>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Bulk Export</h2>
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Export timesheet data for a range of weeks.</p>
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="w-full md:w-auto">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Start Week</label>
               <input
                 type="week"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                 value={exportStartWeek}
                 onChange={(e) => setExportStartWeek(e.target.value)}
+                className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                End Week
-              </label>
+            <div className="w-full md:w-auto">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">End Week</label>
               <input
                 type="week"
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                 value={exportEndWeek}
                 onChange={(e) => setExportEndWeek(e.target.value)}
+                className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
               />
             </div>
             <button
               onClick={handleBulkExport}
               disabled={exporting}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              className="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-bold rounded-full hover:bg-green-500 transition-colors disabled:opacity-50 shadow-sm"
             >
               {exporting ? 'Exporting...' : 'Export CSV'}
             </button>
           </div>
-        </Card>
+          {message && <p className="text-sm text-amber-600 mt-2">{message}</p>}
+        </div>
+      </Card>
 
-        <Card className="space-y-4">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Subcategories</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={async () => {
-                  await syncSettingsNow()
-                  setMessage('Subcategories saved to database!')
-                  setTimeout(() => setMessage(''), 3000)
-                }}
-                disabled={!settingsHasUnsavedChanges}
-                className={cn(
-                  "px-4 py-1.5 text-sm font-medium rounded transition-all",
-                  settingsHasUnsavedChanges
-                    ? "bg-green-600 text-white hover:bg-green-700 shadow-md"
-                    : "bg-gray-200 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500"
-                )}
-              >
-                {settingsHasUnsavedChanges ? '💾 Save Changes' : '✓ Saved'}
-              </button>
-              <button
-                onClick={async () => {
-                  // Clear localStorage and reload from database
-                  localStorage.removeItem('user-settings')
-                  const freshSettings = await getSettings()
-                  setSettings(freshSettings)
-                  setMessage('Reloaded from database!')
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Subcategories</h2>
+          <div className="flex items-center gap-3">
+            {settingsSyncStatus && (
+              <SyncStatusIndicator 
+                status={settingsSyncStatus} 
+                lastSynced={settingsLastSynced}
+                hasUnsavedChanges={settingsHasUnsavedChanges || false}
+                onSyncNow={syncSettingsNow}
+              />
+            )}
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-500/10 text-blue-600 font-bold text-sm rounded-full hover:bg-blue-500/20 transition-colors"
+            >
+              Reload
+            </button>
+            <button 
+              onClick={() => {
+                if (confirm('Clear all subcategories? This will remove all subcategories from all categories.')) {
+                  setSettings({
+                    ...settings,
+                    subcategories: {}
+                  })
+                  setMessage('Subcategories cleared!')
                   setTimeout(() => setMessage(''), 2000)
-                }}
-                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30"
-              >
-                Reload
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm('Clear all subcategories? This will remove all subcategories from all categories.')) {
-                    setSettings({
-                      ...settings,
-                      subcategories: {}
-                    })
-                    setMessage('Subcategories cleared!')
-                    setTimeout(() => setMessage(''), 2000)
-                  }
-                }}
-                className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
-              >
-                Clear All
-              </button>
-            </div>
+                }
+              }}
+              className="px-4 py-2 bg-red-500/10 text-red-600 font-bold text-sm rounded-full hover:bg-red-500/20 transition-colors"
+            >
+              Clear All
+            </button>
           </div>
-          <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            Define up to 5 subcategories for each category. Click <strong>Save Changes</strong> to make them available in the timesheet.
-          </p>
+        </div>
+        
+        <p className="text-sm text-gray-500 mb-8">
+          Define up to 5 subcategories for each category. Click <strong className="text-gray-900">Save Now</strong> above to persist changes immediately.
+        </p>
 
-          <div className="space-y-6">
-            {CATEGORY_KEYS.filter(k => k !== '').map(category => {
-              const currentSubs = settings.subcategories[category] || []
-              const normalizedSubs = normalizeSubcategories(currentSubs)
-
-              return (
-                <div key={category} className="border-b pb-4 last:border-0 dark:border-gray-700">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span
-                      className="w-6 h-6 flex items-center justify-center rounded text-xs font-bold"
-                      style={{
-                        backgroundColor: CATEGORY_COLORS_HEX[category as keyof typeof CATEGORY_COLORS_HEX].bg,
-                        color: CATEGORY_COLORS_HEX[category as keyof typeof CATEGORY_COLORS_HEX].text
-                      }}
-                    >
-                      {category}
-                    </span>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
-                      {CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS]}
-                    </h3>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    {[0, 1, 2, 3, 4].map((slotIndex) => {
-                      const subcategory = normalizedSubs[slotIndex]
-                      const value = subcategory?.name || ''
-                      const shades = SUBCATEGORY_SHADES_HEX[category as keyof typeof SUBCATEGORY_SHADES_HEX]
-                      const bgColor = shades[slotIndex % shades.length]
-
-                      return (
-                        <input
-                          key={slotIndex}
-                          type="text"
-                          value={value}
-                          placeholder={`Subcategory ${slotIndex + 1}`}
-                          style={{
-                            backgroundColor: bgColor,
-                            color: '#1f2937', // dark gray text for readability
-                          }}
-                          className="px-3 py-2 border-2 border-transparent rounded text-sm font-medium placeholder:text-gray-400 placeholder:opacity-60 placeholder:font-normal focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                          onChange={(e) => updateSubcategory(category, slotIndex, e.target.value)}
-                        />
-                      )
-                    })}
-                  </div>
+        {loading ? (
+          <div className="text-center py-12 text-gray-500">Loading settings...</div>
+        ) : (
+          <div className="space-y-8">
+            {CATEGORY_KEYS.filter(k => k !== '').map(cat => (
+              <div key={cat} className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <span 
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shadow-sm"
+                    style={{ 
+                      backgroundColor: CATEGORY_COLORS_HEX[cat].bg, 
+                      color: CATEGORY_COLORS_HEX[cat].text 
+                    }}
+                  >
+                    {cat}
+                  </span>
+                  <span className="font-bold text-lg text-gray-900">{CATEGORY_LABELS[cat]}</span>
                 </div>
-              )
-            })}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {[0, 1, 2, 3, 4].map((index) => {
+                    const savedSubs = settings?.subcategories[cat] || []
+                    const subDef = savedSubs.find(s => s.index === index)
+                    const value = subDef?.name || ''
+                    const shade = SUBCATEGORY_SHADES_HEX[cat][index]
+                    
+                    return (
+                      <input
+                        key={`${cat}-${index}`}
+                        type="text"
+                        placeholder={`Subcategory ${index + 1}`}
+                        className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-transparent focus:outline-none focus:ring-2 focus:ring-gray-400/30 transition-all placeholder:text-gray-500 text-gray-900 shadow-sm"
+                        style={{ backgroundColor: shade }}
+                        value={value}
+                        onChange={(e) => updateSubcategory(cat, index, e.target.value)}
+                      />
+                    )
+                  })}
+                </div>
+                <div className="h-px bg-gray-200 w-full my-6" />
+              </div>
+            ))}
           </div>
-        </Card>
-      </div>
+        )}
+      </Card>
     </div>
   )
 }

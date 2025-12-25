@@ -6,17 +6,166 @@
   --color-text-primary: 240 10% 10%;
   --color-text-secondary: 240 5% 40%;
   --color-border: 240 6% 90%;
+  --color-brand-primary: 84 81% 69%; /* #bef264 Lime-400ish */
+  --color-brand-secondary: 168 76% 80%; /* #99f6e4 Teal-200ish */
 
-  --color-dark-background: 222 47% 11%;
-  --color-dark-surface: 217 33% 17%;
-  --color-dark-surface-elevated: 215 28% 22%;
-  --color-dark-text-primary: 210 20% 98%;
-  --color-dark-text-secondary: 215 16% 65%;
-  --color-dark-border: 217 32% 24%;
-  --color-dark-accent: 217 91% 60%;
+  --color-dark-background: 0 0% 7%; /* #121212 */
+  --color-dark-surface: 0 0% 11%; /* #1c1c1c */
+  --color-dark-surface-elevated: 0 0% 15%; /* #262626 */
+  --color-dark-text-primary: 0 0% 95%; /* #f2f2f2 */
+  --color-dark-text-secondary: 0 0% 65%; /* #a6a6a6 */
+  --color-dark-border: 0 0% 20%; /* #333333 */
+  --color-dark-accent: 84 81% 69%; /* Matching brand primary */
+}
+
+:root {
+  color-scheme: light dark;
 }
 
 :root.dark {
   background-color: hsl(var(--color-dark-background));
   color: hsl(var(--color-dark-text-primary));
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Handsontable General Overrides (Light Mode / Default) */
+.handsontable {
+  font-family: inherit;
+}
+
+/* Remove default borders and make grid lines subtle */
+.handsontable table,
+.handsontable tbody,
+.handsontable thead,
+.handsontable td,
+.handsontable th {
+  border-color: transparent; /* Remove most borders */
+  border-style: none;
+}
+
+/* Row/Col headers styling */
+.handsontable th {
+  background-color: #f8fafc;
+  color: #374151;
+  font-weight: 700;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: none;
+}
+
+/* First row (Time/Day headers) */
+.handsontable tr:first-child th {
+  border-top: none;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Time column header */
+.handsontable th:first-child {
+  border-left: none;
+  text-align: right;
+  padding-right: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+/* Cells */
+.handsontable td {
+  border-right: 1px solid #f9fafb; /* Very subtle vertical separator (gray-50) */
+  border-bottom: 1px solid #f9fafb; /* Very subtle horizontal separator */
+  padding: 4px;
+}
+
+.handsontable,
+.handsontable .wtHolder,
+.handsontable .wtHider,
+.handsontable .htCore {
+  border: 0;
+  box-shadow: none;
+  outline: 0;
+}
+
+.handsontable th.hiTimeColHeaderDay {
+  text-align: center;
+}
+
+.handsontable th.hiTimeColHeaderComplete {
+  color: #16a34a;
+}
+
+/* Hide the blue selection border slightly or make it brand color */
+.handsontable .wtBorder {
+  background-color: hsl(var(--color-brand-primary)) !important;
+}
+.handsontable .area {
+  background-color: hsla(var(--color-brand-primary), 0.2) !important;
+}
+
+/* Current time indicator */
+.handsontable .current-time-indicator {
+  background-color: hsl(var(--color-brand-primary));
+}
+
+
+/* Handsontable Dark Mode Overrides */
+:root.dark .handsontable {
+  color: #e5e5e5;
+}
+
+:root.dark .handsontable table,
+:root.dark .handsontable tbody,
+:root.dark .handsontable thead,
+:root.dark .handsontable td,
+:root.dark .handsontable th {
+  border-color: #333;
+}
+
+:root.dark .handsontable th {
+  background-color: #1a1a1a;
+  color: #a0a0a0;
+  border-bottom-color: #333;
+  border-right-color: #333;
+}
+
+:root.dark .handsontable tr:first-child th {
+  border-top-color: #333;
+}
+
+:root.dark .handsontable th:first-child {
+  border-left-color: #333;
+}
+
+:root.dark .handsontable td {
+  background-color: #121212; /* Match main background */
+  border-bottom-color: #222;
+  border-right-color: #222;
+}
+
+:root.dark .ht_clone_top th {
+  background-color: #1a1a1a;
+  color: #e5e5e5;
+}
+
+:root.dark .ht_clone_left th {
+  background-color: #1a1a1a;
+  color: #a0a0a0;
+}
+
+:root.dark .handsontable .htDimmed {
+  color: #666;
+}
+
+:root.dark .handsontable .current-time-indicator {
+  background-color: hsl(var(--color-brand-primary));
 }
