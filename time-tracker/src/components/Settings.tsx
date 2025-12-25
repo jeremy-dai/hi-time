@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { getSettings, saveSettings, type UserSettings, type SubcategoryDef } from '../api'
+import { getSettings, saveSettings, exportBulkCSV, type UserSettings, type SubcategoryDef } from '../api'
 import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX, CATEGORY_COLORS_HEX } from '../constants/colors'
 import { CATEGORY_KEYS } from '../types/time'
 import Card from './shared/Card'
@@ -96,7 +96,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
     setExporting(true)
     setMessage('')
     try {
-      const csv = await import('../api').then(m => m.exportBulkCSV(exportStartWeek, exportEndWeek))
+      const csv = await exportBulkCSV(exportStartWeek, exportEndWeek)
       const blob = new Blob([csv], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

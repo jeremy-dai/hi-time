@@ -22,7 +22,7 @@ export default function CurrentWeekDashboard({
 }: CurrentWeekDashboardProps) {
   // Most recent completed week (the first one in the list)
   const displayWeekKey = weekKeys[0]
-  const displayWeekData = weeksStore[displayWeekKey] || []
+  const displayWeekData = useMemo(() => weeksStore[displayWeekKey] || [], [weeksStore, displayWeekKey])
 
   // Current/display week stats
   const currentStats = useMemo(() => aggregateWeekData(displayWeekData), [displayWeekData])

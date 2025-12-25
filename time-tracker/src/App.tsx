@@ -21,8 +21,29 @@ function App() {
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_weekMetadataStore, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>({})
-  const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>({})
+  // Initialize metadata synchronously from localStorage for faster loading
+  const initialMetadata = useMemo(() => {
+    const cached: Record<string, { startingHour: number; theme: string | null }> = {}
+    try {
+      // Get all localStorage keys that match our metadata pattern
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key?.startsWith('week-metadata-')) {
+          const weekKey = key.replace('week-metadata-', '')
+          const value = localStorage.getItem(key)
+          if (value) {
+            cached[weekKey] = JSON.parse(value)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Failed to initialize metadata from localStorage:', err)
+    }
+    return cached
+  }, [])
+
+  const [_weekMetadataStore, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
+  const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
   const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })
   const fetchingWeeks = useRef<Set<string>>(new Set())

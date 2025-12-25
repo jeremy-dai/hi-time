@@ -79,7 +79,6 @@ export function useLocalStorageSync<T>(
     };
 
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
   // Save to localStorage immediately when data changes

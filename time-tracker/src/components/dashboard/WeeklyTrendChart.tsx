@@ -2,15 +2,16 @@ import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { WeekStats } from '../../utils/analytics'
 
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
+
 interface WeeklyTrendChartProps {
   current: WeekStats
   previous?: WeekStats | null
 }
 
 export default function WeeklyTrendChart({ current, previous }: WeeklyTrendChartProps) {
-  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
   const data = useMemo(() =>
-    days.map((d, i) => ({
+    DAYS.map((d, i) => ({
       day: d,
       current: current.dailyHours[i] || 0,
       previous: previous ? previous.dailyHours[i] || 0 : 0
