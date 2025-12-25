@@ -132,7 +132,7 @@ app.get('/api/weeks/:week_key', async (req, res) => {
   // RLS automatically filters by authenticated user
   const { data, error } = await req.supabase
     .from('weeks')
-    .select('week_data')
+    .select('week_data, starting_hour, theme')
     .eq('year', parsed.year)
     .eq('week_number', parsed.week)
     .single();
@@ -142,12 +142,16 @@ app.get('/api/weeks/:week_key', async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch week data' });
   }
 
-  res.json({ weekData: data?.week_data || null });
+  res.json({
+    weekData: data?.week_data || null,
+    startingHour: data?.starting_hour ?? 8,
+    theme: data?.theme || null
+  });
 });
 
 app.put('/api/weeks/:week_key', async (req, res) => {
   const { week_key } = req.params;
-  const { weekData } = req.body || {};
+  const { weekData, startingHour, theme } = req.body || {};
 
   if (!weekData) {
     return res.status(400).json({ error: 'weekData is required' });
@@ -158,16 +162,27 @@ app.put('/api/weeks/:week_key', async (req, res) => {
     return res.status(400).json({ error: 'Invalid week key format' });
   }
 
+  // Prepare upsert data
+  const upsertData = {
+    user_id: req.user.id,
+    year: parsed.year,
+    week_number: parsed.week,
+    week_data: weekData,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Add optional fields if provided
+  if (startingHour !== undefined && startingHour !== null) {
+    upsertData.starting_hour = startingHour;
+  }
+  if (theme !== undefined) {
+    upsertData.theme = theme;
+  }
+
   // RLS requires user_id to match authenticated user
   const { error } = await req.supabase
     .from('weeks')
-    .upsert({
-      user_id: req.user.id,
-      year: parsed.year,
-      week_number: parsed.week,
-      week_data: weekData,
-      updated_at: new Date().toISOString(),
-    }, {
+    .upsert(upsertData, {
       onConflict: 'user_id,year,week_number'
     });
 
@@ -203,7 +218,7 @@ app.get('/api/weeks/:week_key/export', async (req, res) => {
   // RLS automatically filters by authenticated user
   const { data, error } = await req.supabase
     .from('weeks')
-    .select('week_data')
+    .select('week_data, starting_hour')
     .eq('year', parsed.year)
     .eq('week_number', parsed.week)
     .single();
@@ -214,7 +229,8 @@ app.get('/api/weeks/:week_key/export', async (req, res) => {
   }
 
   const weekData = data?.week_data || [];
-  const csv_text = exportTimeCSV(weekData);
+  const startingHour = data?.starting_hour ?? 8;
+  const csv_text = exportTimeCSV(weekData, startingHour);
   res.json({ csv_text });
 });
 
@@ -246,7 +262,7 @@ app.get('/api/export/bulk', async (req, res) => {
   
   const { data: weeks, error } = await req.supabase
     .from('weeks')
-    .select('year, week_number, week_data')
+    .select('year, week_number, week_data, starting_hour')
     .or(`year.gt.${startParsed.year},and(year.eq.${startParsed.year},week_number.gte.${startParsed.week})`)
     .or(`year.lt.${endParsed.year},and(year.eq.${endParsed.year},week_number.lte.${endParsed.week})`)
     .order('year', { ascending: true })
@@ -282,8 +298,9 @@ app.get('/api/export/bulk', async (req, res) => {
   
   for (const week of filteredWeeks) {
       const weekKey = `${week.year}-W${String(week.week_number).padStart(2, '0')}`;
+      const startingHour = week.starting_hour ?? 8;
       combinedCSV += `Week: ${weekKey}\n`;
-      combinedCSV += exportTimeCSV(week.week_data);
+      combinedCSV += exportTimeCSV(week.week_data, startingHour);
       combinedCSV += '\n\n';
   }
 

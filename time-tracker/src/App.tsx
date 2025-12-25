@@ -20,17 +20,25 @@ function App() {
   const currentWeekKey = useMemo(() => formatWeekKey(currentDate), [currentDate])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_weekMetadataStore, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>({})
+  const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>({})
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
   const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })
   const fetchingWeeks = useRef<Set<string>>(new Set())
 
+  // Get current week metadata
+  const currentWeekMetadata = weekMetadataStoreRef.current[currentWeekKey] || { startingHour: 8, theme: null }
+
   // Memoize sync functions to prevent recreating on every render
   const syncToDatabase = useCallback(async (data: TimeBlock[][]) => {
-    return await putWeek(currentWeekKey, data);
+    const metadata = weekMetadataStoreRef.current[currentWeekKey]
+    return await putWeek(currentWeekKey, data, metadata);
   }, [currentWeekKey]);
 
   const loadFromDatabase = useCallback(async () => {
-    return await getWeek(currentWeekKey);
+    const result = await getWeek(currentWeekKey);
+    return result?.weekData || null;
   }, [currentWeekKey]);
 
   // Local storage sync for current week data
@@ -66,20 +74,27 @@ function App() {
   }, [activeTab])
 
   // Initialize weekData with empty data if null
-  const currentWeekData = weekData || createEmptyWeekData()
+  const currentWeekData = weekData || createEmptyWeekData(currentWeekMetadata.startingHour)
 
-  function createEmptyWeekData(): TimeBlock[][] {
-    const timeSlots = 32
+  function createEmptyWeekData(startingHour: number = 8): TimeBlock[][] {
+    const timeSlots = 34 // 17 hours * 2 (30-min intervals)
     const days = 7
     return Array.from({ length: days }, (_, day) =>
-      Array.from({ length: timeSlots }, (_, timeIndex) => ({
-        id: `${day}-${timeIndex}`,
-        time: `${String(8 + Math.floor(timeIndex / 2)).padStart(2, '0')}:${timeIndex % 2 === 0 ? '00' : '30'}`,
-        day,
-        category: '' as any,
-        subcategory: null,
-        notes: ''
-      }))
+      Array.from({ length: timeSlots }, (_, timeIndex) => {
+        // Calculate time based on starting hour
+        const totalMinutes = startingHour * 60 + timeIndex * 30
+        const hours = Math.floor(totalMinutes / 60) % 24
+        const minutes = totalMinutes % 60
+
+        return {
+          id: `${day}-${timeIndex}`,
+          time: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`,
+          day,
+          category: '' as any,
+          subcategory: null,
+          notes: ''
+        }
+      })
     )
   }
 
@@ -109,22 +124,35 @@ function App() {
       try {
         // Fetch missing weeks in batch
         const batchResult = await getWeeksBatch(keysToFetch)
-        console.log('loadWeeksForRange - Batch result:', Object.keys(batchResult), 'with data:', Object.entries(batchResult).map(([k, v]) => ({ key: k, hasData: v !== null, dataLength: v?.length })))
+        console.log('loadWeeksForRange - Batch result:', Object.keys(batchResult))
 
-        // Update weekStore with fetched weeks (or empty data for weeks that don't exist)
-        const newEntries = Object.fromEntries(
-          Object.entries(batchResult).map(([key, data]) => [
-            key,
-            data || createEmptyWeekData()
-          ])
-        ) as Record<string, TimeBlock[][]>
+        // Separate weekData and metadata
+        const newWeekData: Record<string, TimeBlock[][]> = {}
+        const newMetadata: Record<string, { startingHour: number; theme: string | null }> = {}
 
-        console.log('loadWeeksForRange - Adding to store:', Object.keys(newEntries))
+        Object.entries(batchResult).forEach(([key, metadata]) => {
+          if (metadata) {
+            newWeekData[key] = metadata.weekData
+            newMetadata[key] = { startingHour: metadata.startingHour, theme: metadata.theme }
+          } else {
+            const defaultStartingHour = 8
+            newWeekData[key] = createEmptyWeekData(defaultStartingHour)
+            newMetadata[key] = { startingHour: defaultStartingHour, theme: null }
+          }
+        })
 
-        const updated = { ...weekStoreRef.current, ...newEntries }
-        weekStoreRef.current = updated
-        setWeekStore(updated)
-        console.log('loadWeeksForRange - Updated store keys:', Object.keys(updated))
+        console.log('loadWeeksForRange - Adding to store:', Object.keys(newWeekData))
+
+        const updatedWeeks = { ...weekStoreRef.current, ...newWeekData }
+        const updatedMetadata = { ...weekMetadataStoreRef.current, ...newMetadata }
+
+        weekStoreRef.current = updatedWeeks
+        weekMetadataStoreRef.current = updatedMetadata
+
+        setWeekStore(updatedWeeks)
+        setWeekMetadataStore(updatedMetadata)
+
+        console.log('loadWeeksForRange - Updated store keys:', Object.keys(updatedWeeks))
       } finally {
         // Remove from fetching set
         keysToFetch.forEach(key => fetchingWeeks.current.delete(key))
@@ -142,34 +170,61 @@ function App() {
   }, [loadWeeksForRange])
 
   useEffect(() => {
+    let cancelled = false
+
     ;(async () => {
+      console.log('[App] Loading week:', currentWeekKey)
+
       // Load current week data
       const existing = await getWeek(currentWeekKey)
+
+      if (cancelled) return
+
+      console.log('[App] Week data response:', existing)
+
       if (existing) {
-        const updated = { ...weekStoreRef.current, [currentWeekKey]: existing }
-        weekStoreRef.current = updated
-        setWeekStore(updated)
-        setWeekData(existing)
+        const updatedWeeks = { ...weekStoreRef.current, [currentWeekKey]: existing.weekData }
+        const updatedMetadata = {
+          ...weekMetadataStoreRef.current,
+          [currentWeekKey]: {
+            startingHour: existing.startingHour ?? 8,
+            theme: existing.theme ?? null
+          }
+        }
+
+        weekStoreRef.current = updatedWeeks
+        weekMetadataStoreRef.current = updatedMetadata
+
+        setWeekStore(updatedWeeks)
+        setWeekMetadataStore(updatedMetadata)
+        setWeekData(existing.weekData)
       } else {
-        const empty = createEmptyWeekData()
-        const updated = { ...weekStoreRef.current, [currentWeekKey]: empty }
-        weekStoreRef.current = updated
-        setWeekStore(updated)
+        const defaultStartingHour = 8
+        const empty = createEmptyWeekData(defaultStartingHour)
+        const emptyMetadata = { startingHour: defaultStartingHour, theme: null }
+
+        weekStoreRef.current = { ...weekStoreRef.current, [currentWeekKey]: empty }
+        weekMetadataStoreRef.current = { ...weekMetadataStoreRef.current, [currentWeekKey]: emptyMetadata }
+
+        setWeekStore(weekStoreRef.current)
+        setWeekMetadataStore(weekMetadataStoreRef.current)
         setWeekData(empty)
-        await putWeek(currentWeekKey, empty)
+        await putWeek(currentWeekKey, empty, emptyMetadata)
       }
 
       // Load ghost data (last year's same week)
       const lastYearWeekKey = calculateLastYearWeek(currentWeekKey)
       const ghostData = await getWeek(lastYearWeekKey)
-      setReferenceData(ghostData)
+      if (!cancelled) {
+        setReferenceData(ghostData?.weekData || null)
+      }
     })()
-  }, [currentWeekKey])
 
-  useEffect(() => {
-    const data = weekStore[currentWeekKey]
-    if (data) setWeekData(data)
-  }, [weekStore, currentWeekKey])
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWeekKey])
 
   const handleUpdateBlock = (day: number, timeIndex: number, block: TimeBlock) => {
     const current = currentWeekData
@@ -224,6 +279,41 @@ function App() {
     reader.readAsText(file)
   }
 
+  // Handle metadata changes (theme, startingHour)
+  const handleMetadataChange = async (newMetadata: { startingHour?: number; theme?: string | null }) => {
+    // If changing starting hour and week has data, confirm first
+    if (newMetadata.startingHour !== undefined && newMetadata.startingHour !== currentWeekMetadata.startingHour) {
+      const hasData = currentWeekData.some(day => day.some(block => block.category || block.notes))
+
+      if (hasData) {
+        const confirmed = window.confirm(
+          `Warning: This week already has time entries. Changing the starting hour won't update existing time slots.\n\n` +
+          `Current range: ${currentWeekMetadata.startingHour}:00 - ${(currentWeekMetadata.startingHour + 17) % 24}:00\n` +
+          `New range: ${newMetadata.startingHour}:00 - ${(newMetadata.startingHour + 17) % 24}:00\n\n` +
+          `Continue anyway?`
+        )
+
+        if (!confirmed) {
+          return
+        }
+      }
+    }
+
+    const updatedMetadata = { ...currentWeekMetadata, ...newMetadata }
+    const updated = { ...weekMetadataStoreRef.current, [currentWeekKey]: updatedMetadata }
+
+    weekMetadataStoreRef.current = updated
+    setWeekMetadataStore(updated)
+
+    // Save to database immediately
+    try {
+      await putWeek(currentWeekKey, currentWeekData, updatedMetadata)
+    } catch (error) {
+      console.error('Failed to save metadata:', error)
+      alert('Failed to save changes. Please try again.')
+    }
+  }
+
   // Show loading while checking authentication
   if (authLoading) {
     return (
@@ -267,14 +357,46 @@ function App() {
         />
       }
     >
-      {activeTab === 'log' && (
-        <HandsontableCalendar
-          weekData={currentWeekData}
-          onUpdateBlock={handleUpdateBlock}
-          onUpdateBlocks={handleUpdateBlocks}
-          referenceData={referenceData}
-          userSettings={userSettings}
-        />
+      {activeTab === 'log' && currentWeekData && (
+        <div className="flex flex-col h-full">
+          {/* Week Theme and Settings */}
+          <div className="flex items-center gap-4 px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <input
+              type="text"
+              value={currentWeekMetadata?.theme || ''}
+              onChange={(e) => handleMetadataChange({ theme: e.target.value })}
+              placeholder="Week theme or title..."
+              className="flex-1 text-lg font-medium bg-transparent border-none focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+            />
+
+            {/* Starting Hour Selector */}
+            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-xs">Start:</span>
+              <select
+                value={currentWeekMetadata?.startingHour || 8}
+                onChange={(e) => handleMetadataChange({ startingHour: parseInt(e.target.value) })}
+                className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {[5, 6, 7, 8, 9, 10].map(hour => (
+                  <option key={hour} value={hour}>
+                    {hour}:00 AM
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Timesheet Grid */}
+          <div className="flex-1 overflow-auto">
+            <HandsontableCalendar
+              weekData={currentWeekData}
+              onUpdateBlock={handleUpdateBlock}
+              onUpdateBlocks={handleUpdateBlocks}
+              referenceData={referenceData}
+              userSettings={userSettings}
+            />
+          </div>
+        </div>
       )}
       {activeTab === 'trends' && (
         <Dashboard

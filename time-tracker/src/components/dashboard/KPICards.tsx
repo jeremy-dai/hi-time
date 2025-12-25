@@ -17,8 +17,15 @@ export default function KPICards({ stats }: KPICardsProps) {
           <div className="h-10 w-full rounded-md overflow-hidden">
             <div className={cn('h-full w-full', CATEGORY_GRADIENTS[cat])} />
           </div>
-          <div className={cn('mt-2 text-2xl font-semibold', 'text-gray-900 dark:text-gray-100')}>
-            {(stats.categoryHours[cat] || 0).toFixed(1)}h
+          <div className={cn('mt-2 flex items-baseline justify-between', 'text-gray-900 dark:text-gray-100')}>
+            <span className="text-2xl font-semibold">
+              {(stats.categoryHours[cat] || 0).toFixed(1)}h
+            </span>
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+              {stats.totalHours > 0 
+                ? `${(((stats.categoryHours[cat] || 0) / stats.totalHours) * 100).toFixed(1)}%` 
+                : '0%'}
+            </span>
           </div>
         </div>
       ))}

@@ -1,4 +1,4 @@
-import { TrendingUp, ArrowUp, ArrowDown } from 'lucide-react'
+import { Briefcase, Bed, Gamepad2, AlertCircle, CheckCircle } from 'lucide-react'
 import type { YTDStats } from '../../utils/analytics'
 import { cn } from '../../utils/classNames'
 
@@ -9,30 +9,44 @@ interface YTDKPICardsProps {
 export default function YTDKPICards({ ytdStats }: YTDKPICardsProps) {
   const cards = [
     {
-      title: 'Average per Week',
-      value: `${ytdStats.averagePerWeek.toFixed(1)}h`,
-      icon: TrendingUp,
-      gradient: 'bg-gradient-to-br from-green-500 to-green-600',
-      subtitle: 'Weekly average'
+      title: 'Avg Rest / Week',
+      value: `${(ytdStats.categoryAverages?.['R'] || 0).toFixed(1)}h`,
+      icon: Bed,
+      gradient: 'bg-gradient-to-br from-emerald-500 to-teal-600',
+      subtitle: 'Target: ~56h (8h/day)'
     },
     {
-      title: 'Highest Week',
-      value: ytdStats.highestWeek ? `${ytdStats.highestWeek.hours.toFixed(1)}h` : 'N/A',
-      icon: ArrowUp,
-      gradient: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-      subtitle: ytdStats.highestWeek ? ytdStats.highestWeek.weekKey.split('-W')[1] ? `Week ${ytdStats.highestWeek.weekKey.split('-W')[1]}` : ytdStats.highestWeek.weekKey : 'No data'
+      title: 'Avg Work / Week',
+      value: `${(ytdStats.categoryAverages?.['W'] || 0).toFixed(1)}h`,
+      icon: Briefcase,
+      gradient: 'bg-gradient-to-br from-amber-500 to-orange-600',
+      subtitle: 'Weekly Average'
     },
     {
-      title: 'Lowest Week',
-      value: ytdStats.lowestWeek ? `${ytdStats.lowestWeek.hours.toFixed(1)}h` : 'N/A',
-      icon: ArrowDown,
-      gradient: 'bg-gradient-to-br from-amber-500 to-amber-600',
-      subtitle: ytdStats.lowestWeek ? ytdStats.lowestWeek.weekKey.split('-W')[1] ? `Week ${ytdStats.lowestWeek.weekKey.split('-W')[1]}` : ytdStats.lowestWeek.weekKey : 'No data'
+      title: 'Avg Play / Week',
+      value: `${(ytdStats.categoryAverages?.['G'] || 0).toFixed(1)}h`,
+      icon: Gamepad2,
+      gradient: 'bg-gradient-to-br from-blue-500 to-indigo-600',
+      subtitle: 'Weekly Average'
+    },
+    {
+      title: 'Avg Mandatory / Week',
+      value: `${(ytdStats.categoryAverages?.['M'] || 0).toFixed(1)}h`,
+      icon: CheckCircle,
+      gradient: 'bg-gradient-to-br from-purple-500 to-violet-600',
+      subtitle: 'Weekly Average'
+    },
+    {
+      title: 'Avg Procrastination',
+      value: `${(ytdStats.categoryAverages?.['P'] || 0).toFixed(1)}h`,
+      icon: AlertCircle,
+      gradient: 'bg-gradient-to-br from-rose-500 to-red-600',
+      subtitle: 'Weekly Average'
     }
   ]
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
       {cards.map((card, index) => {
         const Icon = card.icon
         return (

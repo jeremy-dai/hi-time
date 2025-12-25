@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import type { MultiWeekStats } from '../../utils/analytics'
-import { CATEGORY_COLORS_HEX, CATEGORY_LABELS } from '../../constants/colors'
+import { CATEGORY_COLORS_HEX } from '../../constants/colors'
 import { cn } from '../../utils/classNames'
 
 interface MultiWeekTrendChartProps {
@@ -62,41 +62,42 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
             <Legend
               wrapperStyle={{ paddingTop: '20px' }}
               iconType="line"
+              formatter={(value) => <span className="text-gray-700 dark:text-gray-300 font-medium">{value}</span>}
             />
             <Line
               type="monotone"
               dataKey="Rest"
-              stroke={CATEGORY_COLORS_HEX['R'].text}
-              strokeWidth={2}
-              dot={{ r: 3 }}
+              stroke={CATEGORY_COLORS_HEX['R'].bg}
+              strokeWidth={4}
+              dot={{ r: 4 }}
             />
             <Line
               type="monotone"
               dataKey="Work"
-              stroke={CATEGORY_COLORS_HEX['W'].text}
-              strokeWidth={2}
-              dot={{ r: 3 }}
+              stroke={CATEGORY_COLORS_HEX['W'].bg}
+              strokeWidth={4}
+              dot={{ r: 4 }}
             />
             <Line
               type="monotone"
               dataKey="Play"
-              stroke={CATEGORY_COLORS_HEX['G'].text}
-              strokeWidth={2}
-              dot={{ r: 3 }}
+              stroke={CATEGORY_COLORS_HEX['G'].bg}
+              strokeWidth={4}
+              dot={{ r: 4 }}
             />
             <Line
               type="monotone"
               dataKey="Procrastination"
-              stroke={CATEGORY_COLORS_HEX['P'].text}
-              strokeWidth={2}
-              dot={{ r: 3 }}
+              stroke={CATEGORY_COLORS_HEX['P'].bg}
+              strokeWidth={4}
+              dot={{ r: 4 }}
             />
             <Line
               type="monotone"
               dataKey="Mandatory"
-              stroke={CATEGORY_COLORS_HEX['M'].text}
-              strokeWidth={2}
-              dot={{ r: 3 }}
+              stroke={CATEGORY_COLORS_HEX['M'].bg}
+              strokeWidth={4}
+              dot={{ r: 4 }}
             />
           </LineChart>
         </ResponsiveContainer>

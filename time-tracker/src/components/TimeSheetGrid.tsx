@@ -172,13 +172,21 @@ export function TimeSheetGrid({ weekData, onUpdateBlock, referenceData, weekStar
     const set = new Set<string>()
     weekData.forEach(dayArr => {
       dayArr.forEach(b => {
-        if (b.category === category && b.subcategory) set.add(b.subcategory)
+        if (b.category === category && b.subcategory) {
+            const s = b.subcategory
+            const sStr = typeof s === 'string' ? s : s.name
+            if (sStr) set.add(sStr)
+        }
       })
     })
     if (referenceData) {
       referenceData.forEach(dayArr => {
         dayArr.forEach(b => {
-          if (b && b.category === category && b.subcategory) set.add(b.subcategory)
+            if (b && b.category === category && b.subcategory) {
+                const s = b.subcategory
+                const sStr = typeof s === 'string' ? s : s.name
+                if (sStr) set.add(sStr)
+            }
         })
       })
     }

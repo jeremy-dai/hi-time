@@ -1,7 +1,7 @@
-export interface SubcategoryRef {
+export type SubcategoryRef = {
   index: number
   name: string
-}
+} | string
 
 export interface TimeBlock {
   id: string

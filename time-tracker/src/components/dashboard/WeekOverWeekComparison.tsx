@@ -15,8 +15,6 @@ interface WeekOverWeekComparisonProps {
 export default function WeekOverWeekComparison({
   currentWeekData,
   previousWeekData,
-  currentWeekLabel,
-  previousWeekLabel
 }: WeekOverWeekComparisonProps) {
   const delta = useMemo(() => {
     if (!previousWeekData) return null
@@ -40,11 +38,6 @@ export default function WeekOverWeekComparison({
   const formatDelta = (delta: number) => {
     const sign = delta >= 0 ? '+' : ''
     return `${sign}${delta.toFixed(1)}h`
-  }
-
-  const formatPercentage = (percent: number) => {
-    const sign = percent >= 0 ? '+' : ''
-    return `${sign}${percent.toFixed(0)}%`
   }
 
   const getDeltaIcon = (delta: number) => {

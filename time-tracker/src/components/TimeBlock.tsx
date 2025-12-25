@@ -23,10 +23,11 @@ export function TimeBlock({ block, ghost, isSelected, onClick, onContextMenu, on
   }
 
   const subIdx = (() => {
-    const s = block.subcategory || ghost?.subcategory || ''
-    if (!s) return 0
+    const s = block.subcategory || ghost?.subcategory
+    const sStr = typeof s === 'string' ? s : s?.name || ''
+    if (!sStr) return 0
     let hash = 0
-    for (let i = 0; i < s.length; i++) hash = s.charCodeAt(i) + ((hash << 5) - hash)
+    for (let i = 0; i < sStr.length; i++) hash = sStr.charCodeAt(i) + ((hash << 5) - hash)
     return Math.abs(hash) % 4
   })()
   const baseCat = block.category || ghost?.category || ''
@@ -53,7 +54,10 @@ export function TimeBlock({ block, ghost, isSelected, onClick, onContextMenu, on
         <div className="p-2">
           {(block.subcategory || ghost?.subcategory) && (
             <div className="text-xs font-medium truncate text-gray-900 dark:text-gray-100">
-              {block.subcategory || ghost?.subcategory}
+              {(() => {
+                const s = block.subcategory || ghost?.subcategory
+                return typeof s === 'string' ? s : s?.name
+              })()}
             </div>
           )}
           <div className="text-[10px] mt-0.5 text-gray-500 dark:text-gray-300">

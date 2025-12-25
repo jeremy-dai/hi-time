@@ -66,14 +66,36 @@ function transformWeekDataToDb(weekData: TimeBlock[][]): TimeBlock[][] {
   return [...rest, sun]
 }
 
-export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
+export interface WeekMetadata {
+  weekData: TimeBlock[][]
+  startingHour: number
+  theme: string | null
+}
+
+interface WeekResponse {
+  weekData: TimeBlock[][] | null
+  startingHour?: number
+  theme?: string | null
+}
+
+export async function getWeek(weekKey: string): Promise<WeekMetadata | null> {
   try {
     const headers = await authHeaders()
     const res = await fetch(`${API_BASE}/weeks/${weekKey}`, {
       headers,
     })
-    const data = await handleResponse<ApiResponse<TimeBlock[][]>>(res, `/weeks/${weekKey}`)
-    return data.weekData ? transformWeekDataFromDb(data.weekData) : null
+    const response = await handleResponse<WeekResponse>(res, `/weeks/${weekKey}`)
+
+    // Handle response
+    if (response.weekData !== undefined && response.weekData !== null) {
+      return {
+        weekData: transformWeekDataFromDb(response.weekData),
+        startingHour: response.startingHour ?? 8,
+        theme: response.theme ?? null
+      }
+    }
+
+    return null
   } catch (error) {
     console.error(`Failed to get week ${weekKey}:`, error)
     return null
@@ -85,20 +107,20 @@ export async function getWeek(weekKey: string): Promise<TimeBlock[][] | null> {
  * Returns a record mapping week keys to their data
  * Weeks that fail to load will have null values
  */
-export async function getWeeksBatch(weekKeys: string[]): Promise<Record<string, TimeBlock[][] | null>> {
+export async function getWeeksBatch(weekKeys: string[]): Promise<Record<string, WeekMetadata | null>> {
   try {
     // Fetch all weeks in parallel using Promise.all
     const results = await Promise.all(
       weekKeys.map(async (weekKey) => {
-        const weekData = await getWeek(weekKey)
-        return { weekKey, weekData }
+        const weekMetadata = await getWeek(weekKey)
+        return { weekKey, weekMetadata }
       })
     )
 
     // Convert array to record
-    const batchResult: Record<string, TimeBlock[][] | null> = {}
-    results.forEach(({ weekKey, weekData }) => {
-      batchResult[weekKey] = weekData
+    const batchResult: Record<string, WeekMetadata | null> = {}
+    results.forEach(({ weekKey, weekMetadata }) => {
+      batchResult[weekKey] = weekMetadata
     })
 
     return batchResult
@@ -109,14 +131,28 @@ export async function getWeeksBatch(weekKeys: string[]): Promise<Record<string, 
   }
 }
 
-export async function putWeek(weekKey: string, weekData: TimeBlock[][]): Promise<boolean> {
+export async function putWeek(
+  weekKey: string,
+  weekData: TimeBlock[][],
+  metadata?: { startingHour?: number; theme?: string | null }
+): Promise<boolean> {
   try {
     const headers = await authHeaders()
     const dbWeekData = transformWeekDataToDb(weekData)
+    const body: any = { weekData: dbWeekData }
+
+    // Add optional metadata fields if provided
+    if (metadata?.startingHour !== undefined) {
+      body.startingHour = metadata.startingHour
+    }
+    if (metadata?.theme !== undefined) {
+      body.theme = metadata.theme
+    }
+
     const res = await fetch(`${API_BASE}/weeks/${weekKey}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...headers },
-      body: JSON.stringify({ weekData: dbWeekData }),
+      body: JSON.stringify(body),
     })
     await handleResponse<ApiResponse<unknown>>(res, `/weeks/${weekKey}`)
     return true

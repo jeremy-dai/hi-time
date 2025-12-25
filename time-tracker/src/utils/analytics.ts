@@ -98,6 +98,8 @@ export interface YTDStats {
   averagePerWeek: number
   highestWeek: { weekKey: string; hours: number } | null
   lowestWeek: { weekKey: string; hours: number } | null
+  categoryTotals: Record<string, number>
+  categoryAverages: Record<string, number>
   monthlyBreakdown: Array<{
     month: string
     hours: number
@@ -206,6 +208,7 @@ export function aggregateYTDData(
 
   const weeklyData: YTDStats['weeklyData'] = []
   const monthlyMap: Record<string, { hours: number; categoryHours: Record<string, number> }> = {}
+  const categoryTotals: Record<string, number> = {}
 
   let totalHours = 0
   let highestWeek: { weekKey: string; hours: number } | null = null
@@ -222,6 +225,10 @@ export function aggregateYTDData(
     })
 
     totalHours += hours
+
+    Object.entries(stats.categoryHours).forEach(([cat, catHours]) => {
+      categoryTotals[cat] = (categoryTotals[cat] || 0) + catHours
+    })
 
     // Track highest/lowest weeks (only for weeks with data)
     if (hours > 0) {
@@ -260,6 +267,11 @@ export function aggregateYTDData(
 
   const averagePerWeek = yearWeeks.length > 0 ? totalHours / yearWeeks.length : 0
 
+  const categoryAverages: Record<string, number> = {}
+  Object.keys(categoryTotals).forEach(cat => {
+    categoryAverages[cat] = yearWeeks.length > 0 ? categoryTotals[cat] / yearWeeks.length : 0
+  })
+
   return {
     year,
     totalHours,
@@ -267,6 +279,8 @@ export function aggregateYTDData(
     averagePerWeek,
     highestWeek,
     lowestWeek,
+    categoryTotals,
+    categoryAverages,
     monthlyBreakdown,
     weeklyData
   }
