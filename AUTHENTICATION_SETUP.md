@@ -56,7 +56,7 @@ Copy `.env.example` to `.env`:
 cp .env.example .env
 ```
 
-Edit `.env` and add your Supabase credentials:
+Edit `.env` and add your Supabase credentials. For testing, you can also use the pre-configured test user:
 
 ```env
 # Backend
@@ -72,6 +72,13 @@ VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...  # Same as above "anon public" key
 VITE_API_BASE_URL=http://localhost:8001/api
 ALLOW_ORIGIN=http://localhost:5173
 PORT=8001
+
+# Test User (Optional)
+VITE_TEST_USER_ID=6878982638626404e6d35207
+VITE_TEST_USER_EMAIL=jeremy@kawo.com
+VITE_TEST_USER_TOKEN=1d655514-6cf4-4657-a08d-a3e35dd7dc50
+VITE_TEST_ORG_ID=5bbeb89b746706598113c33a
+VITE_TEST_BRAND_ID=5a96553fe4b03ac3f944278a
 ```
 
 **Where to find these values:**

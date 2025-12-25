@@ -95,6 +95,7 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
 - [Authentication Setup](AUTHENTICATION_SETUP.md)
 - [Database Schema](DATABASE_SCHEMA.md)
 - [Database Efficiency Analysis](DATABASE_EFFICIENCY_ANALYSIS.md)
+- [API Documentation](API.md)
 
 ## 📝 Usage Guide
 

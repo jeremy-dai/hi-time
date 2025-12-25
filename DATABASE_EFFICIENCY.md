@@ -1,4 +1,4 @@
-# Database Efficiency Analysis
+# Database Efficiency
 
 ## ✅ Timesheet Pattern (Local-First, Incremental Saving)
 
@@ -30,7 +30,8 @@
 #### Smart Caching (`App.tsx:85-110`)
 - Checks cache before fetching.
 - Only fetches missing weeks (no duplicate API calls).
-- Batch fetching reduces network round trips.
+- **True Batch Fetching**: Uses the dedicated `POST /api/weeks/batch` endpoint to fetch all missing weeks in a single HTTP request and a single database query.
+- Significantly reduces network overhead and database load on multi-week views (e.g., Annual Dashboard).
 
 #### Stable Function References
 - Fixed `useCallback` to use functional updates (no dependencies).
