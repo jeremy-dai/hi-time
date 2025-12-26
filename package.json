@@ -7,7 +7,6 @@
   ],
   "scripts": {
     "dev": "concurrently --kill-others --names \"FRONTEND,API\" --prefix-colors \"cyan,yellow\" \"npm run dev --workspace=time-tracker\" \"npm run dev --workspace=api\"",
-    "install": "npm install",
     "build": "npm run build --workspace=time-tracker"
   },
   "devDependencies": {

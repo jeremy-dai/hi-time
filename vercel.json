@@ -1,7 +1,6 @@
 {
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "time-tracker/dist",
-  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/(.*)",
