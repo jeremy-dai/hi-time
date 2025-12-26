@@ -1,6 +1,5 @@
 {
-  "installCommand": "npm install --production=false",
-  "buildCommand": "npm run build --workspace=time-tracker",
+  "buildCommand": "cd time-tracker && npm install && npm run build",
   "outputDirectory": "time-tracker/dist",
   "rewrites": [
     {
