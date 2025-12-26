@@ -165,9 +165,9 @@ vercel
 Your app will be live at `https://your-project.vercel.app`
 
 ### Populate Supabase database with CSV files.
-Run the script :
-```
-node api/scripts/import-local-data.js
+Run the script (requires auth token):
+```bash
+node api/scripts/import-local-data.js <your-auth-token>
 ```
 
 - Read CSV files from raw_data/ .
