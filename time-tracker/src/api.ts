@@ -193,6 +193,7 @@ export interface SubcategoryDef {
 
 export interface UserSettings {
   subcategories: Record<string, SubcategoryDef[]>
+  timeDividers?: string[] // e.g., ['09:00', '12:00', '18:00']
 }
 
 export async function getSettings(): Promise<UserSettings> {
@@ -204,11 +205,15 @@ export async function getSettings(): Promise<UserSettings> {
     const data = await handleResponse<ApiResponse<UserSettings>>(res, '/settings')
     const settings = data.settings || {}
     return {
-      subcategories: settings.subcategories || {}
+      subcategories: settings.subcategories || {},
+      timeDividers: settings.timeDividers || ['09:00', '12:00', '18:00'] // Default dividers
     }
   } catch (error) {
     console.error('Failed to get settings:', error)
-    return { subcategories: {} }
+    return {
+      subcategories: {},
+      timeDividers: ['09:00', '12:00', '18:00']
+    }
   }
 }
 

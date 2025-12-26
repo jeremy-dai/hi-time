@@ -2,6 +2,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export type SyncStatus = 'synced' | 'pending' | 'syncing' | 'error';
 
+// Cached data structure with timestamp
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+// Consider localStorage data stale after 1 hour (in milliseconds)
+const STALENESS_THRESHOLD = 60 * 60 * 1000; // 1 hour
+
 interface UseLocalStorageSyncOptions<T> {
   storageKey: string;
   syncInterval?: number; // milliseconds between auto-syncs (default: 30000 = 30 seconds)
@@ -48,28 +57,50 @@ export function useLocalStorageSync<T>(
     loadFromDatabaseRef.current = loadFromDatabase;
   });
 
-  // Load data on mount: Try localStorage first, then database
+  // Load data on mount: Try localStorage first (if fresh), then database
   useEffect(() => {
     const loadData = async () => {
+      let useLocalStorage = false;
+      let localDataParsed: T | null = null;
+
       // Try localStorage first
       const localData = localStorage.getItem(storageKey);
       if (localData) {
         try {
-          const parsed = JSON.parse(localData);
-          setDataState(parsed);
-          lastSyncedDataRef.current = localData;
-          return;
+          const cached: CachedData<T> = JSON.parse(localData);
+          const age = Date.now() - cached.timestamp;
+
+          // Only use localStorage if it's fresh (within staleness threshold)
+          if (age < STALENESS_THRESHOLD) {
+            console.log(`[useLocalStorageSync] Using fresh localStorage data (age: ${Math.round(age / 1000 / 60)}min)`);
+            localDataParsed = cached.data;
+            useLocalStorage = true;
+          } else {
+            console.log(`[useLocalStorageSync] localStorage data is stale (age: ${Math.round(age / 1000 / 60)}min), fetching from database`);
+          }
         } catch (err) {
           console.error('Failed to parse localStorage data:', err);
         }
       }
 
-      // Fall back to database
+      // Use fresh localStorage data
+      if (useLocalStorage && localDataParsed) {
+        setDataState(localDataParsed);
+        lastSyncedDataRef.current = JSON.stringify(localDataParsed);
+        return;
+      }
+
+      // Fall back to database (if localStorage is empty or stale)
       try {
         const dbData = await loadFromDatabaseRef.current();
         if (dbData) {
           setDataState(dbData);
-          localStorage.setItem(storageKey, JSON.stringify(dbData));
+          // Save to localStorage with timestamp
+          const cached: CachedData<T> = {
+            data: dbData,
+            timestamp: Date.now()
+          };
+          localStorage.setItem(storageKey, JSON.stringify(cached));
           lastSyncedDataRef.current = JSON.stringify(dbData);
           setLastSynced(new Date());
         }
@@ -84,7 +115,13 @@ export function useLocalStorageSync<T>(
   // Save to localStorage immediately when data changes
   const setData = useCallback((newData: T) => {
     setDataState(newData);
-    localStorage.setItem(storageKey, JSON.stringify(newData));
+
+    // Save to localStorage with timestamp
+    const cached: CachedData<T> = {
+      data: newData,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(storageKey, JSON.stringify(cached));
 
     // Check if data has changed since last sync
     const currentDataStr = JSON.stringify(newData);
@@ -105,6 +142,37 @@ export function useLocalStorageSync<T>(
     setError(null);
 
     try {
+      // Safety check: Verify database state before overwriting
+      // This prevents stale localStorage from overwriting fresh database data
+      const currentDbData = await loadFromDatabaseRef.current();
+
+      if (currentDbData) {
+        const dbDataStr = JSON.stringify(currentDbData);
+        const localDataStr = JSON.stringify(data);
+
+        // If database has different data, it might be fresher
+        if (dbDataStr !== localDataStr) {
+          console.warn('[useLocalStorageSync] Database has different data than local. Potential conflict detected.');
+
+          // Check if local data is "empty" (all categories are empty strings)
+          const isLocalDataEmpty = Array.isArray(data) &&
+            (data as any[]).every((day: any[]) =>
+              Array.isArray(day) && day.every((block: any) =>
+                !block.category || block.category === ''
+              )
+            );
+
+          if (isLocalDataEmpty && dbDataStr !== localDataStr) {
+            // Local data is empty but database has data - DO NOT OVERWRITE
+            console.error('[useLocalStorageSync] PREVENTED DATA LOSS: Local data is empty but database has data. Refusing to sync.');
+            setError(new Error('Sync cancelled: Local data appears empty while database has data'));
+            setSyncStatus('error');
+            isSyncingRef.current = false;
+            return;
+          }
+        }
+      }
+
       const success = await syncToDatabaseRef.current(data);
       if (success) {
         lastSyncedDataRef.current = JSON.stringify(data);

@@ -358,7 +358,8 @@ function App() {
 
     // Trigger the sync hook by updating weekData to mark as "unsaved changes"
     // This ensures metadata changes go through the same sync mechanism as timesheet data
-    setWeekData(currentWeekData)
+    // Create a shallow copy to force change detection (metadata changes need to trigger sync)
+    setWeekData([...currentWeekData])
   }
 
   useEffect(() => {
@@ -378,8 +379,16 @@ function App() {
 
   return (
     <AppLayout
-      sidebar={<Sidebar active={activeTab} onNavigate={setActiveTab} userEmail={user?.email} onLogout={signOut} />}
-      header={
+      sidebar={
+        <Sidebar
+          active={activeTab}
+          onNavigate={setActiveTab}
+          userEmail={user?.email}
+          onLogout={signOut}
+          currentDate={currentDate}
+        />
+      }
+      header={activeTab === 'log' ? (
         <Header
           currentDate={currentDate}
           onChangeDate={(d) => setCurrentDate(d)}
@@ -399,38 +408,15 @@ function App() {
           hasUnsavedChanges={weekHasUnsavedChanges}
           syncError={weekSyncError}
           onSyncNow={syncWeekNow}
+          startingHour={currentWeekMetadata.startingHour}
+          onChangeStartingHour={(hour) => handleMetadataChange({ startingHour: hour })}
+          weekTheme={currentWeekMetadata.theme}
+          onChangeWeekTheme={(theme) => handleMetadataChange({ theme })}
         />
-      }
+      ) : undefined}
     >
       {activeTab === 'log' && currentWeekData && (
-        <div className="flex flex-col h-full bg-white rounded-3xl p-6 shadow-sm overflow-hidden">
-          {/* Week Theme and Settings */}
-          <div className="flex items-center gap-6 mb-6">
-            <input
-              type="text"
-              value={currentWeekMetadata?.theme || ''}
-              onChange={(e) => handleMetadataChange({ theme: e.target.value })}
-              placeholder="What are you working on this week?"
-              className="flex-1 text-2xl font-bold bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-gray-900 placeholder-gray-300"
-            />
-
-            {/* Starting Hour Selector */}
-            <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-2 border border-gray-100">
-              <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Start</span>
-              <select
-                value={currentWeekMetadata?.startingHour || 8}
-                onChange={(e) => handleMetadataChange({ startingHour: parseInt(e.target.value) })}
-                className="text-sm font-semibold bg-transparent border-none text-gray-700 focus:outline-none cursor-pointer hover:text-gray-900"
-              >
-                {[5, 6, 7, 8, 9, 10].map(hour => (
-                  <option key={hour} value={hour}>
-                    {hour}:00 AM
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
+        <div className="flex flex-col h-full bg-white rounded-3xl p-3 shadow-sm overflow-hidden">
           {/* Timesheet Grid */}
           <div className="flex-1 overflow-auto bg-white rounded-2xl">
             <HandsontableCalendar

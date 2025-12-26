@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useMemo, useState } from 'react'
+import { useRef, useMemo, useState, useEffect } from 'react'
 import { HotTable } from '@handsontable/react-wrapper'
 import { registerAllModules } from 'handsontable/registry'
 import Handsontable from 'handsontable'
@@ -67,6 +67,70 @@ export function HandsontableCalendar({
     row: number
     col: number
   } | null>(null)
+  const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
+  const [selectedRow, setSelectedRow] = useState<number | null>(null)
+
+  // Calculate current time indicator position
+  useEffect(() => {
+    const calculatePosition = () => {
+      const now = new Date()
+      const hours = now.getHours()
+      const minutes = now.getMinutes()
+      const currentTimeInMinutes = hours * 60 + minutes
+
+      // Use actual time data from weekData (any day will have the same time slots)
+      const timeSlots = weekData[0] || []
+
+      // Find the position within the time slots
+      for (let i = 0; i < timeSlots.length; i++) {
+        const slotTime = timeSlots[i]?.time
+        if (!slotTime) continue
+
+        const [slotHours, slotMinutes] = slotTime.split(':').map(Number)
+        let slotStartMinutes = slotHours * 60 + slotMinutes
+
+        // Get next slot time for range checking
+        const nextSlotTime = i < timeSlots.length - 1 ? timeSlots[i + 1]?.time : null
+        let nextSlotMinutes = slotStartMinutes + 30 // Default to 30 min interval
+
+        if (nextSlotTime) {
+          const [nextHours, nextMins] = nextSlotTime.split(':').map(Number)
+          nextSlotMinutes = nextHours * 60 + nextMins
+
+          // Handle midnight crossing (e.g., 23:30 -> 00:00)
+          if (nextSlotMinutes < slotStartMinutes) {
+            nextSlotMinutes += 24 * 60
+          }
+        }
+
+        // Handle current time after midnight when slots cross midnight
+        let adjustedCurrentTime = currentTimeInMinutes
+        if (slotStartMinutes > 12 * 60 && currentTimeInMinutes < 12 * 60) {
+          // If slot is in evening (after noon) and current time is before noon, add 24 hours to current time
+          adjustedCurrentTime = currentTimeInMinutes + 24 * 60
+        }
+
+        // Check if current time falls within this slot
+        if (adjustedCurrentTime >= slotStartMinutes && adjustedCurrentTime < nextSlotMinutes) {
+          // Calculate exact position within the row (0-1 representing progress through the slot)
+          const slotDuration = nextSlotMinutes - slotStartMinutes
+          const progressInSlot = (adjustedCurrentTime - slotStartMinutes) / slotDuration
+          // Row height is 28px, add row index * rowHeight + progress within row
+          const position = i * 28 + progressInSlot * 28
+          setCurrentTimePosition(position)
+          return
+        }
+      }
+
+      // If current time is outside the range, hide indicator
+      setCurrentTimePosition(null)
+    }
+
+    calculatePosition()
+    const interval = setInterval(calculatePosition, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [weekData])
 
   // Transform weekData (7 days × 32 slots) to Handsontable format (32 rows × 8 cols)
   const tableData = useMemo(() => {
@@ -114,7 +178,7 @@ export function HandsontableCalendar({
   const customRenderer = (
     _instance: any,
     td: HTMLTableCellElement,
-    _row: number,
+    row: number,
     col: number,
     _prop: string | number,
     value: any
@@ -122,7 +186,7 @@ export function HandsontableCalendar({
     // Clear existing content
     td.innerHTML = ''
     td.className = 'htCustomCell'
-    td.style.padding = '2px' // Reduced padding to allow inner container to fill more
+    td.style.padding = '1px' // Reduced padding to allow inner container to fill more
     td.style.position = 'relative'
     td.style.verticalAlign = 'middle'
     td.style.height = '32px' // Slightly taller for block look
@@ -131,15 +195,50 @@ export function HandsontableCalendar({
     td.style.overflow = 'hidden'
     td.style.border = 'none' // Remove cell borders for cleaner look
 
+    // Check if this row should have a time divider above it
+    const actualRowTime = weekData[0]?.[row]?.time
+    const timeDividers = userSettings?.timeDividers || []
+    const hasDivider = actualRowTime && timeDividers.includes(actualRowTime)
+
+    // Apply time divider styling - thicker gray dashed line
+    if (hasDivider) {
+      td.style.borderTop = '2px dashed rgba(100, 116, 139, 0.5)'
+      // No paddingTop to avoid affecting cell size
+    }
+
     if (col === 0) {
-      // Time column
-      td.textContent = value
-      td.style.fontWeight = '500'
-      td.style.color = '#9ca3af' // lighter gray
+      // Time column with selection indicator
+      const isRowSelected = selectedRow === row
+
+      // Create container for time and indicator
+      const container = document.createElement('div')
+      container.style.display = 'flex'
+      container.style.alignItems = 'center'
+      container.style.justifyContent = 'flex-end'
+      container.style.gap = '4px'
+      container.style.paddingRight = '8px'
+
+      // Time text
+      const timeText = document.createElement('span')
+      timeText.textContent = value
+      timeText.style.fontWeight = isRowSelected ? '600' : '500'
+      timeText.style.color = isRowSelected ? '#3b82f6' : '#9ca3af'
+      timeText.style.fontSize = '10px'
+
+      // Selection indicator dot
+      if (isRowSelected) {
+        const dot = document.createElement('div')
+        dot.style.width = '4px'
+        dot.style.height = '4px'
+        dot.style.borderRadius = '50%'
+        dot.style.backgroundColor = '#3b82f6'
+        container.appendChild(dot)
+      }
+
+      container.appendChild(timeText)
+      td.appendChild(container)
+
       td.style.backgroundColor = 'transparent'
-      td.style.fontSize = '10px'
-      td.style.textAlign = 'right'
-      td.style.paddingRight = '12px'
       return td
     }
 
@@ -232,8 +331,15 @@ export function HandsontableCalendar({
        td.appendChild(block)
     }
     
-    // Tooltip
+    // Tooltip with time range
     const tooltipParts = []
+    const rowTime = weekData[0]?.[row]?.time
+    if (rowTime) {
+      // Calculate end time (30 minutes later)
+      const nextSlot = weekData[0]?.[row + 1]?.time
+      const timeRange = nextSlot ? `${rowTime}-${nextSlot}` : rowTime
+      tooltipParts.push(timeRange)
+    }
     if (subcategory) tooltipParts.push(subcategory)
     if (notes) tooltipParts.push(notes)
     const tooltipText = tooltipParts.join(' - ')
@@ -434,6 +540,25 @@ export function HandsontableCalendar({
     setContextMenu(null)
   }
 
+  // Track selected row for time indicator
+  const handleAfterSelection = (row: number) => {
+    setSelectedRow(row)
+    // Force re-render to update time column indicator
+    const hot = hotRef.current?.hotInstance
+    if (hot) {
+      hot.render()
+    }
+  }
+
+  const handleAfterDeselect = () => {
+    setSelectedRow(null)
+    // Force re-render to remove indicator
+    const hot = hotRef.current?.hotInstance
+    if (hot) {
+      hot.render()
+    }
+  }
+
   // Get subcategories for a category
   const getSubcategories = (category: string) => {
     return userSettings?.subcategories?.[category] || []
@@ -452,7 +577,41 @@ export function HandsontableCalendar({
   return (
     <div className="flex flex-col h-full">
       {/* Handsontable */}
-      <div className="flex-1">
+      <div className="flex-1 relative">
+        {/* Current time indicator */}
+        {currentTimePosition !== null && (
+          <div
+            style={{
+              position: 'absolute',
+              top: `${currentTimePosition + 30}px`,
+              left: '0',
+              right: '0',
+              height: '0',
+              borderTop: '2px solid rgba(249, 115, 22, 0.6)',
+              zIndex: 10,
+              pointerEvents: 'none'
+            }}
+          >
+            {/* Time label */}
+            <div
+              style={{
+                position: 'absolute',
+                left: '2px',
+                top: '-9px',
+                fontSize: '9px',
+                fontWeight: '600',
+                color: '#ea580c',
+                backgroundColor: 'white',
+                padding: '2px 4px',
+                borderRadius: '3px',
+                border: '1px solid rgba(249, 115, 22, 0.3)',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
+              }}
+            >
+              {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+            </div>
+          </div>
+        )}
         <HotTable
           ref={hotRef}
           themeName="ht-theme-main"
@@ -470,6 +629,8 @@ export function HandsontableCalendar({
           afterChange={handleAfterChange}
           afterOnCellContextMenu={handleContextMenu}
           afterGetColHeader={afterGetColHeader}
+          afterSelection={handleAfterSelection}
+          afterDeselect={handleAfterDeselect}
           className="htCenter hiTimeHandsontable"
           stretchH="all"
           rowHeights={28}

@@ -167,8 +167,58 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
 
   if (loading || !settings) return <div className="p-8">Loading settings...</div>
 
+  function addTimeDivider() {
+    if (!settings) return
+    const newDividers = [...(settings.timeDividers || []), '12:00']
+    setSettings({ ...settings, timeDividers: newDividers })
+  }
+
+  function updateTimeDivider(index: number, value: string) {
+    if (!settings) return
+    const newDividers = [...(settings.timeDividers || [])]
+    newDividers[index] = value
+    setSettings({ ...settings, timeDividers: newDividers })
+  }
+
+  function removeTimeDivider(index: number) {
+    if (!settings) return
+    const newDividers = settings.timeDividers?.filter((_, i) => i !== index) || []
+    setSettings({ ...settings, timeDividers: newDividers })
+  }
+
   return (
     <div className="space-y-6">
+      <Card>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Time Dividers</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Add visual dividers at specific times to mark different periods of the day (e.g., morning, afternoon, evening).
+        </p>
+        <div className="space-y-3">
+          {(settings?.timeDividers || []).map((time, index) => (
+            <div key={index} className="flex items-center gap-3">
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => updateTimeDivider(index, e.target.value)}
+                className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
+              />
+              <button
+                onClick={() => removeTimeDivider(index)}
+                className="px-4 py-3 bg-red-500/10 text-red-600 font-bold rounded-full hover:bg-red-500/20 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={addTimeDivider}
+            className="px-6 py-3 bg-blue-500/10 text-blue-600 font-bold rounded-full hover:bg-blue-500/20 transition-colors"
+          >
+            + Add Divider
+          </button>
+        </div>
+      </Card>
+
       <Card>
         <h2 className="text-xl font-bold text-gray-900 mb-4">Bulk Export</h2>
         <div className="space-y-4">

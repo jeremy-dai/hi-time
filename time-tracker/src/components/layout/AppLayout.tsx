@@ -20,8 +20,8 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
         <div className="flex-1 min-w-0 flex flex-col h-full">
           {header && (
             <div className={cn(
-              'mb-4',
-              'bg-white rounded-3xl p-6 shadow-sm'
+              'mb-2',
+              'bg-white rounded-3xl py-2 px-3 shadow-sm'
             )}>
               {header}
             </div>

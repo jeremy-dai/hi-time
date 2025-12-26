@@ -64,11 +64,13 @@
 /* First row (Time/Day headers) */
 .handsontable tr:first-child th {
   border-top: none;
-  padding-top: 12px;
-  padding-bottom: 12px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   font-size: 11px;
   text-transform: none;
   letter-spacing: 0;
+  line-height: 1.2;
+  height: 28px;
 }
 
 /* Time column header */
@@ -84,7 +86,7 @@
 .handsontable td {
   border-right: 1px solid #f9fafb; /* Very subtle vertical separator (gray-50) */
   border-bottom: 1px solid #f9fafb; /* Very subtle horizontal separator */
-  padding: 4px;
+  padding: 2px;
 }
 
 .handsontable,
