@@ -435,6 +435,7 @@ function App() {
           <div className="flex-1 overflow-auto bg-white rounded-2xl">
             <HandsontableCalendar
               weekData={currentWeekData}
+              currentDate={currentDate}
               onUpdateBlock={handleUpdateBlock}
               onUpdateBlocks={handleUpdateBlocks}
               referenceData={referenceData}

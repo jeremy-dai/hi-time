@@ -45,6 +45,7 @@ Handsontable.editors.registerEditor('notes', NotesEditor)
 
 interface HandsontableCalendarProps {
   weekData: TimeBlock[][]
+  currentDate: Date
   onUpdateBlock: (day: number, timeIndex: number, block: TimeBlock) => void
   onUpdateBlocks?: (updates: { day: number, timeIndex: number, block: TimeBlock }[]) => void
   referenceData?: TimeBlock[][] | null
@@ -53,6 +54,7 @@ interface HandsontableCalendarProps {
 
 export function HandsontableCalendar({
   weekData,
+  currentDate,
   onUpdateBlock,
   onUpdateBlocks,
   referenceData,
@@ -91,12 +93,22 @@ export function HandsontableCalendar({
 
   // Day headers with completion status
   const dayHeaders = useMemo(() => {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+    // Get the start of the week (Sunday)
+    const weekStart = new Date(currentDate)
+    const dayOfWeek = weekStart.getDay() // 0 is Sunday
+    weekStart.setDate(weekStart.getDate() - dayOfWeek)
+
     return days.map((day, idx) => {
+      const dayDate = new Date(weekStart)
+      dayDate.setDate(weekStart.getDate() + idx)
+      const dateNum = dayDate.getDate()
+
       const allCategorized = weekData[idx]?.every(block => block.category)
-      return `${day}${allCategorized ? ' ✓' : ''}`
+      return `${day} ${dateNum}${allCategorized ? ' ✓' : ''}`
     })
-  }, [weekData])
+  }, [weekData, currentDate])
 
   // Custom cell renderer
   const customRenderer = (
