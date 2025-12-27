@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DailyBreakdown } from '../../types/insights'
-import { CATEGORY_LABELS, CATEGORY_COLORS_HEX } from '../../constants/colors'
+import { CATEGORY_COLORS_HEX } from '../../constants/colors'
 
 interface WeeklyBreakdownChartProps {
   dailyPattern: DailyBreakdown[]

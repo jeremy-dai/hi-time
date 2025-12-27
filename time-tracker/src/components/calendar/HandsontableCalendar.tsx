@@ -736,7 +736,6 @@ export function HandsontableCalendar({
             const hasRealData = block?.category || block?.notes
             const isGhost = !hasRealData && ghost?.category
 
-            const category = isGhost ? ghost.category : block?.category
             const subcategoryRaw = isGhost ? ghost.subcategory : block?.subcategory
             const notes = isGhost ? ghost.notes : block?.notes
 

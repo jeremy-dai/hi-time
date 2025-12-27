@@ -348,7 +348,7 @@ function formatMultiWeekComparison(analysis: EnhancedAnalysis): string {
 }
 
 function formatFourWeeksRawData(analysis: EnhancedAnalysis): string {
-  const { multiWeekComparison, rawWeekData, weekKeys } = analysis.trends
+  const { multiWeekComparison, rawWeekData } = analysis.trends
   const lines: string[] = []
 
   lines.push('## Four Weeks Raw Data')

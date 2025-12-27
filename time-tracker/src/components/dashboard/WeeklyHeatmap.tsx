@@ -8,7 +8,7 @@ interface WeeklyHeatmapProps {
   weekKeys: string[]
 }
 
-export default function WeeklyHeatmap({ ytdStats, weeksStore, weekKeys }: WeeklyHeatmapProps) {
+export default function WeeklyHeatmap({ ytdStats, weeksStore: _weeksStore, weekKeys: _weekKeys }: WeeklyHeatmapProps) {
   const [hoveredWeek, setHoveredWeek] = useState<{ weekKey: string; hours: number; workHours: number } | null>(null)
 
   const { maxWorkHours, weekData } = useMemo(() => {
