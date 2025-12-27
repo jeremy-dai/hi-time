@@ -14,6 +14,7 @@ interface SettingsProps {
 export function Settings({ onSettingsSaved }: SettingsProps) {
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const [exportStartWeek, setExportStartWeek] = useState('')
   const [exportEndWeek, setExportEndWeek] = useState('')
@@ -184,159 +185,298 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
     setSettings({ ...settings, timeDividers: newDividers })
   }
 
+  const timezoneOptions = [
+    { value: 'Asia/Shanghai', label: 'Beijing (UTC+8)' },
+    { value: 'America/New_York', label: 'New York (EST/EDT)' },
+    { value: 'America/Los_Angeles', label: 'Los Angeles (PST/PDT)' },
+    { value: 'Europe/London', label: 'London (GMT/BST)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (UTC+9)' },
+    { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEST/AEDT)' },
+    { value: 'UTC', label: 'UTC' }
+  ]
+
+  const handleClearAll = () => {
+    setSettings({
+      ...settings,
+      subcategories: {}
+    })
+    setMessage('All subcategories cleared')
+    setTimeout(() => setMessage(''), 3000)
+    setShowClearConfirm(false)
+  }
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Time Dividers</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Add visual dividers at specific times to mark different periods of the day (e.g., morning, afternoon, evening).
-        </p>
-        <div className="space-y-3">
-          {(settings?.timeDividers || []).map((time, index) => (
-            <div key={index} className="flex items-center gap-3">
-              <input
-                type="time"
-                value={time}
-                onChange={(e) => updateTimeDivider(index, e.target.value)}
-                className="bg-white border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
-              />
-              <button
-                onClick={() => removeTimeDivider(index)}
-                className="px-4 py-3 bg-red-500/10 text-red-600 font-bold rounded-full hover:bg-red-500/20 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          ))}
+    <div className="space-y-6 max-w-6xl">
+      {/* Sync Status Bar */}
+      <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-3">
+          {settingsSyncStatus && (
+            <SyncStatusIndicator
+              status={settingsSyncStatus}
+              lastSynced={settingsLastSynced}
+              hasUnsavedChanges={settingsHasUnsavedChanges || false}
+              onSyncNow={syncSettingsNow}
+            />
+          )}
+          {settingsHasUnsavedChanges ? (
+            <span className="text-sm text-amber-600 font-medium">Unsaved changes (auto-syncing...)</span>
+          ) : (
+            <span className="text-sm text-gray-500">All changes saved</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {settingsHasUnsavedChanges && (
+            <button
+              onClick={syncSettingsNow}
+              className="px-5 py-2 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-500 transition-colors shadow-sm"
+            >
+              Save Now
+            </button>
+          )}
           <button
-            onClick={addTimeDivider}
-            className="px-6 py-3 bg-blue-500/10 text-blue-600 font-bold rounded-full hover:bg-blue-500/20 transition-colors"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-gray-100 text-gray-700 font-medium text-sm rounded-xl hover:bg-gray-200 transition-colors"
           >
-            + Add Divider
+            Reload Page
           </button>
         </div>
-      </Card>
+      </div>
 
+      {/* Display Preferences */}
       <Card>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Bulk Export</h2>
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">Export timesheet data for a range of weeks.</p>
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="w-full md:w-auto">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Start Week</label>
-              <input
-                type="week"
-                value={exportStartWeek}
-                onChange={(e) => setExportStartWeek(e.target.value)}
-                className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
-              />
-            </div>
-            <div className="w-full md:w-auto">
-              <label className="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">End Week</label>
-              <input
-                type="week"
-                value={exportEndWeek}
-                onChange={(e) => setExportEndWeek(e.target.value)}
-                className="w-full bg-white border border-gray-100 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
-              />
-            </div>
-            <button
-              onClick={handleBulkExport}
-              disabled={exporting}
-              className="w-full md:w-auto px-6 py-3 bg-green-600 text-white font-bold rounded-full hover:bg-green-500 transition-colors disabled:opacity-50 shadow-sm"
-            >
-              {exporting ? 'Exporting...' : 'Export CSV'}
-            </button>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Display</h2>
+            <p className="text-sm text-gray-500">Customize how your timesheet is displayed</p>
           </div>
-          {message && <p className="text-sm text-amber-600 mt-2">{message}</p>}
+
+          <div className="space-y-4">
+            <div className="flex items-start justify-between py-4 border-b border-gray-100">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Timezone
+                </label>
+                <p className="text-sm text-gray-500">
+                  Sets your local timezone for the current time indicator
+                </p>
+              </div>
+              <select
+                value={settings.timezone || 'Asia/Shanghai'}
+                onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
+                className="ml-4 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300"
+              >
+                {timezoneOptions.map(tz => (
+                  <option key={tz.value} value={tz.value}>{tz.label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-start justify-between py-3 border-b border-gray-100 last:border-0">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-900 mb-0.5">
+                  Time Dividers
+                </label>
+                <p className="text-xs text-gray-500">
+                  Add visual dividers to mark different periods of the day
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {(settings?.timeDividers || []).length === 0 && (
+                  <p className="text-xs text-gray-400 italic">None</p>
+                )}
+                {(settings?.timeDividers || []).map((time, index) => (
+                  <div key={index} className="flex items-center gap-1 bg-gray-50 rounded-lg pl-2 pr-1 py-1">
+                    <input
+                      type="time"
+                      value={time}
+                      onChange={(e) => updateTimeDivider(index, e.target.value)}
+                      className="bg-transparent border-none text-sm text-gray-900 focus:outline-none w-24"
+                    />
+                    <button
+                      onClick={() => removeTimeDivider(index)}
+                      className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
+                      title="Remove"
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={addTimeDivider}
+                  className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
+                >
+                  <span>+</span>
+                  <span>Add</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </Card>
 
+      {/* Categories & Subcategories */}
       <Card>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Subcategories</h2>
-          <div className="flex items-center gap-3">
-            {settingsSyncStatus && (
-              <SyncStatusIndicator 
-                status={settingsSyncStatus} 
-                lastSynced={settingsLastSynced}
-                hasUnsavedChanges={settingsHasUnsavedChanges || false}
-                onSyncNow={syncSettingsNow}
-              />
-            )}
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-500/10 text-blue-600 font-bold text-sm rounded-full hover:bg-blue-500/20 transition-colors"
-            >
-              Reload
-            </button>
-            <button 
-              onClick={() => {
-                if (confirm('Clear all subcategories? This will remove all subcategories from all categories.')) {
-                  setSettings({
-                    ...settings,
-                    subcategories: {}
-                  })
-                  setMessage('Subcategories cleared!')
-                  setTimeout(() => setMessage(''), 2000)
-                }
-              }}
-              className="px-4 py-2 bg-red-500/10 text-red-600 font-bold text-sm rounded-full hover:bg-red-500/20 transition-colors"
+        <div className="space-y-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Categories & Subcategories</h2>
+              <p className="text-sm text-gray-500">Define up to 5 subcategories for each category</p>
+            </div>
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="px-4 py-2 bg-red-50 text-red-600 font-medium text-sm rounded-xl hover:bg-red-100 transition-colors"
             >
               Clear All
             </button>
           </div>
-        </div>
-        
-        <p className="text-sm text-gray-500 mb-8">
-          Define up to 5 subcategories for each category. Click <strong className="text-gray-900">Save Now</strong> above to persist changes immediately.
-        </p>
 
-        {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading settings...</div>
-        ) : (
-          <div className="space-y-8">
-            {CATEGORY_KEYS.filter(k => k !== '').map(cat => (
-              <div key={cat} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shadow-sm"
-                    style={{ 
-                      backgroundColor: CATEGORY_COLORS_HEX[cat].bg, 
-                      color: CATEGORY_COLORS_HEX[cat].text 
-                    }}
-                  >
-                    {cat}
-                  </span>
-                  <span className="font-bold text-lg text-gray-900">{CATEGORY_LABELS[cat]}</span>
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">Loading settings...</div>
+          ) : (
+            <div className="space-y-6">
+              {CATEGORY_KEYS.filter(k => k !== '').map(cat => (
+                <div key={cat} className="pb-6 border-b border-gray-100 last:border-0">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm"
+                      style={{
+                        backgroundColor: CATEGORY_COLORS_HEX[cat].bg,
+                        color: CATEGORY_COLORS_HEX[cat].text
+                      }}
+                    >
+                      {cat}
+                    </span>
+                    <span className="font-bold text-base text-gray-900">{CATEGORY_LABELS[cat]}</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {[0, 1, 2, 3, 4].map((index) => {
+                      const savedSubs = settings?.subcategories[cat] || []
+                      const subDef = savedSubs.find(s => s.index === index)
+                      const value = subDef?.name || ''
+                      const shade = SUBCATEGORY_SHADES_HEX[cat][index]
+
+                      return (
+                        <input
+                          key={`${cat}-${index}`}
+                          type="text"
+                          placeholder={`Subcategory ${index + 1}`}
+                          className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-transparent focus:outline-none focus:ring-2 focus:ring-gray-400/30 transition-all placeholder:text-gray-400 text-gray-900 shadow-sm"
+                          style={{ backgroundColor: shade }}
+                          value={value}
+                          onChange={(e) => updateSubcategory(cat, index, e.target.value)}
+                        />
+                      )
+                    })}
+                  </div>
                 </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                  {[0, 1, 2, 3, 4].map((index) => {
-                    const savedSubs = settings?.subcategories[cat] || []
-                    const subDef = savedSubs.find(s => s.index === index)
-                    const value = subDef?.name || ''
-                    const shade = SUBCATEGORY_SHADES_HEX[cat][index]
-                    
-                    return (
-                      <input
-                        key={`${cat}-${index}`}
-                        type="text"
-                        placeholder={`Subcategory ${index + 1}`}
-                        className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-transparent focus:outline-none focus:ring-2 focus:ring-gray-400/30 transition-all placeholder:text-gray-500 text-gray-900 shadow-sm"
-                        style={{ backgroundColor: shade }}
-                        value={value}
-                        onChange={(e) => updateSubcategory(cat, index, e.target.value)}
-                      />
-                    )
-                  })}
-                </div>
-                <div className="h-px bg-gray-200 w-full my-6" />
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </Card>
+
+      {/* Data Management */}
+      <Card>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Data Management</h2>
+            <p className="text-sm text-gray-500">Export and manage your timesheet data</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="py-4 border-b border-gray-100 last:border-0">
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Bulk Export
+                </label>
+                <p className="text-sm text-gray-500">
+                  Export timesheet data for a range of weeks as CSV
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 items-end">
+                <div className="w-full sm:flex-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">Start Week</label>
+                  <input
+                    type="week"
+                    value={exportStartWeek}
+                    onChange={(e) => setExportStartWeek(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+                <div className="w-full sm:flex-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2">End Week</label>
+                  <input
+                    type="week"
+                    value={exportEndWeek}
+                    onChange={(e) => setExportEndWeek(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleBulkExport}
+                  disabled={exporting}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-green-600 text-white font-semibold text-sm rounded-xl hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {exporting ? 'Exporting...' : 'Export CSV'}
+                </button>
+              </div>
+              {message && (
+                <div className="mt-3 px-4 py-2 bg-amber-50 text-amber-700 text-sm rounded-lg border border-amber-200">
+                  {message}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Clear All Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowClearConfirm(false)}
+          />
+
+          {/* Modal */}
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-1">Clear All Subcategories?</h3>
+                <p className="text-sm text-gray-600">
+                  This will permanently remove all subcategories from all categories. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearAll}
+                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold text-sm rounded-xl hover:bg-red-500 transition-colors shadow-sm"
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
