@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
-import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
+import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, saveSettings, type UserSettings } from './api'
 import AppLayout from './components/layout/AppLayout'
 import Header from './components/layout/Header'
 import { parseTimeCSV } from './utils/csvParser'
@@ -45,8 +45,30 @@ function App() {
   const [, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
-  const [userSettings, setUserSettings] = useState<UserSettings>({ subcategories: {} })
+  // Initialize timezone from localStorage first (before settings load)
+  const [userSettings, setUserSettings] = useState<UserSettings>(() => {
+    const storedTimezone = localStorage.getItem('user-timezone')
+    return { 
+      subcategories: {}, 
+      timezone: storedTimezone || 'Asia/Shanghai' 
+    }
+  })
   const fetchingWeeks = useRef<Set<string>>(new Set())
+  
+  // Get timezone from userSettings, localStorage, or default to Beijing
+  const getTimezone = (): string => {
+    if (userSettings?.timezone) {
+      return userSettings.timezone
+    }
+    // Try localStorage as fallback
+    const stored = localStorage.getItem('user-timezone')
+    if (stored) {
+      return stored
+    }
+    return 'Asia/Shanghai' // Default to Beijing time
+  }
+  
+  const currentTimezone = getTimezone()
 
   // Get current week metadata
   const currentWeekMetadata = weekMetadataStoreRef.current[currentWeekKey] || { startingHour: 8, theme: null }
@@ -102,7 +124,26 @@ function App() {
 
   const loadUserSettings = async () => {
     const s = await getSettings()
-    if (s) setUserSettings(s)
+    if (s) {
+      setUserSettings(s)
+      // Also save timezone to localStorage as fallback
+      if (s.timezone) {
+        localStorage.setItem('user-timezone', s.timezone)
+      }
+    }
+  }
+  
+  const handleTimezoneChange = async (newTimezone: string) => {
+    const updatedSettings = { ...userSettings, timezone: newTimezone }
+    setUserSettings(updatedSettings)
+    // Save to localStorage immediately
+    localStorage.setItem('user-timezone', newTimezone)
+    // Save to database
+    try {
+      await saveSettings(updatedSettings)
+    } catch (error) {
+      console.error('Failed to save timezone setting:', error)
+    }
   }
 
   useEffect(() => {
@@ -439,6 +480,8 @@ function App() {
           onChangeStartingHour={(hour) => handleMetadataChange({ startingHour: hour })}
           weekTheme={currentWeekMetadata.theme}
           onChangeWeekTheme={(theme) => handleMetadataChange({ theme })}
+          timezone={currentTimezone}
+          onChangeTimezone={handleTimezoneChange}
         />
       ) : undefined}
     >
@@ -453,6 +496,7 @@ function App() {
               onUpdateBlocks={handleUpdateBlocks}
               referenceData={referenceData}
               userSettings={userSettings}
+              timezone={currentTimezone}
             />
           </div>
         </div>

@@ -50,6 +50,7 @@ interface HandsontableCalendarProps {
   onUpdateBlocks?: (updates: { day: number, timeIndex: number, block: TimeBlock }[]) => void
   referenceData?: TimeBlock[][] | null
   userSettings?: UserSettings
+  timezone?: string
 }
 
 export function HandsontableCalendar({
@@ -58,9 +59,11 @@ export function HandsontableCalendar({
   onUpdateBlock,
   onUpdateBlocks,
   referenceData,
-  userSettings
+  userSettings,
+  timezone = 'Asia/Shanghai'
 }: HandsontableCalendarProps) {
   const hotRef = useRef<any>(null)
+  const ROW_HEIGHT = 32
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
@@ -68,6 +71,7 @@ export function HandsontableCalendar({
     col: number
   } | null>(null)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
+  const [currentTimeString, setCurrentTimeString] = useState<string>('')
   const [tooltipState, setTooltipState] = useState<{
     visible: boolean
     content: string
@@ -79,10 +83,26 @@ export function HandsontableCalendar({
   // Calculate current time indicator position
   useEffect(() => {
     const calculatePosition = () => {
+      // Get current time in the specified timezone
       const now = new Date()
-      const hours = now.getHours()
-      const minutes = now.getMinutes()
-      const currentTimeInMinutes = hours * 60 + minutes
+      const tz = timezone || 'Asia/Shanghai'
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+
+      const parts = formatter.formatToParts(now)
+      const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10)
+      const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10)
+      const seconds = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10)
+
+      const currentTimeInMinutes = hours * 60 + minutes + seconds / 60
+
+      // Store the formatted time string for display
+      setCurrentTimeString(`${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`)
 
       // Use actual time data from weekData (any day will have the same time slots)
       const timeSlots = weekData[0] || []
@@ -93,36 +113,52 @@ export function HandsontableCalendar({
         if (!slotTime) continue
 
         const [slotHours, slotMinutes] = slotTime.split(':').map(Number)
-        let slotStartMinutes = slotHours * 60 + slotMinutes
+        const slotStartMinutes = slotHours * 60 + slotMinutes
 
         // Get next slot time for range checking
         const nextSlotTime = i < timeSlots.length - 1 ? timeSlots[i + 1]?.time : null
-        let nextSlotMinutes = slotStartMinutes + 30 // Default to 30 min interval
+        if (!nextSlotTime) continue
 
-        if (nextSlotTime) {
-          const [nextHours, nextMins] = nextSlotTime.split(':').map(Number)
-          nextSlotMinutes = nextHours * 60 + nextMins
+        const [nextHours, nextMins] = nextSlotTime.split(':').map(Number)
+        let nextSlotMinutes = nextHours * 60 + nextMins
 
-          // Handle midnight crossing (e.g., 23:30 -> 00:00)
-          if (nextSlotMinutes < slotStartMinutes) {
-            nextSlotMinutes += 24 * 60
-          }
+        // Normalize slot times - handle midnight crossing
+        let slotStart = slotStartMinutes
+        let slotEnd = nextSlotMinutes
+        
+        // If next slot is earlier, we crossed midnight (e.g., 23:30 -> 00:00)
+        if (nextSlotMinutes < slotStartMinutes) {
+          slotEnd = nextSlotMinutes + 24 * 60
         }
 
-        // Handle current time after midnight when slots cross midnight
-        let adjustedCurrentTime = currentTimeInMinutes
-        if (slotStartMinutes > 12 * 60 && currentTimeInMinutes < 12 * 60) {
-          // If slot is in evening (after noon) and current time is before noon, add 24 hours to current time
-          adjustedCurrentTime = currentTimeInMinutes + 24 * 60
+        // Normalize current time for comparison
+        let currentTime = currentTimeInMinutes
+        
+        // If slot crosses midnight, check if current time is in the morning part
+        if (nextSlotMinutes < slotStartMinutes) {
+          // Slot crosses midnight: it goes from evening (e.g., 23:30) to next day (e.g., 00:00)
+          // If current time is before the slot start, it might be in the morning part
+          if (currentTime < slotStartMinutes) {
+            // Current time could be in the morning part (00:00 - nextSlotMinutes)
+            // or it's earlier in the day (not in this slot)
+            if (currentTime < nextSlotMinutes) {
+              // Current time is in the morning part of this slot
+              currentTime += 24 * 60
+            } else {
+              // Current time is not in this slot
+              continue
+            }
+          }
+          // If currentTime >= slotStartMinutes, it's in the evening part, compare normally
         }
 
         // Check if current time falls within this slot
-        if (adjustedCurrentTime >= slotStartMinutes && adjustedCurrentTime < nextSlotMinutes) {
+        if (currentTime >= slotStart && currentTime < slotEnd) {
           // Calculate exact position within the row (0-1 representing progress through the slot)
-          const slotDuration = nextSlotMinutes - slotStartMinutes
-          const progressInSlot = (adjustedCurrentTime - slotStartMinutes) / slotDuration
-          // Row height is 28px, add row index * rowHeight + progress within row
-          const position = i * 28 + progressInSlot * 28
+          const slotDuration = slotEnd - slotStart
+          const progressInSlot = slotDuration > 0 ? (currentTime - slotStart) / slotDuration : 0
+          // Row height is 32px, add row index * rowHeight + progress within row
+          const position = i * ROW_HEIGHT + progressInSlot * ROW_HEIGHT
           setCurrentTimePosition(position)
           return
         }
@@ -133,10 +169,11 @@ export function HandsontableCalendar({
     }
 
     calculatePosition()
-    const interval = setInterval(calculatePosition, 60000) // Update every minute
+    // Update every 5 minutes
+    const interval = setInterval(calculatePosition, 5 * 60 * 1000)
 
     return () => clearInterval(interval)
-  }, [weekData])
+  }, [weekData, timezone])
 
   // Transform weekData (7 days × 32 slots) to Handsontable format (32 rows × 8 cols)
   const tableData = useMemo(() => {
@@ -644,7 +681,18 @@ export function HandsontableCalendar({
                 boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
               }}
             >
-              {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+              {currentTimeString || (() => {
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                  timeZone: timezone,
+                  hour12: false,
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
+                const parts = formatter.formatToParts(new Date())
+                const hours = parts.find(p => p.type === 'hour')?.value || '00'
+                const minutes = parts.find(p => p.type === 'minute')?.value || '00'
+                return `${hours}:${minutes}`
+              })()}
             </div>
           </div>
         )}
@@ -723,7 +771,7 @@ export function HandsontableCalendar({
           afterOnCellMouseOut={() => setTooltipState(null)}
           className="htCenter hiTimeHandsontable"
           stretchH="all"
-          rowHeights={28}
+          rowHeights={ROW_HEIGHT}
         />
       </div>
 

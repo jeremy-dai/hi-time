@@ -17,6 +17,8 @@ interface HeaderProps {
   onChangeStartingHour?: (hour: number) => void
   weekTheme?: string | null
   onChangeWeekTheme?: (theme: string) => void
+  timezone?: string
+  onChangeTimezone?: (timezone: string) => void
 }
 
 function toInputDate(d: Date): string {
@@ -26,7 +28,7 @@ function toInputDate(d: Date): string {
   return `${y}-${m}-${dd}`
 }
 
-export default function Header({ currentDate, onChangeDate, syncStatus, lastSynced, hasUnsavedChanges, syncError, onSyncNow, startingHour = 8, onChangeStartingHour, weekTheme, onChangeWeekTheme }: HeaderProps) {
+export default function Header({ currentDate, onChangeDate, syncStatus, lastSynced, hasUnsavedChanges, syncError, onSyncNow, startingHour = 8, onChangeStartingHour, weekTheme, onChangeWeekTheme, timezone = 'Asia/Shanghai', onChangeTimezone }: HeaderProps) {
 
   return (
     <div className="flex flex-row items-center justify-between gap-4">
@@ -133,6 +135,26 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
                   {hour} AM
                 </option>
               ))}
+            </select>
+          </div>
+        )}
+
+        {onChangeTimezone && (
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[10px] text-gray-400 font-medium">TZ</span>
+            <select
+              value={timezone}
+              onChange={(e) => onChangeTimezone(e.target.value)}
+              className="text-xs bg-transparent border-none text-gray-500 focus:outline-none cursor-pointer hover:text-gray-700 font-medium -mt-0.5"
+            >
+              <option value="Asia/Shanghai">Beijing</option>
+              <option value="America/New_York">New York</option>
+              <option value="America/Los_Angeles">Los Angeles</option>
+              <option value="Europe/London">London</option>
+              <option value="Asia/Tokyo">Tokyo</option>
+              <option value="Europe/Paris">Paris</option>
+              <option value="Australia/Sydney">Sydney</option>
+              <option value="UTC">UTC</option>
             </select>
           </div>
         )}
