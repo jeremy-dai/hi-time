@@ -68,7 +68,13 @@ export function HandsontableCalendar({
     col: number
   } | null>(null)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
-  const [selectedRow, setSelectedRow] = useState<number | null>(null)
+  const [tooltipState, setTooltipState] = useState<{
+    visible: boolean
+    content: string
+    x: number
+    y: number
+  } | null>(null)
+  const previousTimeCellRef = useRef<HTMLElement | null>(null)
 
   // Calculate current time indicator position
   useEffect(() => {
@@ -207,11 +213,10 @@ export function HandsontableCalendar({
     }
 
     if (col === 0) {
-      // Time column with selection indicator
-      const isRowSelected = selectedRow === row
-
+      // Time column - selection indicator will be added via DOM manipulation
       // Create container for time and indicator
       const container = document.createElement('div')
+      container.className = 'time-cell-container'
       container.style.display = 'flex'
       container.style.alignItems = 'center'
       container.style.justifyContent = 'flex-end'
@@ -220,20 +225,11 @@ export function HandsontableCalendar({
 
       // Time text
       const timeText = document.createElement('span')
+      timeText.className = 'time-text'
       timeText.textContent = value
-      timeText.style.fontWeight = isRowSelected ? '600' : '500'
-      timeText.style.color = isRowSelected ? '#3b82f6' : '#9ca3af'
+      timeText.style.fontWeight = '500'
+      timeText.style.color = '#9ca3af'
       timeText.style.fontSize = '10px'
-
-      // Selection indicator dot
-      if (isRowSelected) {
-        const dot = document.createElement('div')
-        dot.style.width = '4px'
-        dot.style.height = '4px'
-        dot.style.borderRadius = '50%'
-        dot.style.backgroundColor = '#3b82f6'
-        container.appendChild(dot)
-      }
 
       container.appendChild(timeText)
       td.appendChild(container)
@@ -331,7 +327,7 @@ export function HandsontableCalendar({
        td.appendChild(block)
     }
     
-    // Tooltip with time range
+    // Custom instant tooltip with time range
     const tooltipParts = []
     const rowTime = weekData[0]?.[row]?.time
     if (rowTime) {
@@ -343,7 +339,19 @@ export function HandsontableCalendar({
     if (subcategory) tooltipParts.push(subcategory)
     if (notes) tooltipParts.push(notes)
     const tooltipText = tooltipParts.join(' - ')
-    if (tooltipText) td.title = tooltipText
+
+    if (tooltipText) {
+      td.onmouseenter = () => {
+        const rect = td.getBoundingClientRect()
+        setTooltipState({
+          visible: true,
+          content: tooltipText,
+          x: rect.left + rect.width / 2,
+          y: rect.top - 8
+        })
+      }
+      td.onmouseleave = () => setTooltipState(null)
+    }
 
     return td
   }
@@ -542,20 +550,65 @@ export function HandsontableCalendar({
 
   // Track selected row for time indicator
   const handleAfterSelection = (row: number) => {
-    setSelectedRow(row)
-    // Force re-render to update time column indicator
     const hot = hotRef.current?.hotInstance
-    if (hot) {
-      hot.render()
+    if (!hot) return
+
+    // Clear previous indicator
+    if (previousTimeCellRef.current) {
+      const prevContainer = previousTimeCellRef.current.querySelector('.time-cell-container')
+      const prevDot = prevContainer?.querySelector('.selection-dot')
+      const prevText = prevContainer?.querySelector('.time-text') as HTMLElement
+
+      if (prevDot) prevDot.remove()
+      if (prevText) {
+        prevText.style.fontWeight = '500'
+        prevText.style.color = '#9ca3af'
+      }
     }
+
+    // Get the time cell for the selected row
+    const timeCell = hot.getCell(row, 0)
+    if (!timeCell) return
+
+    // Add indicator to new selection
+    const container = timeCell.querySelector('.time-cell-container')
+    const timeText = container?.querySelector('.time-text') as HTMLElement
+
+    if (container && timeText) {
+      // Create blue dot
+      const dot = document.createElement('div')
+      dot.className = 'selection-dot'
+      dot.style.width = '4px'
+      dot.style.height = '4px'
+      dot.style.borderRadius = '50%'
+      dot.style.backgroundColor = '#3b82f6'
+
+      // Insert dot before time text
+      container.insertBefore(dot, timeText)
+
+      // Update text styling
+      timeText.style.fontWeight = '600'
+      timeText.style.color = '#3b82f6'
+    }
+
+    // Store reference for next time
+    previousTimeCellRef.current = timeCell
   }
 
   const handleAfterDeselect = () => {
-    setSelectedRow(null)
-    // Force re-render to remove indicator
-    const hot = hotRef.current?.hotInstance
-    if (hot) {
-      hot.render()
+    // Clear indicator from previous cell
+    if (previousTimeCellRef.current) {
+      const prevContainer = previousTimeCellRef.current.querySelector('.time-cell-container')
+      const prevDot = prevContainer?.querySelector('.selection-dot')
+      const prevText = prevContainer?.querySelector('.time-text') as HTMLElement
+
+      if (prevDot) prevDot.remove()
+      if (prevText) {
+        prevText.style.fontWeight = '500'
+        prevText.style.color = '#9ca3af'
+      }
+
+      previousTimeCellRef.current = null
     }
   }
 
@@ -636,6 +689,23 @@ export function HandsontableCalendar({
           rowHeights={28}
         />
       </div>
+
+      {/* Custom Tooltip */}
+      {tooltipState && (
+        <div
+          style={{
+            position: 'fixed',
+            left: `${tooltipState.x}px`,
+            top: `${tooltipState.y}px`,
+            transform: 'translate(-50%, -100%)',
+            pointerEvents: 'none',
+            zIndex: 1000
+          }}
+          className="px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg dark:bg-gray-800 dark:border dark:border-gray-700"
+        >
+          {tooltipState.content}
+        </div>
+      )}
 
       {/* Instructions */}
       <div className="mt-6 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border dark:border-gray-700">
