@@ -16,9 +16,26 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
 const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
 
+const MAX_DAYS = 7;
+const MAX_SLOTS = 34; // 17 hours * 2 (30-minute blocks)
+
 const app = express();
 app.use(cors({ origin: ALLOW_ORIGIN }));
 app.use(express.json({ limit: '2mb' }));
+
+function sanitizeWeekData(weekData) {
+  const makeEmptyDay = () => [];
+  if (!Array.isArray(weekData)) {
+    return Array.from({ length: MAX_DAYS }, () => makeEmptyDay());
+  }
+
+  const days = weekData.slice(0, MAX_DAYS);
+  while (days.length < MAX_DAYS) {
+    days.push(makeEmptyDay());
+  }
+
+  return days.map(day => Array.isArray(day) ? day.slice(0, MAX_SLOTS) : makeEmptyDay());
+}
 
 // Init Supabase
 // Note: We need SUPABASE_URL and SUPABASE_SECRET_KEY in environment variables
@@ -143,7 +160,7 @@ app.get('/api/weeks/:week_key', async (req, res) => {
   }
 
   res.json({
-    weekData: data?.week_data || null,
+    weekData: data ? sanitizeWeekData(data.week_data) : null,
     startingHour: data?.starting_hour ?? 8,
     theme: data?.theme || null
   });
@@ -203,7 +220,7 @@ app.post('/api/weeks/batch', async (req, res) => {
   data.forEach(d => {
     const key = `${d.year}-W${String(d.week_number).padStart(2, '0')}`;
     result[key] = {
-      weekData: d.week_data,
+      weekData: sanitizeWeekData(d.week_data),
       startingHour: d.starting_hour ?? 8,
       theme: d.theme || null
     };
@@ -225,12 +242,14 @@ app.put('/api/weeks/:week_key', async (req, res) => {
     return res.status(400).json({ error: 'Invalid week key format' });
   }
 
+  const sanitizedWeekData = sanitizeWeekData(weekData);
+
   // Prepare upsert data
   const upsertData = {
     user_id: req.user.id,
     year: parsed.year,
     week_number: parsed.week,
-    week_data: weekData,
+    week_data: sanitizedWeekData,
     updated_at: new Date().toISOString(),
   };
 
@@ -291,7 +310,7 @@ app.get('/api/weeks/:week_key/export', async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch data' });
   }
 
-  const weekData = data?.week_data || [];
+  const weekData = sanitizeWeekData(data?.week_data || []);
   const startingHour = data?.starting_hour ?? 8;
   const csv_text = exportTimeCSV(weekData, startingHour);
   res.json({ csv_text });

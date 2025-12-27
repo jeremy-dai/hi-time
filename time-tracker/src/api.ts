@@ -1,4 +1,5 @@
 import type { TimeBlock } from './types/time'
+import { TIME_SLOTS } from './constants/timesheet'
 import { ApiError } from './utils/errorHandler'
 import { getAuthToken } from './lib/supabase'
 
@@ -32,23 +33,40 @@ async function handleResponse<T>(res: Response, endpoint: string): Promise<T> {
   return await res.json() as T
 }
 
-// Helper to transform Mon-Sun (DB) to Sun-Sat (UI)
+const MAX_SLOTS = TIME_SLOTS.length
+const MAX_DAYS = 7
+
+function sanitizeWeekData(weekData: TimeBlock[][] | null | undefined): TimeBlock[][] {
+  const makeEmptyDay = () => [] as TimeBlock[]
+  if (!Array.isArray(weekData)) {
+    return Array.from({ length: MAX_DAYS }, () => makeEmptyDay())
+  }
+
+  const days = weekData.slice(0, MAX_DAYS)
+  while (days.length < MAX_DAYS) {
+    days.push(makeEmptyDay())
+  }
+
+  return days.map(day => Array.isArray(day) ? day.slice(0, MAX_SLOTS) : makeEmptyDay())
+}
+
+// Helper to transform Mon-Sun (DB) to Sun-Sat (UI) with trimming
 function transformWeekDataFromDb(weekData: TimeBlock[][]): TimeBlock[][] {
-  if (!weekData || weekData.length !== 7) return weekData
+  const sanitized = sanitizeWeekData(weekData)
   // DB: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
   // UI: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
-  const sun = weekData[6]
-  const rest = weekData.slice(0, 6)
+  const sun = sanitized[6]
+  const rest = sanitized.slice(0, 6)
   return [sun, ...rest]
 }
 
-// Helper to transform Sun-Sat (UI) to Mon-Sun (DB)
+// Helper to transform Sun-Sat (UI) to Mon-Sun (DB) with trimming
 function transformWeekDataToDb(weekData: TimeBlock[][]): TimeBlock[][] {
-  if (!weekData || weekData.length !== 7) return weekData
+  const sanitized = sanitizeWeekData(weekData)
   // UI: [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
   // DB: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
-  const sun = weekData[0]
-  const rest = weekData.slice(1)
+  const sun = sanitized[0]
+  const rest = sanitized.slice(1)
   return [...rest, sun]
 }
 

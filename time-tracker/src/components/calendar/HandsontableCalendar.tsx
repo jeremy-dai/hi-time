@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useRef, useMemo, useState, useEffect } from 'react'
+import { useRef, useMemo, useState, useEffect, Fragment } from 'react'
 import { HotTable } from '@handsontable/react-wrapper'
 import { registerAllModules } from 'handsontable/registry'
 import Handsontable from 'handsontable'
@@ -7,7 +7,7 @@ import 'handsontable/styles/handsontable.min.css'
 import 'handsontable/styles/ht-theme-main.min.css'
 import type { TimeBlock, CategoryKey, SubcategoryRef } from '../../types/time'
 import type { UserSettings } from '../../api'
-import { TIME_SLOTS } from '../../constants/timesheet'
+import { TIME_SLOTS, DAYS_SHORT } from '../../constants/timesheet'
 import { CATEGORY_LABELS, CATEGORY_COLORS_HEX, GHOST_CATEGORY_COLORS_HEX, SUBCATEGORY_SHADES_HEX } from '../../constants/colors'
 import { getSubcategoryName, getSubcategoryIndex, normalizeSubcategories } from '../../utils/subcategoryHelpers'
 
@@ -637,6 +637,62 @@ export function HandsontableCalendar({
     return userSettings?.subcategories?.[category] || []
   }
 
+  // Calculate summary totals for the week in pomodoros (one block = 1 pomodoro = 30 minutes)
+  const summaryTotals = useMemo(() => {
+    const totals: Record<
+      string,
+      {
+        total: number
+        perDay: number[]
+        subcategories: Record<string, { total: number; perDay: number[]; index: number }>
+      }
+    > = {}
+    const perDayTotals = Array(7).fill(0)
+
+    const visibleSlots = TIME_SLOTS.length
+    const limitedWeekData = weekData.slice(0, 7)
+
+    limitedWeekData.forEach((dayData, dayIdx) => {
+      dayData.slice(0, visibleSlots).forEach((block) => {
+        if (block.category) {
+          const category = block.category
+
+          if (!totals[category]) {
+            totals[category] = {
+              total: 0,
+              perDay: Array(7).fill(0),
+              subcategories: {}
+            }
+          }
+
+          totals[category].total += 1
+          totals[category].perDay[dayIdx] += 1
+          perDayTotals[dayIdx] += 1
+
+          if (block.subcategory) {
+            const subcategoryName = getSubcategoryName(block.subcategory)
+            const subcategoryIndex = getSubcategoryIndex(block.subcategory)
+            if (subcategoryName) {
+              if (!totals[category].subcategories[subcategoryName]) {
+                totals[category].subcategories[subcategoryName] = {
+                  total: 0,
+                  perDay: Array(7).fill(0),
+                  index: subcategoryIndex
+                }
+              }
+              totals[category].subcategories[subcategoryName].total += 1
+              totals[category].subcategories[subcategoryName].perDay[dayIdx] += 1
+            }
+          }
+        }
+      })
+    })
+
+    const weekTotal = perDayTotals.reduce((sum, count) => sum + count, 0)
+
+    return { totals, weekTotal, perDayTotals, visibleSlots }
+  }, [weekData])
+
   // Cell configuration - enable notes editing
   const cellsConfig = (_row: number, col: number) => {
     if (col === 0) {
@@ -802,22 +858,179 @@ export function HandsontableCalendar({
         <span className="inline-block">🔍 Hover for full text</span>
       </div>
 
-      {/* Legend */}
-      <div className="mt-6 p-4 rounded-lg border border-gray-100 bg-gray-50 dark:bg-gray-900 dark:border-[hsl(var(--color-dark-border))]">
-        <h3 className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">Category Legend</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
-          {Object.entries(CATEGORY_LABELS).map(([key, label]) => {
-            const colors = CATEGORY_COLORS_HEX[key as keyof typeof CATEGORY_COLORS_HEX]
-            return (
-              <div key={key} className="flex items-center gap-2">
-                <div
-                  className="w-4 h-4 rounded"
-                  style={{ backgroundColor: colors.bg }}
-                />
-                <span className="dark:text-gray-200">{label}</span>
-              </div>
-            )
-          })}
+      {/* Summary Table */}
+      <div className="mt-6 p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[hsl(var(--color-dark-surface))] shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Weekly Summary</h3>
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Values shown in pomodoros (30 min blocks)</span>
+        </div>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <table className="w-full text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
+            <colgroup>
+              <col style={{ width: '20%' }} />
+              {DAYS_SHORT.map((_, idx) => (
+                <col key={idx} style={{ width: `${80 / DAYS_SHORT.length}%` }} />
+              ))}
+              <col style={{ width: 'auto' }} />
+            </colgroup>
+            <thead>
+              <tr className="border-b-2 border-gray-300 dark:border-gray-600">
+                <th className="text-left py-3 px-3 font-bold text-gray-800 dark:text-gray-200 text-xs uppercase tracking-wide">Category</th>
+                {DAYS_SHORT.map((day) => (
+                  <th key={day} className="text-right py-3 px-3 font-bold text-gray-800 dark:text-gray-200 text-xs uppercase tracking-wide">
+                    {day}
+                  </th>
+                ))}
+                <th className="text-right py-3 px-3 font-bold text-blue-700 dark:text-blue-300 bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-l-2 border-blue-400 dark:border-blue-500 text-xs uppercase tracking-wide">
+                  Week
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(CATEGORY_LABELS)
+                .filter(([key]) => key !== '' && summaryTotals.totals[key])
+                .map(([key, label]) => {
+                  const categoryTotal = summaryTotals.totals[key]
+                  const colors = CATEGORY_COLORS_HEX[key as keyof typeof CATEGORY_COLORS_HEX]
+                  const hasSubcategories = Object.keys(categoryTotal.subcategories).length > 0
+
+                  // Convert hex to rgba with opacity
+                  const hexToRgba = (hex: string, alpha: number) => {
+                    const r = parseInt(hex.slice(1, 3), 16)
+                    const g = parseInt(hex.slice(3, 5), 16)
+                    const b = parseInt(hex.slice(5, 7), 16)
+                    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+                  }
+
+                  return (
+                    <Fragment key={key}>
+                      <tr 
+                        className="border-b border-gray-200/60 dark:border-gray-700/60 hover:bg-opacity-40 transition-colors"
+                        style={{ 
+                          backgroundColor: hexToRgba(colors.bg, 0.3)
+                        }}
+                      >
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5">
+                              <div
+                                className="w-3.5 h-3.5 rounded shrink-0 shadow-sm ring-1 ring-black/5"
+                                style={{ backgroundColor: colors.bg }}
+                              />
+                              <span className="font-semibold text-sm" style={{ color: colors.text }}>{label}</span>
+                            </div>
+                            <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 border border-blue-100 dark:border-blue-800">
+                              {categoryTotal.total}
+                            </span>
+                          </div>
+                        </td>
+                        {categoryTotal.perDay.map((count, idx) => {
+                          const showBravo = key === 'W' && count >= 16
+                          return (
+                            <td key={`${key}-day-${idx}`} className="text-right py-2.5 px-3 font-medium text-sm" style={{ color: colors.text }}>
+                              <div className="flex items-center justify-end gap-1">
+                                {showBravo && (
+                                  <span title="Bravo! Work hours >= 16 pomodoros">👏</span>
+                                )}
+                                <span>{count || '-'}</span>
+                              </div>
+                            </td>
+                          )
+                        })}
+                        <td className="text-right py-2.5 px-3 font-bold text-sm bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-l-2 border-blue-400 dark:border-blue-500" style={{ color: colors.text }}>
+                          {categoryTotal.total}
+                        </td>
+                      </tr>
+                      {hasSubcategories && Object.entries(categoryTotal.subcategories)
+                        .sort(([, a], [, b]) => b.total - a.total) // Sort by pomodoros descending
+                        .map(([subName, subData]) => {
+                          const shades = SUBCATEGORY_SHADES_HEX[key as keyof typeof SUBCATEGORY_SHADES_HEX] || SUBCATEGORY_SHADES_HEX['']
+                          const shadeColor = shades[subData.index % shades.length]
+
+                          return (
+                            <tr 
+                              key={subName} 
+                              className="border-b border-gray-200/40 dark:border-gray-700/40"
+                              style={{ 
+                                backgroundColor: hexToRgba(shadeColor, 0.22)
+                              }}
+                            >
+                              <td className="py-2 px-3 pl-8">
+                                <div className="flex items-center gap-2.5">
+                                  <div
+                                    className="w-3 h-3 rounded shrink-0 shadow-sm ring-1 ring-black/5"
+                                    style={{ backgroundColor: shadeColor }}
+                                  />
+                                  <span className="text-sm" style={{ color: colors.text }}>{subName}</span>
+                                </div>
+                              </td>
+                              {subData.perDay.map((count, idx) => (
+                                <td key={`${subName}-day-${idx}`} className="text-right py-2 px-3 text-sm" style={{ color: colors.text }}>
+                                  {count || '-'}
+                                </td>
+                              ))}
+                              <td className="text-right py-2 px-3 font-semibold text-sm bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-l-2 border-blue-400 dark:border-blue-500" style={{ color: colors.text }}>
+                                {subData.total}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                    </Fragment>
+                  )
+                })}
+              <tr className="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-50 dark:bg-gray-800/50 font-bold">
+                <td className="py-3 px-3 text-gray-900 dark:text-gray-100 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>Total</span>
+                    <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-100 border border-blue-200 dark:border-blue-800">
+                      {summaryTotals.weekTotal}
+                    </span>
+                  </div>
+                </td>
+                {summaryTotals.perDayTotals.map((count, idx) => {
+                  const expectedDailyTotal = summaryTotals.visibleSlots // 34 slots per day
+                  const isValid = count === expectedDailyTotal
+                  return (
+                    <td 
+                      key={`week-day-${idx}`} 
+                      className={`text-right py-3 px-3 text-sm ${isValid ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        {isValid && (
+                          <span 
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-bold shadow-sm" 
+                            title="All slots filled"
+                          >
+                            ✓
+                          </span>
+                        )}
+                        <span className="font-bold">{count}</span>
+                      </div>
+                    </td>
+                  )
+                })}
+                <td className="text-right py-3 px-3 bg-gradient-to-b from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-900/30 border-l-2 border-blue-500 dark:border-blue-400">
+                  {(() => {
+                    const expectedWeekTotal = summaryTotals.visibleSlots * 7 // 34 * 7 = 238
+                    const isValid = summaryTotals.weekTotal === expectedWeekTotal
+                    return (
+                      <div className={`flex items-center justify-end gap-1.5 text-sm ${isValid ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
+                        {isValid && (
+                          <span 
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-bold shadow-sm" 
+                            title="Week fully filled (all 238 slots)"
+                          >
+                            ✓
+                          </span>
+                        )}
+                        <span className="font-bold">{summaryTotals.weekTotal}</span>
+                      </div>
+                    )
+                  })()}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
