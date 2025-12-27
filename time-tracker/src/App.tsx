@@ -16,8 +16,9 @@ import { useLocalStorageSync } from './hooks/useLocalStorageSync'
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'settings'>('log')
-  const [currentDate, setCurrentDate] = useState<Date>(() => new Date())
-  const currentWeekKey = useMemo(() => formatWeekKey(currentDate), [currentDate])
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [currentDateState, setCurrentDateState] = useState<Date>(() => new Date())
+  const currentWeekKey = useMemo(() => formatWeekKey(currentDateState), [currentDateState])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
   // Initialize metadata synchronously from localStorage for faster loading
@@ -76,6 +77,28 @@ function App() {
     syncToDatabase,
     loadFromDatabase
   })
+
+  // Wrapper for setCurrentDate that syncs before changing weeks
+  const setCurrentDate = useCallback(async (newDate: Date) => {
+    const newWeekKey = formatWeekKey(newDate)
+
+    // If changing weeks and there are unsaved changes, sync first
+    if (newWeekKey !== currentWeekKey && syncWeekNow && weekHasUnsavedChanges) {
+      console.log('[App] Week changing from', currentWeekKey, 'to', newWeekKey, '- syncing first')
+      setIsNavigating(true)
+      try {
+        await syncWeekNow()
+        console.log('[App] Sync complete, changing weeks')
+      } catch (err) {
+        console.error('[App] Failed to sync before week change:', err)
+        // Continue anyway - periodic sync will retry
+      } finally {
+        setIsNavigating(false)
+      }
+    }
+
+    setCurrentDateState(newDate)
+  }, [currentWeekKey, syncWeekNow, weekHasUnsavedChanges])
 
   const loadUserSettings = async () => {
     const s = await getSettings()
@@ -367,9 +390,13 @@ function App() {
     document.documentElement.classList.remove('dark')
   }, [])
 
-  // Show loading while checking authentication
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-900">Loading...</div>
+  // Show loading while checking authentication or navigating
+  if (authLoading || isNavigating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+        {isNavigating ? 'Saving changes...' : 'Loading...'}
+      </div>
+    )
   }
 
   // Show login if not authenticated
@@ -385,12 +412,12 @@ function App() {
           onNavigate={setActiveTab}
           userEmail={user?.email}
           onLogout={signOut}
-          currentDate={currentDate}
+          currentDate={currentDateState}
         />
       }
       header={activeTab === 'log' ? (
         <Header
-          currentDate={currentDate}
+          currentDate={currentDateState}
           onChangeDate={(d) => setCurrentDate(d)}
           onImportCSVFile={handleImportCSVFile}
           onExportCSV={() => {
@@ -421,7 +448,7 @@ function App() {
           <div className="flex-1 overflow-auto bg-white rounded-2xl">
             <HandsontableCalendar
               weekData={currentWeekData}
-              currentDate={currentDate}
+              currentDate={currentDateState}
               onUpdateBlock={handleUpdateBlock}
               onUpdateBlocks={handleUpdateBlocks}
               referenceData={referenceData}
@@ -435,7 +462,7 @@ function App() {
           weekData={currentWeekData}
           weeksStore={weekStore}
           currentWeekKey={currentWeekKey}
-          currentDate={currentDate}
+          currentDate={currentDateState}
           loadWeeksForRange={loadWeeksForRange}
           loadYearWeeks={loadYearWeeks}
           viewMode="trends"
@@ -446,7 +473,7 @@ function App() {
           weekData={currentWeekData}
           weeksStore={weekStore}
           currentWeekKey={currentWeekKey}
-          currentDate={currentDate}
+          currentDate={currentDateState}
           loadWeeksForRange={loadWeeksForRange}
           loadYearWeeks={loadYearWeeks}
           viewMode="annual"

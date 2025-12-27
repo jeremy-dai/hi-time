@@ -327,32 +327,6 @@ export function HandsontableCalendar({
        td.appendChild(block)
     }
     
-    // Custom instant tooltip with time range
-    const tooltipParts = []
-    const rowTime = weekData[0]?.[row]?.time
-    if (rowTime) {
-      // Calculate end time (30 minutes later)
-      const nextSlot = weekData[0]?.[row + 1]?.time
-      const timeRange = nextSlot ? `${rowTime}-${nextSlot}` : rowTime
-      tooltipParts.push(timeRange)
-    }
-    if (subcategory) tooltipParts.push(subcategory)
-    if (notes) tooltipParts.push(notes)
-    const tooltipText = tooltipParts.join(' - ')
-
-    if (tooltipText) {
-      td.onmouseenter = () => {
-        const rect = td.getBoundingClientRect()
-        setTooltipState({
-          visible: true,
-          content: tooltipText,
-          x: rect.left + rect.width / 2,
-          y: rect.top - 8
-        })
-      }
-      td.onmouseleave = () => setTooltipState(null)
-    }
-
     return td
   }
 
@@ -416,9 +390,18 @@ export function HandsontableCalendar({
         // Simple paste: treat as category
         category = newValue
       } else if (newValue && typeof newValue === 'object') {
-        category = newValue.category || ''
-        subcategory = newValue.subcategory || null
-        notes = newValue.notes || ''
+        // Extract only the actual data, not ghost/rendering metadata
+        // If isGhost is true, we're copying from a ghost cell - use the ghost data
+        // Otherwise use the regular data
+        if (newValue.isGhost) {
+          category = newValue.ghostCategory || ''
+          subcategory = newValue.ghostSubcategory || null
+          notes = newValue.ghostNotes || ''
+        } else {
+          category = newValue.category || ''
+          subcategory = newValue.subcategory || null
+          notes = newValue.notes || ''
+        }
       }
 
       const block: TimeBlock = {
@@ -684,6 +667,60 @@ export function HandsontableCalendar({
           afterGetColHeader={afterGetColHeader}
           afterSelection={handleAfterSelection}
           afterDeselect={handleAfterDeselect}
+          afterOnCellMouseOver={(event, coords, td) => {
+            // Skip tooltip updates during drag operations (drag and fill)
+            // Check if any mouse button is pressed, which indicates dragging
+            if (event.buttons !== 0) {
+              return
+            }
+
+            // Skip headers and time column
+            if (coords.row < 0 || coords.col <= 0) {
+              setTooltipState(null)
+              return
+            }
+
+            const day = coords.col - 1
+            const timeIndex = coords.row
+            const block = weekData[day]?.[timeIndex]
+            const ghost = referenceData?.[day]?.[timeIndex]
+
+            const hasRealData = block?.category || block?.notes
+            const isGhost = !hasRealData && ghost?.category
+
+            const category = isGhost ? ghost.category : block?.category
+            const subcategoryRaw = isGhost ? ghost.subcategory : block?.subcategory
+            const notes = isGhost ? ghost.notes : block?.notes
+
+            const tooltipParts = []
+            const rowTime = weekData[0]?.[timeIndex]?.time
+            if (rowTime) {
+              const nextSlot = weekData[0]?.[timeIndex + 1]?.time
+              const timeRange = nextSlot ? `${rowTime}-${nextSlot}` : rowTime
+              tooltipParts.push(timeRange)
+            }
+
+            if (subcategoryRaw) {
+              const subcategoryName = getSubcategoryName(subcategoryRaw)
+              if (subcategoryName) tooltipParts.push(subcategoryName)
+            }
+
+            if (notes) tooltipParts.push(notes)
+
+            const tooltipText = tooltipParts.join(' - ')
+            if (tooltipText) {
+              const rect = td.getBoundingClientRect()
+              setTooltipState({
+                visible: true,
+                content: tooltipText,
+                x: rect.left + rect.width / 2,
+                y: rect.top - 8
+              })
+            } else {
+              setTooltipState(null)
+            }
+          }}
+          afterOnCellMouseOut={() => setTooltipState(null)}
           className="htCenter hiTimeHandsontable"
           stretchH="all"
           rowHeights={28}

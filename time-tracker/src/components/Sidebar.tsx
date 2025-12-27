@@ -90,46 +90,53 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
   return (
     <nav
       aria-label="Primary"
-      className="h-full bg-white md:bg-transparent rounded-3xl border border-gray-200 md:border-none p-4 flex flex-col"
+      className="h-full bg-white md:bg-transparent rounded-3xl border border-gray-200 md:border-none pb-4 pr-4 flex flex-col"
     >
       {/* Week Display */}
       {currentDate && (() => {
         const info = getWeekInfo(currentDate)
         const style = getSeasonStyle(info.season)
         const SeasonIcon = style.icon
-        
+
         return (
-          <div className="mb-6 px-2">
+          <div className="mb-4 pl-3 pt-3">
+            {/* Week info card */}
             <div className={cn(
-              'relative overflow-hidden px-5 py-5 rounded-2xl bg-gradient-to-br transition-all duration-300',
+              'relative overflow-hidden rounded-xl bg-linear-to-br transition-all duration-300',
               style.bgGradient,
-              'border shadow-sm hover:shadow-md',
+              'border',
               style.borderColor
             )}>
-              <div className="relative z-10">
-                <div className={cn("text-xs font-bold uppercase tracking-wider mb-1", style.subTextColor)}>
-                  Week {info.weekNumber}
+              <div className="relative z-10 px-3 py-3">
+                {/* Season with icon */}
+                <div className={cn("flex items-center justify-between mb-2", style.textColor)}>
+                  <div className="flex items-center gap-1.5">
+                    <SeasonIcon size={16} strokeWidth={2.5} />
+                    <span className="text-sm font-bold">{info.season}</span>
+                  </div>
+                  <span className="text-xs font-semibold opacity-50">#{info.weekNumber}</span>
                 </div>
-                <div className={cn("text-xl font-bold tracking-tight flex items-center gap-2", style.textColor)}>
-                  {info.season}
-                  <span className="opacity-40">/</span>
-                  <span>W{info.weekInSeason}</span>
+
+                {/* Main week number */}
+                <div className={cn("text-2xl font-bold leading-none", style.textColor)}>
+                  Week {info.weekInSeason}
                 </div>
               </div>
-              
-              <SeasonIcon 
+
+              {/* Background icon */}
+              <SeasonIcon
                 className={cn(
-                  "absolute -right-2 -bottom-2 w-24 h-24 opacity-10 transform rotate-12",
+                  "absolute -right-2 -bottom-2 w-20 h-20 opacity-[0.06]",
                   style.textColor
-                )} 
-                strokeWidth={1.5}
+                )}
+                strokeWidth={1}
               />
             </div>
           </div>
         )
       })()}
 
-      <div className="flex-1 space-y-1">
+      <div className="flex-1 space-y-1 pl-3">
         <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">Menu</div>
         <SidebarItem
           icon={<Calendar size={20} />}
@@ -159,7 +166,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
       </div>
 
       <div className={cn(
-        'mt-4 pt-4 border-t',
+        'mt-4 pt-4 border-t pl-3',
         'border-white/10'
       )}>
         {userEmail && (

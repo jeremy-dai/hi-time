@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MultiWeekStats } from '../../utils/analytics'
 import { CATEGORY_COLORS_HEX } from '../../constants/colors'
 import { cn } from '../../utils/classNames'
@@ -59,11 +59,6 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
               }}
               labelStyle={{ color: '#111827', fontWeight: 'bold' }}
             />
-            <Legend
-              wrapperStyle={{ paddingTop: '20px' }}
-              iconType="line"
-              formatter={(value) => <span className="text-gray-700 dark:text-gray-300 font-medium">{value}</span>}
-            />
             <Line
               type="monotone"
               dataKey="Rest"
@@ -102,24 +97,6 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
           </LineChart>
         </ResponsiveContainer>
       )}
-
-      {/* Summary stats */}
-      <div className={cn('mt-6 p-4 rounded-lg', 'bg-gray-50 dark:bg-gray-800/50')}>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <div className="text-gray-600 dark:text-gray-400">Avg per Week</div>
-            <div className={cn('text-lg font-semibold', 'text-gray-900 dark:text-gray-100')}>
-              {multiWeekStats.averagePerWeek.toFixed(1)}h
-            </div>
-          </div>
-          <div>
-            <div className="text-gray-600 dark:text-gray-400">Weeks Tracked</div>
-            <div className={cn('text-lg font-semibold', 'text-gray-900 dark:text-gray-100')}>
-              {multiWeekStats.weeks.length}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

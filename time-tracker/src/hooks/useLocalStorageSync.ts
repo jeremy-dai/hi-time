@@ -208,17 +208,6 @@ export function useLocalStorageSync<T>(
     };
   }, [syncInterval, hasUnsavedChanges, syncNow]);
 
-  // Sync on unmount if there are unsaved changes
-  useEffect(() => {
-    return () => {
-      if (hasUnsavedChanges && data) {
-        // Fire and forget - sync on unmount
-        syncToDatabaseRef.current(data);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Warn user before closing tab if there are unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

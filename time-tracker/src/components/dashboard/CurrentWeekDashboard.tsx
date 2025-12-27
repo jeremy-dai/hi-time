@@ -1,12 +1,18 @@
 import { useMemo } from 'react'
 import type { TimeBlock } from '../../types/time'
 import { aggregateWeekData, aggregateMultiWeekData } from '../../utils/analytics'
+import { generateEnhancedAnalysis } from '../../utils/enhancedAnalytics'
 import KPICards from './KPICards'
 import WeeklyBreakdownChart from './WeeklyBreakdownChart'
-import WeekOverWeekComparison from './WeekOverWeekComparison'
 import MultiWeekTrendChart from './MultiWeekTrendChart'
+import {
+  TimeSlotAnalysis,
+  TopActivitiesBreakdown,
+  ExportButton,
+  WeeklyWorkGoal,
+  WeeklyRhythmHeatmap
+} from '../insights'
 import { cn } from '../../utils/classNames'
-
 import { CalendarRange } from 'lucide-react'
 
 interface CurrentWeekDashboardProps {
@@ -32,52 +38,98 @@ export default function CurrentWeekDashboard({
     return aggregateMultiWeekData(weeksStore, weekKeys)
   }, [weeksStore, weekKeys])
 
-  // Previous week data for comparison (the second one in the list)
-  const previousWeekKey = weekKeys[1]
-  const previousWeekData = weeksStore[previousWeekKey] || null
+  // Enhanced analysis for insights (dual perspective)
+  const enhancedAnalysis = useMemo(() => {
+    return generateEnhancedAnalysis(displayWeekData, currentStats, weeksStore, weekKeys)
+  }, [displayWeekData, currentStats, weeksStore, weekKeys])
+
+  // Calculate 4-week average for KPI cards
+  const fourWeekAverage = useMemo(() => {
+    const avg: Record<string, number> = {}
+    for (const comparison of enhancedAnalysis.trends.multiWeekComparison) {
+      for (const [cat, hours] of Object.entries(comparison.categoryHours)) {
+        avg[cat] = (avg[cat] || 0) + hours
+      }
+    }
+    // Divide by number of weeks to get average
+    for (const cat in avg) {
+      avg[cat] = avg[cat] / weekKeys.length
+    }
+    return avg
+  }, [enhancedAnalysis.trends.multiWeekComparison, weekKeys.length])
+
+  // Week range for export filename
+  const weekRange = weekKeys.length > 1
+    ? `${weekKeys[0]}-to-${weekKeys[weekKeys.length - 1]}`
+    : weekKeys[0] || 'unknown'
 
   return (
     <div className="space-y-6">
-      {/* Week Status Banner */}
+      {/* Analysis Period Banner with Export Button */}
       <div className={cn(
-        'rounded-lg p-4 flex items-start space-x-3',
+        'rounded-lg p-4 flex items-center justify-between',
         'bg-blue-50 text-blue-900 dark:bg-blue-900/20 dark:text-blue-100'
       )}>
-        <CalendarRange className="w-5 h-5 mt-0.5 text-blue-600 dark:text-blue-400" />
-        <div>
-          <h3 className="font-semibold text-sm">
-            Analysis Period: {dateRangeLabel}
-          </h3>
-          <p className="text-sm mt-1 opacity-90">
-            Showing trends for the last 4 completed weeks. The current incomplete week is excluded.
-          </p>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div>
-        <KPICards stats={currentStats} />
-      </div>
-
-      {/* Daily Breakdown and Week-over-Week Comparison */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
-          <div className={cn('text-lg font-semibold mb-3', 'text-gray-900 dark:text-gray-100')}>
-            Daily Breakdown ({displayWeekKey})
+        <div className="flex items-center space-x-3">
+          <CalendarRange className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <div>
+            <h3 className="font-semibold text-sm">
+              Analysis Period: {dateRangeLabel}
+            </h3>
+            <p className="text-xs mt-0.5 opacity-90">
+              Latest week: <span className="font-semibold">{displayWeekKey}</span> • 4-week trends
+            </p>
           </div>
-          <WeeklyBreakdownChart stats={currentStats} />
         </div>
-
-        <WeekOverWeekComparison
-          currentWeekData={displayWeekData}
-          previousWeekData={previousWeekData}
-          currentWeekLabel="Last Complete Week"
-          previousWeekLabel="Week Before"
-        />
+        <ExportButton analysis={enhancedAnalysis} weekRange={weekRange} />
       </div>
 
-      {/* 4-Week Trend */}
-      <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
+      {/* LATEST WEEK SECTION */}
+      <div>
+        <h2 className={cn('text-base font-bold mb-2', 'text-gray-700 dark:text-gray-300')}>
+          📊 Latest Week Overview
+        </h2>
+
+        {/* Category Summary Cards */}
+        <div className="space-y-2">
+          <KPICards
+            latestWeekStats={currentStats}
+            fourWeekAverage={fourWeekAverage as any}
+          />
+
+          {/* Weekly Work Goal */}
+          <WeeklyWorkGoal metrics={enhancedAnalysis.latestWeek.workGoalMetrics} />
+        </div>
+      </div>
+
+      {/* COMBINED ANALYSIS SECTION */}
+      <div>
+        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700 dark:text-gray-300')}>
+          📈 Trends & Detailed Analysis
+        </h2>
+
+        <div className="space-y-6">
+          {/* Top Activities (latest week) - Most actionable insight */}
+          <TopActivitiesBreakdown activities={enhancedAnalysis.latestWeek.topActivities} />
+
+          {/* 4-Week Trend Chart - Shows progression over time */}
+          <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
+
+          {/* Average Daily Breakdown - Pattern across week */}
+          <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
+            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900 dark:text-gray-100')}>
+              Average Daily Breakdown (4 Weeks)
+            </div>
+            <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
+          </div>
+
+          {/* Weekly Rhythm Heatmap - Time patterns */}
+          <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
+
+          {/* Time Slot Patterns - Detailed time slot analysis */}
+          <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
+        </div>
+      </div>
     </div>
   )
 }

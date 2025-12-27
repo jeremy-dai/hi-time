@@ -4,6 +4,7 @@ import { aggregateYTDData } from '../../utils/analytics'
 import YTDKPICards from './YTDKPICards'
 import MonthlyBreakdownChart from './MonthlyBreakdownChart'
 import WeeklyHeatmap from './WeeklyHeatmap'
+import AnnualProductivityStreak from './AnnualProductivityStreak'
 import { RefreshCw, CalendarRange } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
@@ -100,11 +101,14 @@ export default function AnnualDashboard({
       {/* YTD Summary Cards */}
       <YTDKPICards ytdStats={ytdStats} />
 
+      {/* Productivity Streak */}
+      <AnnualProductivityStreak streakMetrics={ytdStats.streakMetrics} />
+
       {/* Monthly Breakdown Chart */}
       <MonthlyBreakdownChart ytdStats={ytdStats} />
 
       {/* Weekly Heatmap */}
-      <WeeklyHeatmap ytdStats={ytdStats} />
+      <WeeklyHeatmap ytdStats={ytdStats} weeksStore={weeksStore} weekKeys={weekKeys} />
     </div>
   )
 }

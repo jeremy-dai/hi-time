@@ -29,25 +29,6 @@ export function aggregateWeekData(weekData: TimeBlock[][]): WeekStats {
   return { totalHours, categoryHours, dailyHours, dailyByCategory }
 }
 
-export interface WeekComparison {
-  current: WeekStats
-  previous: WeekStats
-  deltaByCategory: Record<string, number>
-  deltaDailyHours: number[]
-}
-
-export function compareWeeks(current: TimeBlock[][], previous: TimeBlock[][]): WeekComparison {
-  const cur = aggregateWeekData(current)
-  const prev = aggregateWeekData(previous)
-  const deltaByCategory: Record<string, number> = {}
-  const keys = new Set([...Object.keys(cur.categoryHours), ...Object.keys(prev.categoryHours)])
-  keys.forEach(k => {
-    deltaByCategory[k] = (cur.categoryHours[k] || 0) - (prev.categoryHours[k] || 0)
-  })
-  const deltaDailyHours = cur.dailyHours.map((h, i) => h - (prev.dailyHours[i] || 0))
-  return { current: cur, previous: prev, deltaByCategory, deltaDailyHours }
-}
-
 export interface AnnualStats {
   weeklyTotals: Array<{ weekKey: string; hours: number }>
   monthlyTotals: Array<{ monthKey: string; hours: number }>
@@ -110,15 +91,12 @@ export interface YTDStats {
     hours: number
     categoryHours: Record<string, number>
   }>
-}
-
-export interface WeekDelta {
-  totalDelta: number
-  totalPercentChange: number
-  categoryDeltas: Record<string, {
-    delta: number
-    percentChange: number
-  }>
+  streakMetrics: {
+    currentStreak: number
+    longestStreak: number
+    productiveDays: number
+    totalDays: number
+  }
 }
 
 // New aggregation functions
@@ -158,39 +136,76 @@ export function aggregateMultiWeekData(
 }
 
 /**
- * Calculate deltas between two weeks with percentage changes
+ * Calculate annual productivity streak from weeks store
+ * A productive day is defined as 8+ hours of work (W + M categories)
+ * Streak allows up to 2 skipped days without breaking
  */
-export function calculateWeekDelta(
-  currentWeekData: TimeBlock[][],
-  previousWeekData: TimeBlock[][]
-): WeekDelta {
-  const current = aggregateWeekData(currentWeekData)
-  const previous = aggregateWeekData(previousWeekData)
+function calculateAnnualStreak(
+  weeksStore: Record<string, TimeBlock[][]>,
+  weekKeys: string[]
+): YTDStats['streakMetrics'] {
+  // Build array of all days with their work hours
+  const daysData: Array<{ date: string; workHours: number; dayOfWeek: number }> = []
 
-  const totalDelta = current.totalHours - previous.totalHours
-  const totalPercentChange = previous.totalHours > 0
-    ? (totalDelta / previous.totalHours) * 100
-    : 0
+  for (const weekKey of weekKeys) {
+    const weekData = weeksStore[weekKey] || []
+    for (let d = 0; d < 7; d++) {
+      const dayBlocks = weekData[d] || []
+      let workHours = 0
 
-  const categoryDeltas: Record<string, { delta: number; percentChange: number }> = {}
-  const allCategories = new Set([
-    ...Object.keys(current.categoryHours),
-    ...Object.keys(previous.categoryHours)
-  ])
+      for (const block of dayBlocks) {
+        if (block && (block.category === 'W' || block.category === 'M')) {
+          workHours += 0.5
+        }
+      }
 
-  allCategories.forEach(cat => {
-    const currentHours = current.categoryHours[cat] || 0
-    const previousHours = previous.categoryHours[cat] || 0
-    const delta = currentHours - previousHours
-    const percentChange = previousHours > 0 ? (delta / previousHours) * 100 : 0
+      daysData.push({
+        date: `${weekKey}-${d}`,
+        workHours,
+        dayOfWeek: d // 0 = Sunday, 1 = Monday, etc.
+      })
+    }
+  }
 
-    categoryDeltas[cat] = { delta, percentChange }
-  })
+  // A productive day is 8+ hours of work
+  const isProductiveDay = (day: typeof daysData[0]) => day.workHours >= 8
+
+  // Calculate streaks with skip allowance (up to 2 skipped days)
+  let currentStreak = 0
+  let longestStreak = 0
+  let skipsRemaining = 2
+  let productiveDays = 0
+
+  for (const day of daysData) {
+    const isProductive = isProductiveDay(day)
+
+    if (isProductive) {
+      productiveDays++
+      currentStreak++
+      skipsRemaining = 2 // Reset skip allowance
+      if (currentStreak > longestStreak) {
+        longestStreak = currentStreak
+      }
+    } else {
+      // Day is not productive
+      if (skipsRemaining > 0) {
+        // Skip this day without breaking streak
+        skipsRemaining--
+      } else {
+        // Break the streak
+        currentStreak = 0
+        skipsRemaining = 2
+      }
+    }
+  }
+
+  const totalDays = daysData.length
 
   return {
-    totalDelta,
-    totalPercentChange,
-    categoryDeltas
+    currentStreak,
+    longestStreak,
+    productiveDays,
+    totalDays
   }
 }
 
@@ -272,6 +287,9 @@ export function aggregateYTDData(
     categoryAverages[cat] = yearWeeks.length > 0 ? categoryTotals[cat] / yearWeeks.length : 0
   })
 
+  // Calculate productivity streak metrics
+  const streakMetrics = calculateAnnualStreak(weeksStore, yearWeeks)
+
   return {
     year,
     totalHours,
@@ -282,7 +300,8 @@ export function aggregateYTDData(
     categoryTotals,
     categoryAverages,
     monthlyBreakdown,
-    weeklyData
+    weeklyData,
+    streakMetrics
   }
 }
 
