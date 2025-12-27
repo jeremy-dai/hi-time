@@ -74,7 +74,6 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       })
 
       if (needsMigration) {
-        console.log('Migrating old subcategory format to new format')
         hasMigratedRef.current = true
         setSettings({
           ...settings,
@@ -105,7 +104,6 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       a.click()
       setMessage('Export successful!')
     } catch (e) {
-      console.error(e)
       setMessage('Export failed')
     } finally {
       setExporting(false)

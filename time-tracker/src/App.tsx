@@ -21,6 +21,9 @@ function App() {
   const currentWeekKey = useMemo(() => formatWeekKey(currentDateState), [currentDateState])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
+  // Staleness threshold for cached metadata (1 hour, consistent with weeksheet data)
+  const METADATA_STALENESS_THRESHOLD = 60 * 60 * 1000 // 1 hour
+
   // Initialize metadata synchronously from localStorage for faster loading
   const initialMetadata = useMemo(() => {
     const cached: Record<string, { startingHour: number; theme: string | null }> = {}
@@ -32,7 +35,23 @@ function App() {
           const weekKey = key.replace('week-metadata-', '')
           const value = localStorage.getItem(key)
           if (value) {
-            cached[weekKey] = JSON.parse(value)
+            try {
+              const parsed = JSON.parse(value)
+              // Check if it's the new format with timestamp
+              if (parsed.data && parsed.timestamp !== undefined) {
+                const age = Date.now() - parsed.timestamp
+                // Only use if fresh (within staleness threshold)
+                if (age < METADATA_STALENESS_THRESHOLD) {
+                  cached[weekKey] = parsed.data
+                }
+                // If stale, skip it (will be loaded from database)
+              } else {
+                // Old format without timestamp - still use it but it will be migrated
+                cached[weekKey] = parsed
+              }
+            } catch (parseErr) {
+              console.error(`Failed to parse metadata for ${weekKey}:`, parseErr)
+            }
           }
         }
       }
@@ -45,30 +64,17 @@ function App() {
   const [, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
-  // Initialize timezone from localStorage first (before settings load)
+  // Initialize with default settings (timezone will be loaded from user-settings via useLocalStorageSync)
   const [userSettings, setUserSettings] = useState<UserSettings>(() => {
-    const storedTimezone = localStorage.getItem('user-timezone')
-    return { 
-      subcategories: {}, 
-      timezone: storedTimezone || 'Asia/Shanghai' 
+    return {
+      subcategories: {},
+      timezone: 'Asia/Shanghai' // Default, will be overridden by settings load
     }
   })
   const fetchingWeeks = useRef<Set<string>>(new Set())
   
-  // Get timezone from userSettings, localStorage, or default to Beijing
-  const getTimezone = (): string => {
-    if (userSettings?.timezone) {
-      return userSettings.timezone
-    }
-    // Try localStorage as fallback
-    const stored = localStorage.getItem('user-timezone')
-    if (stored) {
-      return stored
-    }
-    return 'Asia/Shanghai' // Default to Beijing time
-  }
-  
-  const currentTimezone = getTimezone()
+  // Get timezone from userSettings or default to Beijing
+  const currentTimezone = userSettings?.timezone || 'Asia/Shanghai'
 
   // Get current week metadata
   const currentWeekMetadata = weekMetadataStoreRef.current[currentWeekKey] || { startingHour: 8, theme: null }
@@ -106,11 +112,9 @@ function App() {
 
     // If changing weeks and there are unsaved changes, sync first
     if (newWeekKey !== currentWeekKey && syncWeekNow && weekHasUnsavedChanges) {
-      console.log('[App] Week changing from', currentWeekKey, 'to', newWeekKey, '- syncing first')
       setIsNavigating(true)
       try {
         await syncWeekNow()
-        console.log('[App] Sync complete, changing weeks')
       } catch (err) {
         console.error('[App] Failed to sync before week change:', err)
         // Continue anyway - periodic sync will retry
@@ -126,18 +130,12 @@ function App() {
     const s = await getSettings()
     if (s) {
       setUserSettings(s)
-      // Also save timezone to localStorage as fallback
-      if (s.timezone) {
-        localStorage.setItem('user-timezone', s.timezone)
-      }
     }
   }
-  
+
   const handleTimezoneChange = async (newTimezone: string) => {
     const updatedSettings = { ...userSettings, timezone: newTimezone }
     setUserSettings(updatedSettings)
-    // Save to localStorage immediately
-    localStorage.setItem('user-timezone', newTimezone)
     // Save to database
     try {
       await saveSettings(updatedSettings)
@@ -149,13 +147,6 @@ function App() {
   useEffect(() => {
     loadUserSettings()
   }, [])
-
-  // Reload settings when navigating to log tab to pick up any changes from settings page
-  useEffect(() => {
-    if (activeTab === 'log') {
-      loadUserSettings()
-    }
-  }, [activeTab])
 
   // Initialize weekData with empty data if null
   const currentWeekData = weekData || createEmptyWeekData(currentWeekMetadata.startingHour)
@@ -185,30 +176,19 @@ function App() {
   // Lazy loading functions for dashboard views
   const loadWeeksForRange = useCallback(async (weekKeys: string[]) => {
     try {
-      console.log('loadWeeksForRange - START, weekKeys:', weekKeys)
-      console.log('loadWeeksForRange - current store:', Object.keys(weekStoreRef.current))
-      console.log('loadWeeksForRange - currently fetching:', Array.from(fetchingWeeks.current))
-
       // Filter out weeks that are already in store OR currently being fetched
       const keysToFetch = weekKeys.filter(key => !weekStoreRef.current[key] && !fetchingWeeks.current.has(key))
 
-      console.log('loadWeeksForRange - keys to fetch:', keysToFetch)
-
       if (keysToFetch.length === 0) {
-        console.log('loadWeeksForRange - early return, all weeks already loaded or being fetched')
         return // All weeks already loaded or being fetched
       }
 
-      console.log('loadWeeksForRange - PAST THE CHECK, about to mark as fetching')
-
       // Mark these weeks as being fetched
       keysToFetch.forEach(key => fetchingWeeks.current.add(key))
-      console.log('loadWeeksForRange - FETCHING weeks:', keysToFetch)
 
       try {
         // Fetch missing weeks in batch
         const batchResult = await getWeeksBatch(keysToFetch)
-        console.log('loadWeeksForRange - Batch result:', Object.keys(batchResult))
 
         // Separate weekData and metadata
         const newWeekData: Record<string, TimeBlock[][]> = {}
@@ -219,19 +199,25 @@ function App() {
             newWeekData[key] = metadata.weekData
             const weekMetadata = { startingHour: metadata.startingHour, theme: metadata.theme }
             newMetadata[key] = weekMetadata
-            // Cache metadata to localStorage
-            localStorage.setItem(`week-metadata-${key}`, JSON.stringify(weekMetadata))
+            // Cache metadata to localStorage with timestamp (for staleness detection)
+            const cachedMetadata = {
+              data: weekMetadata,
+              timestamp: Date.now()
+            }
+            localStorage.setItem(`week-metadata-${key}`, JSON.stringify(cachedMetadata))
           } else {
             const defaultStartingHour = 8
             const weekMetadata = { startingHour: defaultStartingHour, theme: null }
             newWeekData[key] = createEmptyWeekData(defaultStartingHour)
             newMetadata[key] = weekMetadata
-            // Cache metadata to localStorage
-            localStorage.setItem(`week-metadata-${key}`, JSON.stringify(weekMetadata))
+            // Cache metadata to localStorage with timestamp
+            const cachedMetadata = {
+              data: weekMetadata,
+              timestamp: Date.now()
+            }
+            localStorage.setItem(`week-metadata-${key}`, JSON.stringify(cachedMetadata))
           }
         })
-
-        console.log('loadWeeksForRange - Adding to store:', Object.keys(newWeekData))
 
         const updatedWeeks = { ...weekStoreRef.current, ...newWeekData }
         const updatedMetadata = { ...weekMetadataStoreRef.current, ...newMetadata }
@@ -241,12 +227,9 @@ function App() {
 
         setWeekStore(updatedWeeks)
         setWeekMetadataStore(updatedMetadata)
-
-        console.log('loadWeeksForRange - Updated store keys:', Object.keys(updatedWeeks))
       } finally {
         // Remove from fetching set
         keysToFetch.forEach(key => fetchingWeeks.current.delete(key))
-        console.log('loadWeeksForRange - Finished fetching, removed from set')
       }
     } catch (error) {
       console.error('loadWeeksForRange - ERROR:', error)
@@ -263,15 +246,24 @@ function App() {
     let cancelled = false
 
     ;(async () => {
-      console.log('[App] Loading week:', currentWeekKey)
-
-      // Try to load metadata from localStorage first
+      // Try to load metadata from localStorage first (with staleness check)
       let cachedMetadata: { startingHour: number; theme: string | null } | null = null
       try {
         const localMetadata = localStorage.getItem(`week-metadata-${currentWeekKey}`)
         if (localMetadata) {
-          cachedMetadata = JSON.parse(localMetadata)
-          console.log('[App] Loaded metadata from localStorage:', cachedMetadata)
+          const parsed = JSON.parse(localMetadata)
+          // Check if it's the new format with timestamp
+          if (parsed.data && parsed.timestamp !== undefined) {
+            const age = Date.now() - parsed.timestamp
+            // Only use if fresh (within staleness threshold)
+            if (age < METADATA_STALENESS_THRESHOLD) {
+              cachedMetadata = parsed.data
+            }
+            // If stale, skip it (will load from database)
+          } else {
+            // Old format without timestamp - use it but will be migrated
+            cachedMetadata = parsed
+          }
         }
       } catch (err) {
         console.error('[App] Failed to parse localStorage metadata:', err)
@@ -282,11 +274,9 @@ function App() {
 
       if (cancelled) return
 
-      console.log('[App] Week data response:', existing)
-
       if (existing) {
         const updatedWeeks = { ...weekStoreRef.current, [currentWeekKey]: existing.weekData }
-        // Use cached metadata if available, otherwise use database metadata
+        // Use cached metadata if available and fresh, otherwise use database metadata
         const metadata = cachedMetadata || {
           startingHour: existing.startingHour ?? 8,
           theme: existing.theme ?? null
@@ -303,9 +293,13 @@ function App() {
         setWeekMetadataStore(updatedMetadata)
         setWeekData(existing.weekData)
 
-        // Save metadata to localStorage if we got it from database
+        // Save metadata to localStorage with timestamp if we got it from database
         if (!cachedMetadata) {
-          localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(metadata))
+          const cachedMetadataWithTimestamp = {
+            data: metadata,
+            timestamp: Date.now()
+          }
+          localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(cachedMetadataWithTimestamp))
         }
       } else {
         const defaultStartingHour = 8
@@ -319,8 +313,12 @@ function App() {
         setWeekMetadataStore(weekMetadataStoreRef.current)
         setWeekData(empty)
 
-        // Save to localStorage and database
-        localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(emptyMetadata))
+        // Save to localStorage with timestamp and database
+        const cachedMetadataWithTimestamp = {
+          data: emptyMetadata,
+          timestamp: Date.now()
+        }
+        localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(cachedMetadataWithTimestamp))
         await putWeek(currentWeekKey, empty, emptyMetadata)
       }
 
@@ -417,8 +415,12 @@ function App() {
     weekMetadataStoreRef.current = updated
     setWeekMetadataStore(updated)
 
-    // Cache metadata to localStorage for consistency with weekData
-    localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(updatedMetadata))
+    // Cache metadata to localStorage with timestamp (for staleness detection)
+    const cachedMetadata = {
+      data: updatedMetadata,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(cachedMetadata))
 
     // Trigger the sync hook by updating weekData to mark as "unsaved changes"
     // This ensures metadata changes go through the same sync mechanism as timesheet data
@@ -426,15 +428,10 @@ function App() {
     setWeekData([...currentWeekData])
   }
 
-  useEffect(() => {
-    // Force light mode by removing dark class if present
-    document.documentElement.classList.remove('dark')
-  }, [])
-
   // Show loading while checking authentication or navigating
   if (authLoading || isNavigating) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-900">
         {isNavigating ? 'Saving changes...' : 'Loading...'}
       </div>
     )

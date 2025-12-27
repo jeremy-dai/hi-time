@@ -26,28 +26,26 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
   }, [multiWeekStats])
 
   return (
-    <div className={cn('rounded-3xl p-6 min-w-0', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
-      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900 dark:text-gray-100')}>
+    <div className={cn('rounded-3xl p-6 min-w-0', 'bg-white shadow-sm')}>
+      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
         4-Week Trend
       </div>
 
       {chartData.length === 0 ? (
-        <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+        <div className="text-gray-500 text-center py-8">
           No trend data available
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey="week"
               stroke="#6b7280"
-              className="dark:stroke-gray-400"
               tick={{ fill: '#6b7280' }}
             />
             <YAxis
               stroke="#6b7280"
-              className="dark:stroke-gray-400"
               tick={{ fill: '#6b7280' }}
               label={{ value: 'Hours', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
             />

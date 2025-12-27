@@ -8,23 +8,10 @@
   --color-border: 240 6% 90%;
   --color-brand-primary: 84 81% 69%; /* #bef264 Lime-400ish */
   --color-brand-secondary: 168 76% 80%; /* #99f6e4 Teal-200ish */
-
-  --color-dark-background: 0 0% 7%; /* #121212 */
-  --color-dark-surface: 0 0% 11%; /* #1c1c1c */
-  --color-dark-surface-elevated: 0 0% 15%; /* #262626 */
-  --color-dark-text-primary: 0 0% 95%; /* #f2f2f2 */
-  --color-dark-text-secondary: 0 0% 65%; /* #a6a6a6 */
-  --color-dark-border: 0 0% 20%; /* #333333 */
-  --color-dark-accent: 84 81% 69%; /* Matching brand primary */
 }
 
 :root {
-  color-scheme: light dark;
-}
-
-:root.dark {
-  background-color: hsl(var(--color-dark-background));
-  color: hsl(var(--color-dark-text-primary));
+  color-scheme: light;
 }
 
 @layer utilities {
@@ -116,58 +103,5 @@
 
 /* Current time indicator */
 .handsontable .current-time-indicator {
-  background-color: hsl(var(--color-brand-primary));
-}
-
-
-/* Handsontable Dark Mode Overrides */
-:root.dark .handsontable {
-  color: #e5e5e5;
-}
-
-:root.dark .handsontable table,
-:root.dark .handsontable tbody,
-:root.dark .handsontable thead,
-:root.dark .handsontable td,
-:root.dark .handsontable th {
-  border-color: #333;
-}
-
-:root.dark .handsontable th {
-  background-color: #1a1a1a;
-  color: #a0a0a0;
-  border-bottom-color: #333;
-  border-right-color: #333;
-}
-
-:root.dark .handsontable tr:first-child th {
-  border-top-color: #333;
-}
-
-:root.dark .handsontable th:first-child {
-  border-left-color: #333;
-}
-
-:root.dark .handsontable td {
-  background-color: #121212; /* Match main background */
-  border-bottom-color: #222;
-  border-right-color: #222;
-}
-
-:root.dark .ht_clone_top th {
-  background-color: #1a1a1a;
-  color: #e5e5e5;
-}
-
-:root.dark .ht_clone_left th {
-  background-color: #1a1a1a;
-  color: #a0a0a0;
-}
-
-:root.dark .handsontable .htDimmed {
-  color: #666;
-}
-
-:root.dark .handsontable .current-time-indicator {
   background-color: hsl(var(--color-brand-primary));
 }

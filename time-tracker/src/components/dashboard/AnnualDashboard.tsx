@@ -61,9 +61,9 @@ export default function AnnualDashboard({
       {/* Date Range Banner */}
       <div className={cn(
         'rounded-lg p-4 flex items-start space-x-3',
-        'bg-blue-50 text-blue-900 dark:bg-blue-900/20 dark:text-blue-100'
+        'bg-blue-50 text-blue-900'
       )}>
-        <CalendarRange className="w-5 h-5 mt-0.5 text-blue-600 dark:text-blue-400" />
+        <CalendarRange className="w-5 h-5 mt-0.5 text-blue-600" />
         <div>
           <h3 className="font-semibold text-sm">
             Analysis Period: {dateRangeLabel}
@@ -77,10 +77,10 @@ export default function AnnualDashboard({
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={cn('text-xl font-semibold', 'text-gray-900 dark:text-gray-100')}>
+          <h2 className={cn('text-xl font-semibold', 'text-gray-900')}>
             {year} Year-to-Date
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Last updated: {formatLastRefreshed()}
           </p>
         </div>

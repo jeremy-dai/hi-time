@@ -96,7 +96,6 @@ export default function Dashboard({
       if (missingKeys.length > 0) {
         setIsLoadingData(true)
         try {
-          console.log('Dashboard loading missing weeks:', missingKeys)
           await loadWeeksForRange(keysToLoad) // Load all needed (API handles filtering)
         } finally {
           setIsLoadingData(false)
@@ -108,11 +107,11 @@ export default function Dashboard({
   }, [viewMode, trendsWeekKeys, annualWeekKeys, loadWeeksForRange, weeksStore])
 
   return (
-    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
+    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
       {isLoadingData && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading data...</span>
+          <span className="ml-3 text-gray-600">Loading data...</span>
         </div>
       )}
 

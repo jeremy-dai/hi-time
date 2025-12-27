@@ -68,10 +68,10 @@ export default function CurrentWeekDashboard({
       {/* Analysis Period Banner with Export Button */}
       <div className={cn(
         'rounded-lg p-4 flex items-center justify-between',
-        'bg-blue-50 text-blue-900 dark:bg-blue-900/20 dark:text-blue-100'
+        'bg-blue-50 text-blue-900'
       )}>
         <div className="flex items-center space-x-3">
-          <CalendarRange className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <CalendarRange className="w-5 h-5 text-blue-600" />
           <div>
             <h3 className="font-semibold text-sm">
               Analysis Period: {dateRangeLabel}
@@ -86,7 +86,7 @@ export default function CurrentWeekDashboard({
 
       {/* LATEST WEEK SECTION */}
       <div>
-        <h2 className={cn('text-base font-bold mb-2', 'text-gray-700 dark:text-gray-300')}>
+        <h2 className={cn('text-base font-bold mb-2', 'text-gray-700')}>
           📊 Latest Week Overview
         </h2>
 
@@ -104,7 +104,7 @@ export default function CurrentWeekDashboard({
 
       {/* COMBINED ANALYSIS SECTION */}
       <div>
-        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700 dark:text-gray-300')}>
+        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
           📈 Trends & Detailed Analysis
         </h2>
 
@@ -116,8 +116,8 @@ export default function CurrentWeekDashboard({
           <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
 
           {/* Average Daily Breakdown - Pattern across week */}
-          <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
-            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900 dark:text-gray-100')}>
+          <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
+            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
               Average Daily Breakdown (4 Weeks)
             </div>
             <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />

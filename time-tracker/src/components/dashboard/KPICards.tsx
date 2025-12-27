@@ -15,11 +15,11 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
   const totalHours = latestWeekStats.totalHours
 
   return (
-    <div className={cn('rounded-3xl p-4', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
+    <div className={cn('rounded-3xl p-4', 'bg-white shadow-sm')}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-        <h3 className={cn('text-sm font-semibold', 'text-gray-900 dark:text-gray-100')}>
+        <BarChart3 className="w-4 h-4 text-gray-500" />
+        <h3 className={cn('text-sm font-semibold', 'text-gray-900')}>
           Category Breakdown
         </h3>
       </div>
@@ -37,11 +37,11 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
           return (
             <div key={cat} className="flex items-center gap-2 min-w-0">
               {/* Label */}
-              <div className="w-24 flex-shrink-0 text-xs font-medium text-gray-600 dark:text-gray-400 truncate">
+              <div className="w-24 flex-shrink-0 text-xs font-medium text-gray-600 truncate">
                 {CATEGORY_LABELS[cat]}
               </div>
               {/* Bar */}
-              <div className="flex-1 min-w-0 h-5 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <div className="flex-1 min-w-0 h-5 rounded-lg overflow-hidden bg-gray-100">
                 <div
                   className="h-full transition-all"
                   style={{
@@ -52,13 +52,13 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
               </div>
               {/* Stats */}
               <div className="flex items-center gap-2 text-xs flex-shrink-0">
-                <span className="font-semibold text-gray-900 dark:text-gray-100 w-12 text-right whitespace-nowrap">
+                <span className="font-semibold text-gray-900 w-12 text-right whitespace-nowrap">
                   {hours.toFixed(1)}h
                 </span>
-                <span className="font-medium text-gray-500 dark:text-gray-400 w-12 text-right whitespace-nowrap">
+                <span className="font-medium text-gray-500 w-12 text-right whitespace-nowrap">
                   {percentage.toFixed(1)}%
                 </span>
-                <span className={cn('text-xs w-20 text-right whitespace-nowrap', delta > 0.5 ? 'text-green-600 dark:text-green-400' : delta < -0.5 ? 'text-red-600 dark:text-red-400' : 'text-gray-500')}>
+                <span className={cn('text-xs w-20 text-right whitespace-nowrap', delta > 0.5 ? 'text-green-600' : delta < -0.5 ? 'text-red-600' : 'text-gray-500')}>
                   {delta > 0 ? '+' : ''}{delta.toFixed(1)}h vs avg
                 </span>
               </div>

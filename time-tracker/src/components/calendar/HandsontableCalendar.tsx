@@ -841,15 +841,15 @@ export function HandsontableCalendar({
             pointerEvents: 'none',
             zIndex: 1000
           }}
-          className="px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg dark:bg-gray-800 dark:border dark:border-gray-700"
+          className="px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg"
         >
           {tooltipState.content}
         </div>
       )}
 
       {/* Instructions */}
-      <div className="mt-6 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg border dark:border-gray-700">
-        <span className="font-semibold text-gray-900 dark:text-gray-200 mr-2">How to use:</span>
+      <div className="mt-6 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border">
+        <span className="font-semibold text-gray-900 mr-2">How to use:</span>
         <span className="inline-block mr-3">↔️ Drag to select</span>
         <span className="inline-block mr-3">📋 Cmd+C/V to copy/paste</span>
         <span className="inline-block mr-3">⬇️ Drag corner to fill</span>
@@ -859,10 +859,10 @@ export function HandsontableCalendar({
       </div>
 
       {/* Summary Table */}
-      <div className="mt-6 p-5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[hsl(var(--color-dark-surface))] shadow-sm">
+      <div className="mt-6 p-5 rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">Weekly Summary</h3>
-          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Values shown in pomodoros (30 min blocks)</span>
+          <h3 className="text-base font-semibold text-gray-900">Weekly Summary</h3>
+          <span className="text-xs text-gray-500 font-medium">Values shown in pomodoros (30 min blocks)</span>
         </div>
         <div className="overflow-x-auto -mx-1 px-1">
           <table className="w-full text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
@@ -871,19 +871,15 @@ export function HandsontableCalendar({
               {DAYS_SHORT.map((_, idx) => (
                 <col key={idx} style={{ width: `${80 / DAYS_SHORT.length}%` }} />
               ))}
-              <col style={{ width: 'auto' }} />
             </colgroup>
             <thead>
-              <tr className="border-b-2 border-gray-300 dark:border-gray-600">
-                <th className="text-left py-3 px-3 font-bold text-gray-800 dark:text-gray-200 text-xs uppercase tracking-wide">Category</th>
+              <tr className="border-b-2 border-gray-300">
+                <th className="text-left py-3 px-3 font-bold text-gray-800 text-xs uppercase tracking-wide">Category</th>
                 {DAYS_SHORT.map((day) => (
-                  <th key={day} className="text-right py-3 px-3 font-bold text-gray-800 dark:text-gray-200 text-xs uppercase tracking-wide">
+                  <th key={day} className="text-right py-3 px-3 font-bold text-gray-800 text-xs uppercase tracking-wide">
                     {day}
                   </th>
                 ))}
-                <th className="text-right py-3 px-3 font-bold text-blue-700 dark:text-blue-300 bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-l-2 border-blue-400 dark:border-blue-500 text-xs uppercase tracking-wide">
-                  Week
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -905,7 +901,7 @@ export function HandsontableCalendar({
                   return (
                     <Fragment key={key}>
                       <tr 
-                        className="border-b border-gray-200/60 dark:border-gray-700/60 hover:bg-opacity-40 transition-colors"
+                        className="border-b border-gray-200/60 hover:bg-opacity-40 transition-colors"
                         style={{ 
                           backgroundColor: hexToRgba(colors.bg, 0.3)
                         }}
@@ -919,7 +915,7 @@ export function HandsontableCalendar({
                               />
                               <span className="font-semibold text-sm" style={{ color: colors.text }}>{label}</span>
                             </div>
-                            <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 border border-blue-100 dark:border-blue-800">
+                            <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">
                               {categoryTotal.total}
                             </span>
                           </div>
@@ -937,9 +933,6 @@ export function HandsontableCalendar({
                             </td>
                           )
                         })}
-                        <td className="text-right py-2.5 px-3 font-bold text-sm bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-l-2 border-blue-400 dark:border-blue-500" style={{ color: colors.text }}>
-                          {categoryTotal.total}
-                        </td>
                       </tr>
                       {hasSubcategories && Object.entries(categoryTotal.subcategories)
                         .sort(([, a], [, b]) => b.total - a.total) // Sort by pomodoros descending
@@ -950,7 +943,7 @@ export function HandsontableCalendar({
                           return (
                             <tr 
                               key={subName} 
-                              className="border-b border-gray-200/40 dark:border-gray-700/40"
+                              className="border-b border-gray-200/40"
                               style={{ 
                                 backgroundColor: hexToRgba(shadeColor, 0.22)
                               }}
@@ -969,20 +962,17 @@ export function HandsontableCalendar({
                                   {count || '-'}
                                 </td>
                               ))}
-                              <td className="text-right py-2 px-3 font-semibold text-sm bg-gradient-to-b from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/20 border-l-2 border-blue-400 dark:border-blue-500" style={{ color: colors.text }}>
-                                {subData.total}
-                              </td>
                             </tr>
                           )
                         })}
                     </Fragment>
                   )
                 })}
-              <tr className="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-50 dark:bg-gray-800/50 font-bold">
-                <td className="py-3 px-3 text-gray-900 dark:text-gray-100 text-sm">
+              <tr className="border-t-2 border-gray-400 bg-gray-50 font-bold">
+                <td className="py-3 px-3 text-gray-900 text-sm">
                   <div className="flex items-center justify-between">
                     <span>Total</span>
-                    <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-100 border border-blue-200 dark:border-blue-800">
+                    <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                       {summaryTotals.weekTotal}
                     </span>
                   </div>
@@ -991,14 +981,14 @@ export function HandsontableCalendar({
                   const expectedDailyTotal = summaryTotals.visibleSlots // 34 slots per day
                   const isValid = count === expectedDailyTotal
                   return (
-                    <td 
-                      key={`week-day-${idx}`} 
-                      className={`text-right py-3 px-3 text-sm ${isValid ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}
+                    <td
+                      key={`week-day-${idx}`}
+                      className={`text-right py-3 px-3 text-sm ${isValid ? 'text-green-700' : 'text-gray-900'}`}
                     >
                       <div className="flex items-center justify-end gap-1.5">
                         {isValid && (
-                          <span 
-                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-bold shadow-sm" 
+                          <span
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold shadow-sm"
                             title="All slots filled"
                           >
                             ✓
@@ -1009,25 +999,6 @@ export function HandsontableCalendar({
                     </td>
                   )
                 })}
-                <td className="text-right py-3 px-3 bg-gradient-to-b from-blue-100 to-blue-200 dark:from-blue-900/40 dark:to-blue-900/30 border-l-2 border-blue-500 dark:border-blue-400">
-                  {(() => {
-                    const expectedWeekTotal = summaryTotals.visibleSlots * 7 // 34 * 7 = 238
-                    const isValid = summaryTotals.weekTotal === expectedWeekTotal
-                    return (
-                      <div className={`flex items-center justify-end gap-1.5 text-sm ${isValid ? 'text-green-700 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}`}>
-                        {isValid && (
-                          <span 
-                            className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 text-xs font-bold shadow-sm" 
-                            title="Week fully filled (all 238 slots)"
-                          >
-                            ✓
-                          </span>
-                        )}
-                        <span className="font-bold">{summaryTotals.weekTotal}</span>
-                      </div>
-                    )
-                  })()}
-                </td>
               </tr>
             </tbody>
           </table>
@@ -1051,9 +1022,9 @@ export function HandsontableCalendar({
               left: contextMenu.x,
               zIndex: 50
             }}
-            className="bg-white border rounded-lg shadow-lg p-2 text-sm min-w-[180px] dark:bg-[hsl(var(--color-dark-surface-elevated))] dark:border-[hsl(var(--color-dark-border))]"
+            className="bg-white border rounded-lg shadow-lg p-2 text-sm min-w-[180px]"
           >
-            <div className="px-2 py-1 font-medium text-gray-900 dark:text-gray-100">
+            <div className="px-2 py-1 font-medium text-gray-900">
               Change category
             </div>
             <div className="flex flex-col p-1">
@@ -1066,21 +1037,21 @@ export function HandsontableCalendar({
                 return (
                   <div key={category} className="relative group">
                     <button
-                      className="px-2 py-1 w-full text-left rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
+                      className="px-2 py-1 w-full text-left rounded hover:bg-gray-100 flex items-center gap-2"
                       onClick={() => handleCategorySelect(category)}
                     >
                       <span
                         className="w-4 h-4 rounded flex-shrink-0"
                         style={{ backgroundColor: colors.bg }}
                       />
-                      <span className="flex-1 dark:text-gray-200">{label}</span>
+                      <span className="flex-1">{label}</span>
                       {normalizedSubs.length > 0 && <span className="text-gray-400">›</span>}
                     </button>
 
                     {/* Subcategory submenu */}
                     {normalizedSubs.length > 0 && (
-                      <div className="absolute left-full top-0 ml-1 bg-white border rounded-lg shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block dark:bg-[hsl(var(--color-dark-surface-elevated))] dark:border-[hsl(var(--color-dark-border))] z-50">
-                        <div className="px-2 py-1 font-medium text-gray-900 dark:text-gray-100 text-xs">
+                      <div className="absolute left-full top-0 ml-1 bg-white border rounded-lg shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50">
+                        <div className="px-2 py-1 font-medium text-gray-900 text-xs">
                           Subcategory
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1090,14 +1061,14 @@ export function HandsontableCalendar({
                             return (
                               <button
                                 key={sub.index}
-                                className="px-2 py-1 rounded text-left hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 text-sm"
+                                className="px-2 py-1 rounded text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
                                 onClick={() => handleCategorySelect(category, sub.name, sub.index)}
                               >
                                 <span
                                   className="w-3 h-3 rounded flex-shrink-0"
                                   style={{ backgroundColor: shadeColor }}
                                 />
-                                <span className="dark:text-gray-200 truncate">{sub.name}</span>
+                                <span className="truncate">{sub.name}</span>
                               </button>
                             )
                           })}

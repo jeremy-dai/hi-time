@@ -43,8 +43,7 @@ export default function ExportButton({ analysis, weekRange }: ExportButtonProps)
           ? 'bg-green-500 text-white'
           : 'bg-blue-600 hover:bg-blue-700 text-white',
         'shadow-sm hover:shadow-md',
-        'disabled:opacity-50 disabled:cursor-not-allowed',
-        'dark:bg-blue-500 dark:hover:bg-blue-600'
+        'disabled:opacity-50 disabled:cursor-not-allowed'
       )}
     >
       {exportSuccess ? (

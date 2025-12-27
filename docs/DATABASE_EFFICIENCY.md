@@ -68,34 +68,86 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 
 ---
 
+## 📊 Caching Strategy Overview
+
+### Data Types and Storage
+
+| Data Type | localStorage Key | Format | Staleness Threshold | Sync Mechanism |
+| :--- | :--- | :--- | :--- | :--- |
+| **Weeksheet Data** | `week-{weekKey}` | `CachedData<TimeBlock[][]>` | 1 hour | `useLocalStorageSync` (30s) |
+| **Week Metadata** | `week-metadata-{weekKey}` | `CachedData<{startingHour, theme}>` | 1 hour | Coupled with weeksheet sync |
+| **User Settings** | `user-settings` | `CachedData<UserSettings>` | 1 hour | `useLocalStorageSync` (30s) |
+
+**CachedData Format**:
+```typescript
+interface CachedData<T> {
+  data: T;
+  timestamp: number; // Unix timestamp in milliseconds
+}
+```
+
+### Staleness Detection
+
+All cached data includes a timestamp and is validated before use:
+- **Fresh data** (< 1 hour old): Used immediately from localStorage
+- **Stale data** (≥ 1 hour old): Ignored, fetched from database instead
+- **Prevents**: Cross-device conflicts, outdated data persisting indefinitely
+
 ## 📊 Efficiency Comparison
 
-| Aspect | Timesheet | Dashboard |
-| :--- | :--- | :--- |
-| **Writes** | Batched every 30s | None (read-only) ✅ |
-| **Reads** | Once on mount, then cached | On-demand, cached ✅ |
-| **Cache Strategy** | `localStorage` + in-memory | In-memory only |
-| **Batch Operations** | Yes (30s intervals) | Yes (parallel fetch) ✅ |
-| **User Feedback** | Sync status indicator | Loading states ✅ |
+| Aspect | Timesheet | Week Metadata | User Settings | Dashboard |
+| :--- | :--- | :--- | :--- | :--- |
+| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | None (read-only) ✅ |
+| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
+| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | In-memory only |
+| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | N/A |
+| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (parallel fetch) ✅ |
+| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Loading states ✅ |
 
 ---
 
-## 🎯 Recommendations for Further Optimization
+## ✅ Recent Improvements (2025)
 
-The current implementation is already quite efficient—it minimizes database reads through smart caching and batch fetching. The main difference from the timesheet is that dashboards are read-only (no writes), so we don't need the incremental save mechanism.
+### 1. Unified Staleness Detection
+- **Problem**: Week metadata lacked timestamp-based staleness checks
+- **Solution**: All cached data now uses `CachedData<T>` wrapper with timestamps
+- **Benefit**: Consistent 1-hour staleness threshold across all data types
+- **Location**: `App.tsx:24-62`
 
-### Optional Enhancements
+### 2. Consolidated Timezone Storage
+- **Problem**: Timezone stored redundantly in 3 locations (`userSettings`, `user-timezone`, `user-settings`)
+- **Solution**: Single source of truth via `user-settings` (managed by `useLocalStorageSync`)
+- **Benefit**: Eliminates desync risk, simpler initialization logic
+- **Location**: `App.tsx:67-77`
 
-1. **localStorage Caching for Dashboard** (similar to timesheet):
-   - Cache frequently accessed weeks in `localStorage`.
-   - Faster dashboard loads on return visits.
-   - Reduce database reads for historical data.
+### 3. Removed Unnecessary Settings Reload
+- **Problem**: Settings reloaded every time user switched to "log" tab
+- **Solution**: Trust `useLocalStorageSync` to handle updates, load once on mount
+- **Benefit**: Fewer API calls, better performance
+- **Location**: `App.tsx:147-149`
 
-2. **✅ Staleness Detection** (Implemented in `useLocalStorageSync`):
-   - Added timestamps to cached weeks.
-   - Auto-refresh data older than 1 hour.
-   - Prevents stale data overwrites.
+### 4. Standardized Metadata Loading
+- **Problem**: Inconsistent staleness checks across batch fetch, current week load, initial load
+- **Solution**: All three paths now check timestamps and use `CachedData` format
+- **Benefit**: Predictable behavior regardless of loading path
+- **Locations**: `App.tsx:197-220`, `App.tsx:249-323`, `App.tsx:28-62`
 
-3. **Prefetching Strategy**:
-   - Preload likely-needed weeks in the background.
-   - E.g., when viewing Current Week, prefetch Annual data.
+## 🎯 Future Optimization Opportunities
+
+The current implementation is highly efficient with smart caching and batch fetching. Consider these optional enhancements:
+
+1. **localStorage Caching for Dashboard Historical Weeks**:
+   - Cache frequently accessed historical weeks in `localStorage`
+   - Faster dashboard loads on return visits
+   - Reduce database reads for read-only historical data
+   - Use same `CachedData` wrapper with staleness detection
+
+2. **Prefetching Strategy**:
+   - Preload likely-needed weeks in the background
+   - E.g., when viewing Current Week, prefetch last 4 weeks for Trends view
+   - When viewing Trends, prefetch Annual data in background
+
+3. **Service Worker Cache**:
+   - Cache API responses at network layer
+   - Offline-first capability for historical data
+   - Faster subsequent loads even after localStorage clear

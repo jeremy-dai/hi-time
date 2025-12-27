@@ -28,17 +28,18 @@ export default function WeeklyHeatmap({ ytdStats, weeksStore: _weeksStore, weekK
   }, [ytdStats])
 
   const getProductiveColor = (workHours: number) => {
-    if (workHours === 0) return 'bg-gray-100 dark:bg-gray-800'
+    if (workHours === 0) return 'bg-gray-100'
     const intensity = workHours / maxWorkHours
-    if (intensity > 0.75) return 'bg-yellow-500 dark:bg-yellow-600/70'
-    if (intensity > 0.5) return 'bg-yellow-400 dark:bg-yellow-500/60'
-    if (intensity > 0.25) return 'bg-yellow-300 dark:bg-yellow-400/50'
-    return 'bg-yellow-200 dark:bg-yellow-300/40'
+    if (intensity > 0.75) return 'bg-yellow-500'
+    if (intensity > 0.5) return 'bg-yellow-400'
+    if (intensity > 0.25) return 'bg-yellow-300'
+    return 'bg-yellow-200'
   }
 
-  // Group weeks by month for better visualization
-  const weeksByMonth = useMemo(() => {
-    const months: Record<string, typeof weekData> = {}
+  // Organize data into a 2D grid structure with months as rows and weeks as columns
+  const gridData = useMemo(() => {
+    // Group weeks by month and year
+    const monthsMap: Record<string, typeof weekData> = {}
     weekData.forEach((week) => {
       const [yearStr, weekStr] = week.weekKey.split('-W')
       const weekNum = parseInt(weekStr, 10)
@@ -47,101 +48,167 @@ export default function WeeklyHeatmap({ ytdStats, weeksStore: _weeksStore, weekK
       const monthIndex = Math.floor((weekNum - 1) / 4.33)
       const monthKey = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`
 
-      if (!months[monthKey]) {
-        months[monthKey] = []
+      if (!monthsMap[monthKey]) {
+        monthsMap[monthKey] = []
       }
-      months[monthKey].push(week)
+      monthsMap[monthKey].push(week)
     })
-    return months
+
+    // Convert to sorted array of months with week arrays
+    const sortedMonths = Object.keys(monthsMap).sort()
+
+    // Find the maximum number of weeks in any month
+    const maxWeeks = Math.max(...Object.values(monthsMap).map(weeks => weeks.length), 0)
+
+    // Build grid structure: each row is a month, each column is a week position
+    const grid = sortedMonths.map(monthKey => {
+      const weeks = monthsMap[monthKey].sort((a, b) => {
+        const weekA = parseInt(a.weekKey.split('-W')[1], 10)
+        const weekB = parseInt(b.weekKey.split('-W')[1], 10)
+        return weekA - weekB
+      })
+
+      // Pad with nulls to ensure consistent column count
+      const paddedWeeks = [...weeks]
+      while (paddedWeeks.length < maxWeeks) {
+        paddedWeeks.push(null as any)
+      }
+
+      return {
+        monthKey,
+        weeks: paddedWeeks
+      }
+    })
+
+    return { grid, maxWeeks }
   }, [weekData])
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
   return (
-    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
-      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900 dark:text-gray-100')}>
+    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
+      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
         Weekly Activity Heatmap
       </div>
 
       {weekData.length === 0 ? (
-        <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+        <div className="text-gray-500 text-center py-8">
           No weekly data available
         </div>
       ) : (
-        <div className="space-y-4">
-          {/* Heatmap by month */}
-          {Object.keys(weeksByMonth)
-            .sort()
-            .map((monthKey) => {
-              const monthIndex = parseInt(monthKey.split('-')[1], 10) - 1
-              const monthLabel = monthNames[monthIndex] || monthKey
-              const weeks = weeksByMonth[monthKey]
+        <div className="w-full overflow-x-auto">
+          {/* Header Row - Week Labels */}
+          <div className={`grid gap-1 mb-2`} style={{ gridTemplateColumns: `60px repeat(${gridData.maxWeeks}, 1fr)` }}>
+            <div /> {/* Empty corner */}
+            {Array.from({ length: gridData.maxWeeks }, (_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  'text-center text-sm font-semibold py-1',
+                  'text-gray-700'
+                )}
+              >
+                W{i + 1}
+              </div>
+            ))}
+          </div>
 
-              return (
-                <div key={monthKey}>
-                  <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {monthLabel}
-                  </div>
-                  <div className="flex flex-wrap gap-1">
-                    {weeks.map((week) => {
-                      const weekNum = week.weekKey.split('-W')[1]
-                      return (
-                        <div
-                          key={week.weekKey}
-                          className="relative group"
-                          onMouseEnter={() => setHoveredWeek({ weekKey: week.weekKey, hours: week.hours, workHours: week.workHours })}
-                          onMouseLeave={() => setHoveredWeek(null)}
-                        >
-                          <div
-                            className={cn(
-                              'w-8 h-8 rounded flex items-center justify-center cursor-pointer',
-                              'transition-all duration-200 hover:scale-125 hover:shadow-lg hover:z-10',
-                              'border border-gray-200 dark:border-gray-700',
-                              getProductiveColor(week.workHours)
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'text-[10px] font-medium',
-                                week.workHours > 0
-                                  ? 'text-gray-900 dark:text-gray-100'
-                                  : 'text-gray-600 dark:text-gray-400'
-                              )}
-                            >
-                              {weekNum}
-                            </span>
-                          </div>
+          {/* Heatmap Grid */}
+          {gridData.grid.map((row, rowIndex) => {
+            const monthIndex = parseInt(row.monthKey.split('-')[1], 10) - 1
+            const monthLabel = monthNames[monthIndex] || row.monthKey
 
-                          {/* Tooltip */}
-                          {hoveredWeek?.weekKey === week.weekKey && (
-                            <div className="absolute z-20 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg whitespace-nowrap">
-                              <div className="font-semibold">{week.weekKey}</div>
-                              <div>Work: {week.workHours.toFixed(1)}h</div>
-                              <div>Total: {week.hours.toFixed(1)}h</div>
-                              <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1">
-                                <div className="border-4 border-transparent border-t-gray-900"></div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+            return (
+              <div key={row.monthKey} className={`grid gap-1 mb-0.5`} style={{ gridTemplateColumns: `60px repeat(${gridData.maxWeeks}, 1fr)` }}>
+                {/* Month Label */}
+                <div className={cn(
+                  'flex items-center justify-end pr-2 text-sm font-medium',
+                  'text-gray-700'
+                )}>
+                  {monthLabel}
                 </div>
-              )
-            })}
+
+                {/* Cells for each week */}
+                {row.weeks.map((week, colIndex) => {
+                  if (!week) {
+                    // Empty cell
+                    return (
+                      <div
+                        key={`${rowIndex}-${colIndex}`}
+                        className="h-8"
+                      />
+                    )
+                  }
+
+                  const weekNum = week.weekKey.split('-W')[1]
+                  return (
+                    <div
+                      key={week.weekKey}
+                      className="relative"
+                      onMouseEnter={() => setHoveredWeek({ weekKey: week.weekKey, hours: week.hours, workHours: week.workHours })}
+                      onMouseLeave={() => setHoveredWeek(null)}
+                    >
+                      <div
+                        className={cn(
+                          'h-8 rounded flex items-center justify-center cursor-pointer',
+                          'transition-all duration-200 hover:scale-110 hover:shadow-lg hover:z-10',
+                          'border border-gray-200',
+                          getProductiveColor(week.workHours)
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'text-[10px] font-medium',
+                            week.workHours > 0
+                              ? 'text-gray-900'
+                              : 'text-gray-600'
+                          )}
+                        >
+                          {weekNum}
+                        </span>
+                      </div>
+
+                      {/* Tooltip */}
+                      {hoveredWeek?.weekKey === week.weekKey && (
+                        <div className={cn(
+                          'absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2',
+                          'w-48 p-3 rounded-lg shadow-lg',
+                          'bg-white border border-gray-200',
+                          'text-xs pointer-events-none'
+                        )}>
+                          <div className="font-semibold text-gray-900 mb-1">
+                            {week.weekKey}
+                          </div>
+                          <div className="text-gray-600">
+                            Work: {week.workHours.toFixed(1)}h
+                          </div>
+                          <div className="text-gray-500">
+                            Total: {week.hours.toFixed(1)}h
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
 
           {/* Legend */}
-          <div className="flex items-center justify-center gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="text-xs text-gray-600 dark:text-gray-400">Less work</div>
-            <div className="flex items-center space-x-1">
-              <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700"></div>
-              <div className="w-4 h-4 rounded bg-yellow-200 dark:bg-yellow-300/40 border border-gray-200 dark:border-gray-700"></div>
-              <div className="w-4 h-4 rounded bg-yellow-300 dark:bg-yellow-400/50 border border-gray-200 dark:border-gray-700"></div>
-              <div className="w-4 h-4 rounded bg-yellow-400 dark:bg-yellow-500/60 border border-gray-200 dark:border-gray-700"></div>
-              <div className="w-4 h-4 rounded bg-yellow-500 dark:bg-yellow-600/70 border border-gray-200 dark:border-gray-700"></div>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <span className={cn('text-xs', 'text-gray-600')}>
+              Less work
+            </span>
+            <div className="flex gap-1">
+              <div className="w-5 h-5 rounded bg-gray-100 border border-gray-200" />
+              <div className="w-5 h-5 rounded bg-yellow-200 border border-gray-200" />
+              <div className="w-5 h-5 rounded bg-yellow-300 border border-gray-200" />
+              <div className="w-5 h-5 rounded bg-yellow-400 border border-gray-200" />
+              <div className="w-5 h-5 rounded bg-yellow-500 border border-gray-200" />
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">More work</div>
+            <span className={cn('text-xs', 'text-gray-600')}>
+              More work
+            </span>
           </div>
         </div>
       )}

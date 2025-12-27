@@ -13,18 +13,18 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
     return (
       <div className={cn(
         'rounded-3xl px-4 pt-3 pb-4',
-        'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]'
+        'bg-white shadow-sm'
       )}>
         <div className="flex items-center justify-between mb-2">
           <h2 className={cn(
             'text-lg font-semibold',
-            'text-gray-900 dark:text-gray-100'
+            'text-gray-900'
           )}>
             Time Slot Patterns
           </h2>
-          <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <Clock className="w-5 h-5 text-blue-600" />
         </div>
-        <p className={cn('text-sm text-gray-500 dark:text-gray-400')}>
+        <p className={cn('text-sm text-gray-500')}>
           No time slot data available for this period.
         </p>
       </div>
@@ -78,25 +78,25 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
   return (
     <div className={cn(
       'rounded-3xl px-4 pt-3 pb-4',
-      'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]'
+      'bg-white shadow-sm'
     )}>
       <div className="flex items-center justify-between mb-2">
         <h2 className={cn(
           'text-lg font-semibold',
-          'text-gray-900 dark:text-gray-100'
+          'text-gray-900'
         )}>
           Time Slot Patterns
         </h2>
-        <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <Clock className="w-5 h-5 text-blue-600" />
       </div>
 
       {peakProductiveSlot && (
         <div className={cn(
           'mb-2 p-2 rounded-xl',
-          'bg-blue-50 dark:bg-blue-900/20',
-          'border border-blue-200 dark:border-blue-800'
+          'bg-blue-50',
+          'border border-blue-200'
         )}>
-          <p className="text-sm text-blue-900 dark:text-blue-100">
+          <p className="text-sm text-blue-900">
             <span className="font-semibold">Peak Productivity:</span>{' '}
             {peakProductiveSlot.timeSlot} ({maxProductiveBlocks * 0.5} hours of productive work)
           </p>

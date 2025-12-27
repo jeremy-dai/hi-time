@@ -22,10 +22,10 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
     <div className="flex items-center gap-2 text-sm">
       {status === 'synced' && !hasUnsavedChanges && lastSynced && (
         <span
-          className="text-gray-500 dark:text-gray-400 flex items-center gap-1"
+          className="text-gray-500 flex items-center gap-1"
           title={compact ? `Synced at ${formatTime(lastSynced)}` : undefined}
         >
-          <span className="text-green-600 dark:text-green-400">✓</span>
+          <span className="text-green-600">✓</span>
           {compact ? 'Synced' : `Synced at ${formatTime(lastSynced)}`}
         </span>
       )}
@@ -33,7 +33,7 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
       {status === 'pending' && hasUnsavedChanges && (
         <div className="flex items-center gap-2">
           {!compact && (
-            <span className="text-orange-600 dark:text-orange-400 flex items-center gap-1">
+            <span className="text-orange-600 flex items-center gap-1">
               <span>●</span> Unsaved changes
             </span>
           )}
@@ -50,20 +50,20 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
       )}
 
       {status === 'syncing' && (
-        <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
+        <span className="text-blue-600 flex items-center gap-1">
           <span className="animate-pulse">⋯</span> Syncing to database...
         </span>
       )}
 
       {status === 'error' && (
         <div className="flex items-center gap-2">
-          <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
+          <span className="text-red-600 flex items-center gap-1">
             <span>⚠</span> Sync failed
           </span>
           {onSyncNow && (
             <button
               onClick={onSyncNow}
-              className="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+              className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
             >
               Retry
             </button>

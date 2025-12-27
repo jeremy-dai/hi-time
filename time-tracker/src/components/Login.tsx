@@ -41,13 +41,13 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
             Hi-Time Tracker
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600">
             {isSignUp ? 'Create your account' : 'Sign in to your account'}
           </p>
         </div>
@@ -66,7 +66,7 @@ export function Login() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Email address"
               />
             </div>
@@ -82,15 +82,15 @@ export function Login() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 dark:border-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Password"
               />
             </div>
           </div>
 
           {error && (
-            <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-4">
-              <p className="text-sm text-red-800 dark:text-red-400">{error}</p>
+            <div className="rounded-md bg-red-50 p-4">
+              <p className="text-sm text-red-800">{error}</p>
             </div>
           )}
 
@@ -111,7 +111,7 @@ export function Login() {
                 setIsSignUp(!isSignUp)
                 setError(null)
               }}
-              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500"
+              className="text-sm text-blue-600 hover:text-blue-500"
             >
               {isSignUp
                 ? 'Already have an account? Sign in'
@@ -120,7 +120,7 @@ export function Login() {
           </div>
         </form>
 
-        <div className="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
+        <div className="mt-6 text-center text-xs text-gray-500">
           <p>
             Your data is securely stored and only accessible by you.
           </p>

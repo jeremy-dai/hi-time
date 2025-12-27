@@ -72,11 +72,8 @@ export function useLocalStorageSync<T>(
 
           // Only use localStorage if it's fresh (within staleness threshold)
           if (age < STALENESS_THRESHOLD) {
-            console.log(`[useLocalStorageSync] Using fresh localStorage data (age: ${Math.round(age / 1000 / 60)}min)`);
             localDataParsed = cached.data;
             useLocalStorage = true;
-          } else {
-            console.log(`[useLocalStorageSync] localStorage data is stale (age: ${Math.round(age / 1000 / 60)}min), fetching from database`);
           }
         } catch (err) {
           console.error('Failed to parse localStorage data:', err);
@@ -152,8 +149,6 @@ export function useLocalStorageSync<T>(
 
         // If database has different data, it might be fresher
         if (dbDataStr !== localDataStr) {
-          console.warn('[useLocalStorageSync] Database has different data than local. Potential conflict detected.');
-
           // Check if local data is "empty" (all categories are empty strings)
           const isLocalDataEmpty = Array.isArray(data) &&
             (data as any[]).every((day: any[]) =>

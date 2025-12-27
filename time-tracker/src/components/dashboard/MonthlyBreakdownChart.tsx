@@ -29,28 +29,26 @@ export default function MonthlyBreakdownChart({ ytdStats }: MonthlyBreakdownChar
   }, [ytdStats])
 
   return (
-    <div className={cn('rounded-3xl p-6 min-w-0', 'bg-white shadow-sm dark:bg-[hsl(var(--color-dark-surface))]')}>
-      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900 dark:text-gray-100')}>
+    <div className={cn('rounded-3xl p-6 min-w-0', 'bg-white shadow-sm')}>
+      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
         Monthly Breakdown
       </div>
 
       {chartData.length === 0 ? (
-        <div className="text-gray-500 dark:text-gray-400 text-center py-8">
+        <div className="text-gray-500 text-center py-8">
           No monthly data available
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey="month"
               stroke="#6b7280"
-              className="dark:stroke-gray-400"
               tick={{ fill: '#6b7280' }}
             />
             <YAxis
               stroke="#6b7280"
-              className="dark:stroke-gray-400"
               tick={{ fill: '#6b7280' }}
               label={{ value: 'Hours', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
             />
@@ -75,7 +73,7 @@ export default function MonthlyBreakdownChart({ ytdStats }: MonthlyBreakdownChar
       )}
 
       {/* Summary */}
-      <div className={cn('mt-6 p-4 rounded-lg', 'bg-gray-50 dark:bg-gray-800/50')}>
+      <div className={cn('mt-6 p-4 rounded-lg', 'bg-gray-50')}>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           {(['R', 'W', 'G', 'P', 'M'] as const).map((cat) => {
             const totalCategoryHours = ytdStats.monthlyBreakdown.reduce(
@@ -89,9 +87,9 @@ export default function MonthlyBreakdownChart({ ytdStats }: MonthlyBreakdownChar
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: CATEGORY_COLORS_HEX[cat].bg }}
                   />
-                  <div className="text-gray-600 dark:text-gray-400">{CATEGORY_LABELS[cat]}</div>
+                  <div className="text-gray-600">{CATEGORY_LABELS[cat]}</div>
                 </div>
-                <div className={cn('text-lg font-semibold', 'text-gray-900 dark:text-gray-100')}>
+                <div className={cn('text-lg font-semibold', 'text-gray-900')}>
                   {totalCategoryHours.toFixed(1)}h
                 </div>
               </div>
