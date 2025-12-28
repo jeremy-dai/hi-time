@@ -90,7 +90,7 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
               onKeyDown={(e) => handleThemeKeyDown(e, weekData.weekKey)}
               autoFocus
               maxLength={20}
-              className="w-full h-full text-xs text-center border border-blue-500 rounded px-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full h-full text-xs text-center border border-emerald-500 rounded px-0.5 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               style={{ fontSize: '10px' }}
             />
           </foreignObject>
@@ -117,7 +117,7 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
   const chartWidth = Math.max(1200, chartData.length * 30)
 
   return (
-    <div className={cn('rounded-3xl p-6 min-w-0', 'bg-white shadow-sm')}>
+    <div className={cn('rounded-xl p-6 min-w-0', 'bg-white shadow-sm')}>
       <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
         Weekly Breakdown
       </div>

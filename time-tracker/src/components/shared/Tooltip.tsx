@@ -11,7 +11,7 @@ export default function Tooltip({ content, children }: TooltipProps) {
     <div className="relative group inline-block">
       {children}
       <div className={cn(
-        'absolute z-50 px-2 py-1 text-xs rounded-md border',
+        'absolute z-50 px-2 py-1 text-xs rounded-xl border',
         'bg-white text-gray-800 border-gray-200',
         'opacity-0 group-hover:opacity-100 transition-opacity',
         'pointer-events-none',

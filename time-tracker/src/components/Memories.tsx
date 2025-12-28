@@ -52,7 +52,7 @@ export default function Memories() {
       case 'synced':
         return 'text-green-600'
       case 'syncing':
-        return 'text-blue-600'
+        return 'text-emerald-600'
       case 'error':
         return 'text-red-600'
       default:
@@ -76,15 +76,15 @@ export default function Memories() {
   }
 
   return (
-    <div className="h-full overflow-auto bg-white rounded-3xl p-6 shadow-sm">
+    <div className="h-full overflow-auto bg-white rounded-xl p-6 shadow-sm">
       {/* Analysis Period Banner with Year Selector */}
       <div className="mb-6">
         <div className={cn(
-          'rounded-lg p-4 flex items-center justify-between',
-          'bg-blue-50 text-blue-900'
+          'rounded-xl p-4 flex items-center justify-between',
+          'bg-emerald-50 text-emerald-900'
         )}>
           <div className="flex items-center space-x-3">
-            <CalendarRange className="w-5 h-5 text-blue-600" />
+            <CalendarRange className="w-5 h-5 text-emerald-600" />
             <div>
               <h3 className="font-semibold text-sm">
                 Annual Memories: {dateRangeLabel}
@@ -105,10 +105,10 @@ export default function Memories() {
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className={cn(
-                'appearance-none pl-4 pr-10 py-2 rounded-lg font-semibold',
+                'appearance-none pl-4 pr-10 py-2 rounded-xl font-semibold',
                 'bg-white border-2 border-gray-200',
                 'text-gray-900 text-base',
-                'hover:border-blue-300 focus:border-blue-500 focus:outline-none',
+                'hover:border-emerald-300 focus:border-emerald-500 focus:outline-none',
                 'transition-colors cursor-pointer'
               )}
             >

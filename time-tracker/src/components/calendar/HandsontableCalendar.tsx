@@ -891,7 +891,7 @@ export function HandsontableCalendar({
       )}
 
       {/* Instructions */}
-      <div className="mt-6 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border">
+      <div className="mt-6 text-xs text-gray-600 bg-gray-50 p-2 rounded-xl border">
         <span className="font-semibold text-gray-900 mr-2">How to use:</span>
         <span className="inline-block mr-3">↔️ Drag to select</span>
         <span className="inline-block mr-3">📋 Cmd+C/V to copy/paste</span>
@@ -958,7 +958,7 @@ export function HandsontableCalendar({
                               />
                               <span className="font-semibold text-sm" style={{ color: colors.text }}>{label}</span>
                             </div>
-                            <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                            <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-emerald-50 text-blue-700 border border-emerald-100">
                               {categoryTotal.total}
                             </span>
                           </div>
@@ -1015,7 +1015,7 @@ export function HandsontableCalendar({
                 <td className="py-3 px-3 text-gray-900 text-sm">
                   <div className="flex items-center justify-between">
                     <span>Total</span>
-                    <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                    <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-100 text-blue-800 border border-emerald-200">
                       {summaryTotals.weekTotal}
                     </span>
                   </div>
@@ -1065,7 +1065,7 @@ export function HandsontableCalendar({
               left: contextMenu.x,
               zIndex: 50
             }}
-            className="bg-white border rounded-lg shadow-lg p-2 text-sm min-w-[180px]"
+            className="bg-white border rounded-xl shadow-lg p-2 text-sm min-w-[180px]"
           >
             <div className="px-2 py-1 font-medium text-gray-900">
               Change category
@@ -1093,7 +1093,7 @@ export function HandsontableCalendar({
 
                     {/* Subcategory submenu */}
                     {normalizedSubs.length > 0 && (
-                      <div className="absolute left-full top-0 ml-1 bg-white border rounded-lg shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50">
+                      <div className="absolute left-full top-0 ml-1 bg-white border rounded-xl shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50">
                         <div className="px-2 py-1 font-medium text-gray-900 text-xs">
                           Subcategory
                         </div>

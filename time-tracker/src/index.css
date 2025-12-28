@@ -6,8 +6,19 @@
   --color-text-primary: 240 10% 10%;
   --color-text-secondary: 240 5% 40%;
   --color-border: 240 6% 90%;
-  --color-brand-primary: 84 81% 69%; /* #bef264 Lime-400ish */
-  --color-brand-secondary: 168 76% 80%; /* #99f6e4 Teal-200ish */
+
+  /* Gentle Mint-Green Theme Colors (Lime/Teal blend) */
+  --color-brand-primary: 84 81% 69%;      /* #bef264 - Lime-400 (original sidebar color!) */
+  --color-brand-primary-hover: 84 81% 59%; /* Darker lime for hover */
+  --color-brand-light: 84 81% 95%;        /* Very light lime for backgrounds */
+  --color-brand-lighter: 84 81% 98%;      /* Ultra light lime */
+  --color-brand-secondary: 168 76% 80%;   /* #99f6e4 - Teal-200ish */
+
+  /* Accent colors (soft, harmonious with lime) */
+  --color-accent-warm: 168 76% 85%;       /* Soft teal for highlights */
+  --color-accent-success: 160 84% 50%;    /* Emerald for success */
+  --color-accent-warning: 45 93% 65%;     /* Soft amber for warnings */
+  --color-accent-error: 0 65% 65%;        /* Soft red for errors */
 }
 
 :root {
@@ -21,6 +32,48 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* Page transition animations */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-in-from-bottom {
+    from {
+      opacity: 0;
+      transform: translateY(1rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation-fill-mode: backwards;
+  }
+
+  .fade-in {
+    animation-name: fade-in;
+  }
+
+  .slide-in-from-bottom {
+    animation-name: slide-in-from-bottom;
+  }
+
+  /* Typography improvements */
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em; /* tracking-tight */
+  }
+
+  /* Smooth transitions for interactive elements */
+  button:not(.no-transition),
+  a:not(.no-transition),
+  input:not(.no-transition),
+  select:not(.no-transition) {
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
   }
 }
 

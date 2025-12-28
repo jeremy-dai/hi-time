@@ -71,7 +71,7 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
 
   return (
     <div className={cn(
-      'rounded-3xl p-6',
+      'rounded-xl p-6',
       'bg-white shadow-sm'
     )}>
       <div className="mb-4">
@@ -123,7 +123,7 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
                   className={cn(
                     'h-4 rounded transition-all duration-200 cursor-pointer relative',
                     getProductiveColor(cell.categoryBreakdown),
-                    'hover:ring-2 hover:ring-blue-400 hover:scale-110 hover:z-10'
+                    'hover:ring-2 hover:ring-emerald-400 hover:scale-110 hover:z-10'
                   )}
                   onMouseEnter={() => setHoveredCell({ day: colIndex, slot: rowIndex })}
                   onMouseLeave={() => setHoveredCell(null)}
@@ -132,7 +132,7 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
                   {hoveredCell?.day === colIndex && hoveredCell?.slot === rowIndex && (
                     <div className={cn(
                       'absolute z-20 bottom-full mb-2 left-1/2 -translate-x-1/2',
-                      'w-48 p-3 rounded-lg shadow-lg',
+                      'w-48 p-3 rounded-xl shadow-lg',
                       'bg-white',
                       'border border-gray-200',
                       'text-xs pointer-events-none'

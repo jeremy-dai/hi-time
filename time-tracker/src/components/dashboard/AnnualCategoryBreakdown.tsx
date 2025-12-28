@@ -14,7 +14,7 @@ export default function AnnualCategoryBreakdown({ ytdStats }: AnnualCategoryBrea
     : 0
 
   return (
-    <div className={cn('rounded-3xl p-4', 'bg-white shadow-sm')}>
+    <div className={cn('rounded-xl p-4', 'bg-white shadow-sm')}>
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <BarChart3 className="w-4 h-4 text-gray-500" />
@@ -39,7 +39,7 @@ export default function AnnualCategoryBreakdown({ ytdStats }: AnnualCategoryBrea
                 {CATEGORY_LABELS[cat]}
               </div>
               {/* Bar */}
-              <div className="flex-1 min-w-0 h-5 rounded-lg overflow-hidden bg-gray-100">
+              <div className="flex-1 min-w-0 h-5 rounded-xl overflow-hidden bg-gray-100">
                 <div
                   className="h-full transition-all"
                   style={{

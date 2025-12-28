@@ -209,7 +209,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Sync Status Bar */}
-      <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
         <div className="flex items-center gap-3">
           {settingsSyncStatus && (
             <SyncStatusIndicator
@@ -229,7 +229,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
           {settingsHasUnsavedChanges && (
             <button
               onClick={syncSettingsNow}
-              className="px-5 py-2 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-500 transition-colors shadow-sm"
+              className="px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-500 transition-colors shadow-sm"
             >
               Save Now
             </button>
@@ -264,7 +264,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
               <select
                 value={settings.timezone || 'Asia/Shanghai'}
                 onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                className="ml-4 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300"
+                className="ml-4 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300"
               >
                 {timezoneOptions.map(tz => (
                   <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -286,7 +286,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                   <p className="text-xs text-gray-400 italic">None</p>
                 )}
                 {(settings?.timeDividers || []).map((time, index) => (
-                  <div key={index} className="flex items-center gap-1 bg-gray-50 rounded-lg pl-2 pr-1 py-1">
+                  <div key={index} className="flex items-center gap-1 bg-gray-50 rounded-xl pl-2 pr-1 py-1">
                     <input
                       type="time"
                       value={time}
@@ -306,7 +306,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                 ))}
                 <button
                   onClick={addTimeDivider}
-                  className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-lg hover:bg-blue-100 transition-colors inline-flex items-center gap-1"
+                  className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
                 >
                   <span>+</span>
                   <span>Add</span>
@@ -405,7 +405,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     type="week"
                     value={exportStartWeek}
                     onChange={(e) => setExportStartWeek(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
                 <div className="w-full sm:flex-1">
@@ -414,19 +414,19 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     type="week"
                     value={exportEndWeek}
                     onChange={(e) => setExportEndWeek(e.target.value)}
-                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-sm"
+                    className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
                   />
                 </div>
                 <button
                   onClick={handleBulkExport}
                   disabled={exporting}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {exporting ? 'Exporting...' : 'Export CSV'}
                 </button>
               </div>
               {message && (
-                <div className="mt-3 px-4 py-2 bg-amber-50 text-amber-700 text-sm rounded-lg border border-amber-200">
+                <div className="mt-3 px-4 py-2 bg-amber-50 text-amber-700 text-sm rounded-xl border border-amber-200">
                   {message}
                 </div>
               )}
@@ -445,7 +445,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
           />
 
           {/* Modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
+          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
                 <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

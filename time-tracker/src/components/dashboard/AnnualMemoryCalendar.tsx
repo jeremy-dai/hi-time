@@ -15,7 +15,7 @@ const MOOD_COLORS = {
   terrible: 'bg-red-200 border-red-400',
   bad: 'bg-orange-200 border-orange-400',
   neutral: 'bg-gray-200 border-gray-400',
-  good: 'bg-blue-200 border-blue-400',
+  good: 'bg-blue-200 border-emerald-400',
   great: 'bg-green-200 border-green-400'
 }
 
@@ -110,7 +110,7 @@ export default function AnnualMemoryCalendar({
   const totalMemories = Object.keys(memories).length
 
   return (
-    <div className={cn('rounded-3xl p-4', 'bg-white shadow-sm')}>
+    <div className={cn('rounded-xl p-4', 'bg-white shadow-sm')}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div>
@@ -162,8 +162,8 @@ export default function AnnualMemoryCalendar({
                         key={monthData.month}
                         className={cn(
                           'border border-gray-300 px-0 py-0 cursor-text transition-colors relative',
-                          isEditing && 'ring-2 ring-blue-500 ring-inset bg-blue-50',
-                          !isEditing && 'hover:bg-blue-50',
+                          isEditing && 'ring-2 ring-emerald-500 ring-inset bg-emerald-50',
+                          !isEditing && 'hover:bg-emerald-50',
                           !hasMemory && !isEditing && 'bg-white'
                         )}
                         onClick={() => !isEditing && handleCellClick(dayData.dateStr)}

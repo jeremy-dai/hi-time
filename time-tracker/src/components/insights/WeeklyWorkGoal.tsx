@@ -12,7 +12,7 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
   // Determine color based on percentage without status labels
   const getProgressColor = () => {
     if (goalPercentage >= 100) return 'bg-green-500'
-    if (goalPercentage >= 80) return 'bg-blue-500'
+    if (goalPercentage >= 80) return 'bg-emerald-500'
     if (goalPercentage >= 60) return 'bg-purple-500'
     if (goalPercentage >= 40) return 'bg-amber-500'
     return 'bg-red-500'
@@ -20,7 +20,7 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
 
   const getTextColor = () => {
     if (goalPercentage >= 100) return 'text-green-600'
-    if (goalPercentage >= 80) return 'text-blue-600'
+    if (goalPercentage >= 80) return 'text-emerald-600'
     if (goalPercentage >= 60) return 'text-purple-600'
     if (goalPercentage >= 40) return 'text-amber-600'
     return 'text-red-600'

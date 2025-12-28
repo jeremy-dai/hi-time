@@ -27,7 +27,7 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
   }, [multiWeekStats])
 
   return (
-    <div className={cn('rounded-3xl p-6 min-w-0', 'bg-white shadow-sm')}>
+    <div className={cn('rounded-xl p-6 min-w-0', 'bg-white shadow-sm')}>
       <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
         4-Week Trend
       </div>

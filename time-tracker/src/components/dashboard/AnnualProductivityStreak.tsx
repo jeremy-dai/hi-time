@@ -20,7 +20,7 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
 
   return (
     <div className={cn(
-      'rounded-2xl p-4',
+      'rounded-xl p-4',
       'bg-white shadow-sm'
     )}>
       <div className="flex items-center justify-between mb-3">
@@ -75,7 +75,7 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
         <div className={cn(
           'rounded-xl p-3 text-center',
           'bg-gradient-to-br from-blue-50 to-blue-100',
-          'border border-blue-200',
+          'border border-emerald-200',
           'relative overflow-hidden'
         )}>
           {/* Background progress indicator */}
@@ -91,11 +91,11 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
             </div>
 
             {/* Percentage as main metric */}
-            <div className="text-3xl font-bold text-blue-600 mb-0.5">
+            <div className="text-3xl font-bold text-emerald-600 mb-0.5">
               {productivePercentage.toFixed(0)}%
             </div>
 
-            <div className="text-xs font-medium text-blue-900 mb-1.5">
+            <div className="text-xs font-medium text-emerald-900 mb-1.5">
               Productive Days
             </div>
 

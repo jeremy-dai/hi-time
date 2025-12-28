@@ -11,7 +11,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
   if (activities.length === 0) {
     return (
       <div className={cn(
-        'rounded-3xl p-6',
+        'rounded-xl p-6',
         'bg-white shadow-sm'
       )}>
         <div className="flex items-center justify-between mb-4">
@@ -21,7 +21,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
           )}>
             Top Activities
           </h2>
-          <Trophy className="w-5 h-5 text-blue-600" />
+          <Trophy className="w-5 h-5 text-emerald-600" />
         </div>
         <div className={cn(
           'p-6 rounded-xl text-center',
@@ -41,7 +41,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
 
   return (
     <div className={cn(
-      'rounded-3xl p-4',
+      'rounded-xl p-4',
       'bg-white shadow-sm'
     )}>
       <div className="flex items-center justify-between mb-3">
@@ -51,7 +51,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
         )}>
           Top {activities.length} Activities
         </h2>
-        <Trophy className="w-5 h-5 text-blue-600" />
+        <Trophy className="w-5 h-5 text-emerald-600" />
       </div>
 
       <div className="overflow-x-auto">
@@ -165,7 +165,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
 
       {/* Summary Footer */}
       <div className={cn(
-        'mt-2 p-2 rounded-lg',
+        'mt-2 p-2 rounded-xl',
         'bg-gray-50',
         'border border-gray-200'
       )}>

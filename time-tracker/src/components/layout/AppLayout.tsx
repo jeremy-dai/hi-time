@@ -21,7 +21,7 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
           {header && (
             <div className={cn(
               'mb-2',
-              'bg-white rounded-3xl py-2 px-3 shadow-sm'
+              'bg-white rounded-xl py-2 px-3 shadow-sm'
             )}>
               {header}
             </div>

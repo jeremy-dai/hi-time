@@ -67,11 +67,11 @@ export default function CurrentWeekDashboard({
     <div className="space-y-6">
       {/* Analysis Period Banner with Export Button */}
       <div className={cn(
-        'rounded-lg p-4 flex items-center justify-between',
-        'bg-blue-50 text-blue-900'
+        'rounded-xl p-4 flex items-center justify-between',
+        'bg-emerald-50 text-emerald-900'
       )}>
         <div className="flex items-center space-x-3">
-          <CalendarRange className="w-5 h-5 text-blue-600" />
+          <CalendarRange className="w-5 h-5 text-emerald-600" />
           <div>
             <h3 className="font-semibold text-sm">
               Analysis Period: {dateRangeLabel}
@@ -118,7 +118,7 @@ export default function CurrentWeekDashboard({
             <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
 
             {/* Average Daily Breakdown - Pattern across week */}
-            <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
+            <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
               <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
                 Average Daily Breakdown (4 Weeks)
               </div>

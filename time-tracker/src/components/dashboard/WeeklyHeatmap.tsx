@@ -134,7 +134,7 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
-    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
+    <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
       <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
         Weekly Activity Heatmap
       </div>
@@ -201,7 +201,7 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
                       {hoveredDay && day && hoveredDay.dateStr === day.dateStr && (
                         <div className={cn(
                           'absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2',
-                          'w-40 p-2 rounded-lg shadow-xl',
+                          'w-40 p-2 rounded-xl shadow-xl',
                           'bg-gray-900 text-white',
                           'text-xs pointer-events-none whitespace-nowrap'
                         )}>

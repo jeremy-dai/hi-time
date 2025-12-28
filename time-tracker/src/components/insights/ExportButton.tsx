@@ -41,7 +41,7 @@ export default function ExportButton({ analysis, weekRange }: ExportButtonProps)
         'flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all',
         exportSuccess
           ? 'bg-green-500 text-white'
-          : 'bg-blue-600 hover:bg-blue-700 text-white',
+          : 'bg-emerald-500 hover:bg-emerald-600 text-white',
         'shadow-sm hover:shadow-md',
         'disabled:opacity-50 disabled:cursor-not-allowed'
       )}

@@ -495,9 +495,9 @@ function App() {
       ) : undefined}
     >
       {activeTab === 'log' && currentWeekData && (
-        <div className="flex flex-col h-full bg-white rounded-3xl p-3 shadow-sm overflow-hidden">
+        <div className="flex flex-col h-full bg-white rounded-xl p-3 shadow-sm overflow-hidden animate-in fade-in duration-200">
           {/* Timesheet Grid */}
-          <div className="flex-1 overflow-auto bg-white rounded-2xl">
+          <div className="flex-1 overflow-auto bg-white rounded-xl">
             <HandsontableCalendar
               weekData={currentWeekData}
               currentDate={currentDateState}
@@ -511,33 +511,45 @@ function App() {
         </div>
       )}
       {activeTab === 'trends' && (
-        <Dashboard
-          weekData={currentWeekData}
-          weeksStore={weekStore}
-          weekMetadataStore={weekMetadataStoreRef.current}
-          currentWeekKey={currentWeekKey}
-          currentDate={currentDateState}
-          loadWeeksForRange={loadWeeksForRange}
-          loadYearWeeks={loadYearWeeks}
-          onUpdateWeekTheme={handleUpdateWeekTheme}
-          viewMode="trends"
-        />
+        <div className="animate-in fade-in duration-200">
+          <Dashboard
+            weekData={currentWeekData}
+            weeksStore={weekStore}
+            weekMetadataStore={weekMetadataStoreRef.current}
+            currentWeekKey={currentWeekKey}
+            currentDate={currentDateState}
+            loadWeeksForRange={loadWeeksForRange}
+            loadYearWeeks={loadYearWeeks}
+            onUpdateWeekTheme={handleUpdateWeekTheme}
+            viewMode="trends"
+          />
+        </div>
       )}
       {activeTab === 'annual' && (
-        <Dashboard
-          weekData={currentWeekData}
-          weeksStore={weekStore}
-          weekMetadataStore={weekMetadataStoreRef.current}
-          currentWeekKey={currentWeekKey}
-          currentDate={currentDateState}
-          loadWeeksForRange={loadWeeksForRange}
-          loadYearWeeks={loadYearWeeks}
-          onUpdateWeekTheme={handleUpdateWeekTheme}
-          viewMode="annual"
-        />
+        <div className="animate-in fade-in duration-200">
+          <Dashboard
+            weekData={currentWeekData}
+            weeksStore={weekStore}
+            weekMetadataStore={weekMetadataStoreRef.current}
+            currentWeekKey={currentWeekKey}
+            currentDate={currentDateState}
+            loadWeeksForRange={loadWeeksForRange}
+            loadYearWeeks={loadYearWeeks}
+            onUpdateWeekTheme={handleUpdateWeekTheme}
+            viewMode="annual"
+          />
+        </div>
       )}
-      {activeTab === 'memories' && <Memories />}
-      {activeTab === 'settings' && <Settings onSettingsSaved={loadUserSettings} />}
+      {activeTab === 'memories' && (
+        <div className="animate-in fade-in duration-200">
+          <Memories />
+        </div>
+      )}
+      {activeTab === 'settings' && (
+        <div className="animate-in fade-in duration-200">
+          <Settings onSettingsSaved={loadUserSettings} />
+        </div>
+      )}
     </AppLayout>
   )
 }

@@ -13,7 +13,7 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
   if (timeSlotData.length === 0) {
     return (
       <div className={cn(
-        'rounded-3xl px-4 pt-3 pb-4',
+        'rounded-xl px-4 pt-3 pb-4',
         'bg-white shadow-sm'
       )}>
         <div className="flex items-center justify-between mb-2">
@@ -23,7 +23,7 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
           )}>
             Time Slot Patterns
           </h2>
-          <Clock className="w-5 h-5 text-blue-600" />
+          <Clock className="w-5 h-5 text-emerald-600" />
         </div>
         <p className={cn('text-sm text-gray-500')}>
           No time slot data available for this period.
@@ -75,7 +75,7 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
 
   return (
     <div className={cn(
-      'rounded-3xl px-4 pt-3 pb-4',
+      'rounded-xl px-4 pt-3 pb-4',
       'bg-white shadow-sm'
     )}>
       <div className="flex items-center justify-between mb-2">
@@ -85,16 +85,16 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
         )}>
           Time Slot Patterns
         </h2>
-        <Clock className="w-5 h-5 text-blue-600" />
+        <Clock className="w-5 h-5 text-emerald-600" />
       </div>
 
       {peakProductiveSlot && (
         <div className={cn(
           'mb-2 p-2 rounded-xl',
-          'bg-blue-50',
-          'border border-blue-200'
+          'bg-emerald-50',
+          'border border-emerald-200'
         )}>
-          <p className="text-sm text-blue-900">
+          <p className="text-sm text-emerald-900">
             <span className="font-semibold">Peak Productivity:</span>{' '}
             {peakProductiveSlot.timeSlot} ({maxProductiveBlocks * 0.5} hours of productive work)
           </p>

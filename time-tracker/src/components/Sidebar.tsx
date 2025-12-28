@@ -90,7 +90,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
   return (
     <nav
       aria-label="Primary"
-      className="h-full bg-white md:bg-transparent rounded-3xl border border-gray-200 md:border-none pb-4 pr-4 flex flex-col"
+      className="h-full bg-white md:bg-transparent rounded-xl border border-gray-200 md:border-none pb-4 pr-4 flex flex-col"
     >
       {/* Week Display */}
       {currentDate && (() => {

@@ -40,7 +40,7 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
           {onSyncNow && (
             <button
               onClick={onSyncNow}
-              className="px-3 py-1 text-xs font-bold bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-sm"
+              className="px-3 py-1 text-xs font-bold bg-emerald-500 text-white rounded-full hover:bg-emerald-600 transition-colors shadow-sm"
               title={compact ? "Unsaved changes" : undefined}
             >
               {compact ? <span><span className="text-red-400">●</span> Save</span> : 'Save Now'}
@@ -50,7 +50,7 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
       )}
 
       {status === 'syncing' && (
-        <span className="text-blue-600 flex items-center gap-1">
+        <span className="text-emerald-600 flex items-center gap-1">
           <span className="animate-pulse">⋯</span> Syncing to database...
         </span>
       )}

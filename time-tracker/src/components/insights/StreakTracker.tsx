@@ -18,7 +18,7 @@ export default function StreakTracker({ metrics }: StreakTrackerProps) {
 
   return (
     <div className={cn(
-      'rounded-3xl p-6',
+      'rounded-xl p-6',
       'bg-white shadow-sm'
     )}>
       <div className="flex items-center justify-between mb-6">
@@ -31,7 +31,7 @@ export default function StreakTracker({ metrics }: StreakTrackerProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Current Streak */}
         <div className={cn(
-          'rounded-2xl p-5 text-center',
+          'rounded-xl p-5 text-center',
           'bg-gradient-to-br from-orange-50 to-orange-100',
           'border border-orange-200'
         )}>
@@ -51,7 +51,7 @@ export default function StreakTracker({ metrics }: StreakTrackerProps) {
 
         {/* Longest Streak */}
         <div className={cn(
-          'rounded-2xl p-5 text-center',
+          'rounded-xl p-5 text-center',
           'bg-gradient-to-br from-purple-50 to-purple-100',
           'border border-purple-200'
         )}>
@@ -71,17 +71,17 @@ export default function StreakTracker({ metrics }: StreakTrackerProps) {
 
         {/* Productive Days */}
         <div className={cn(
-          'rounded-2xl p-5 text-center',
+          'rounded-xl p-5 text-center',
           'bg-gradient-to-br from-blue-50 to-blue-100',
-          'border border-blue-200'
+          'border border-emerald-200'
         )}>
           <div className="flex justify-center mb-2">
             <Calendar className="w-8 h-8 text-blue-500" />
           </div>
-          <div className="text-3xl font-bold text-blue-600 mb-1">
+          <div className="text-3xl font-bold text-emerald-600 mb-1">
             {productiveDays}/{totalDays}
           </div>
-          <div className="text-sm font-medium text-blue-900">
+          <div className="text-sm font-medium text-emerald-900">
             Productive Days
           </div>
           <div className="text-xs text-blue-700 mt-1">
