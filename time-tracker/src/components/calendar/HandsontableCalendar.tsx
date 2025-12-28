@@ -65,6 +65,7 @@ export function HandsontableCalendar({
 }: HandsontableCalendarProps) {
   const hotRef = useRef<any>(null)
   const ROW_HEIGHT = 28
+  const HEADER_HEIGHT = 36
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
@@ -178,12 +179,30 @@ export function HandsontableCalendar({
 
         // Check if current time falls within this slot
         if (currentTime >= slotStart && currentTime < slotEnd) {
-          // Calculate exact position within the row (0-1 representing progress through the slot)
-          const slotDuration = slotEnd - slotStart
-          const progressInSlot = slotDuration > 0 ? (currentTime - slotStart) / slotDuration : 0
-          // Row height is 32px, add row index * rowHeight + progress within row
-          const position = i * ROW_HEIGHT + progressInSlot * ROW_HEIGHT
-          setCurrentTimePosition(position)
+          // Debug: log to verify row index
+          console.log(`Current time ${hours}:${minutes} is in slot ${slotTime} to ${nextSlotTime}, row index: ${i}`)
+
+          // Get the row directly from the DOM by index
+          const tbody = document.querySelector('.ht_master .htCore tbody')
+          const rows = tbody?.querySelectorAll('tr')
+
+          if (rows && rows[i]) {
+            // Calculate position by summing heights of all previous rows
+            let totalHeight = 0
+            for (let r = 0; r < i; r++) {
+              totalHeight += (rows[r] as HTMLElement).offsetHeight
+            }
+
+            // Position in the middle of the current row for better visual clarity
+            const currentRowHeight = (rows[i] as HTMLElement).offsetHeight
+            totalHeight += currentRowHeight / 2
+
+            setCurrentTimePosition(totalHeight)
+            return
+          }
+
+          // Fallback: use simple calculation
+          setCurrentTimePosition(i * ROW_HEIGHT)
           return
         }
       }
@@ -736,7 +755,7 @@ export function HandsontableCalendar({
           <div
             style={{
               position: 'absolute',
-              top: `${currentTimePosition + 30}px`,
+              top: `${currentTimePosition + HEADER_HEIGHT}px`,
               left: '0',
               right: '0',
               height: '0',
