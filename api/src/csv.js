@@ -22,23 +22,22 @@ export function parseTimeCSV(csvContent) {
     throw new Error('Invalid CSV format: Time row not found');
   }
 
-  // 2. Map Columns to Days (Mon=0, ..., Sun=6)
-  // We expect columns 1..7 to contain dates.
-  const colToDayIndex = {}; // colIndex -> 0..6
-  
-  for (let c = 1; c < headerRow.length; c++) {
-    const dateStr = headerRow[c].trim();
-    if (!dateStr) continue;
-
-    const date = new Date(dateStr);
-    if (!isNaN(date.getTime())) {
-       // date.getDay(): 0=Sun, 1=Mon, ..., 6=Sat
-       // App expects: 0=Mon, 1=Tue, ..., 5=Sat, 6=Sun
-       const jsDay = date.getDay();
-       const appDay = (jsDay + 6) % 7;
-       colToDayIndex[c] = appDay;
-    }
-  }
+  // 2. Map Columns to Days
+  // CSV columns are ALWAYS: Sunday (col 1), Monday (col 2), ..., Saturday (col 7)
+  // DB storage is: Monday (index 0), Tuesday (1), ..., Sunday (6)
+  // So: CSV col 1 (Sun) → DB index 6
+  //     CSV col 2 (Mon) → DB index 0
+  //     CSV col 3 (Tue) → DB index 1
+  //     ... etc
+  const colToDayIndex = {
+    1: 6, // Sunday
+    2: 0, // Monday
+    3: 1, // Tuesday
+    4: 2, // Wednesday
+    5: 3, // Thursday
+    6: 4, // Friday
+    7: 5  // Saturday
+  };
 
   // 3. Parse Time Rows
   for (let i = timeRowIndex + 1; i < lines.length; i++) {

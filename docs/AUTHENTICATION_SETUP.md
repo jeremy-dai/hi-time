@@ -1,6 +1,6 @@
 # Authentication Setup Guide
 
-This guide covers authentication setup for both **local development** and **production deployment**.
+This guide covers authentication setup for the Hi-Time application using Supabase Auth.
 
 ## What's Included?
 
@@ -56,7 +56,7 @@ Copy `.env.example` to `.env`:
 cp .env.example .env
 ```
 
-Edit `.env` and add your Supabase credentials. For testing, you can also use the pre-configured test user:
+Edit `.env` and add your Supabase credentials:
 
 ```env
 # Backend
@@ -72,13 +72,6 @@ VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...  # Same as above "anon public" key
 VITE_API_BASE_URL=http://localhost:8001/api
 ALLOW_ORIGIN=http://localhost:5173
 PORT=8001
-
-# Test User (Optional)
-VITE_TEST_USER_ID=6878982638626404e6d35207
-VITE_TEST_USER_EMAIL=jeremy@kawo.com
-VITE_TEST_USER_TOKEN=1d655514-6cf4-4657-a08d-a3e35dd7dc50
-VITE_TEST_ORG_ID=5bbeb89b746706598113c33a
-VITE_TEST_BRAND_ID=5a96553fe4b03ac3f944278a
 ```
 
 **Where to find these values:**
@@ -125,44 +118,23 @@ node scripts/create-user.js your@email.com yourpassword
 
 If email confirmation is enabled, you still need to confirm the user in the dashboard (step 5 above).
 
-### 6. Import Your Existing Data
+See the [CLI Scripts Guide](SCRIPTS.md) for more details on user management scripts.
 
-If you have CSV files in `raw_data/` to import:
+### 6. Import Your Existing Data (Optional)
 
-**Step 1: Get Your Auth Token**
+If you have CSV files to import, see the [CLI Scripts Guide](SCRIPTS.md) for detailed instructions.
 
-```bash
-cd api
-node scripts/get-auth-token.js your@email.com yourpassword
-```
-
-This will output something like:
-```
-✅ Login successful!
-
-Add this to your .env file:
-VITE_AUTH_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
-User ID: 7fa3180f-ccab-45c7-84f9-83b0f6eff387
-```
-
-**Step 2: Import Data**
-
-```bash
-node scripts/import-local-data.js <paste-your-token-here>
-```
-
-**Step 3: Log In and View Data**
-
-1. Go to http://localhost:5173
-2. Log in with your email and password
-3. Your imported data will be visible!
+**Quick steps:**
+1. Get your auth token: `node scripts/get-auth-token.js your@email.com yourpassword`
+2. Place CSV files (named `YYYY-MM-DD.csv`) in `raw_data/`
+3. Run import: `node scripts/import-local-data.js <your-token>`
+4. Log in at http://localhost:5173 to view your data
 
 ---
 
 ## How Authentication Works
 
-### Local Development Flow
+### Authentication Flow
 
 1. **Sign up/Login**: Users authenticate through the UI
 2. **Session Storage**: Supabase stores the JWT token in browser's localStorage
@@ -202,150 +174,91 @@ User sees only their own data
 
 ---
 
-## Production Deployment
+## Row Level Security (RLS)
 
-When you're ready to deploy to production, follow these steps:
+RLS is the most critical security feature. It ensures data isolation at the database level.
 
-### 1. Database (Already Hosted)
+### How RLS Works
 
-Your Supabase database is already hosted and production-ready! No additional deployment needed.
-
-**Pre-Deployment Checklist:**
-- ✅ Verify RLS policies are applied (check dashboard → **Database** → **Policies**)
-- ✅ Confirm email templates are configured (dashboard → **Authentication** → **Email Templates**)
-- ✅ Review auth settings (enable email confirmation for production)
-
-### 2. Deploy Backend API
-
-**Recommended Platforms:**
-- [Railway](https://railway.app) - Easiest, supports Node.js
-- [Render](https://render.com) - Free tier available
-- [Fly.io](https://fly.io) - Great for global deployment
-
-**Environment Variables to Set:**
-
-```env
-# Required
-SUPABASE_URL=https://yourproject.supabase.co
-SUPABASE_PUBLISHABLE_KEY=eyJ...
-SUPABASE_SECRET_KEY=eyJ...
-
-# IMPORTANT: Set to your production frontend URL
-ALLOW_ORIGIN=https://your-frontend-domain.com
-
-PORT=8001  # or whatever your host requires
+**Without RLS:**
+```sql
+SELECT * FROM weeks;
+-- Returns ALL users' data ❌
 ```
 
-**Example: Deploy to Railway**
-
-1. Install Railway CLI: `npm install -g @railway/cli`
-2. Login: `railway login`
-3. Create project: `railway init`
-4. Deploy: `railway up`
-5. Set environment variables in Railway dashboard
-6. Note your backend URL (e.g., `https://your-api.railway.app`)
-
-### 3. Deploy Frontend
-
-**Recommended Platforms:**
-- [Vercel](https://vercel.com) - Best for React/Vite (recommended)
-- [Netlify](https://netlify.com) - Simple deployment
-- [Cloudflare Pages](https://pages.cloudflare.com) - Fast global CDN
-
-**Environment Variables to Set:**
-
-```env
-# Required
-VITE_SUPABASE_URL=https://yourproject.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=eyJ...
-
-# Point to your deployed backend
-VITE_API_BASE_URL=https://your-api.railway.app/api
+**With RLS:**
+```sql
+SELECT * FROM weeks;
+-- Returns ONLY current user's data ✅
 ```
 
-**Example: Deploy to Vercel**
+### RLS Policies
 
-1. Install Vercel CLI: `npm install -g vercel`
-2. Navigate to frontend: `cd time-tracker`
-3. Deploy: `vercel`
-4. Follow prompts and set environment variables when asked
-5. Production URL: `https://your-app.vercel.app`
+The `database/setup-rls.sql` file creates these policies:
 
-**Build Configuration:**
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Install Command: `npm install`
+**For `weeks` table:**
+- Users can SELECT their own rows (`user_id = auth.uid()`)
+- Users can INSERT rows with their own user_id
+- Users can UPDATE their own rows
+- Users can DELETE their own rows
 
-### 4. Update CORS Settings
+**For `user_settings` table:**
+- Same pattern - users can only access their own settings
 
-**In your backend `.env` or environment variables:**
+### Testing RLS
 
-```env
-ALLOW_ORIGIN=https://your-frontend-domain.vercel.app
+Create two users and verify isolation:
+
+```bash
+# See CLI Scripts Guide for detailed multi-user testing
+cd api
+node scripts/create-user.js user1@test.com pass1
+node scripts/create-user.js user2@test.com pass2
+
+# Log in as user1 in Chrome
+# Log in as user2 in Firefox/Incognito
+# Verify each sees only their own data
 ```
 
-**For multiple origins (dev + production):**
+---
 
-Update `api/src/app.js` to allow both:
+## Production Configuration
 
-```javascript
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://your-frontend-domain.vercel.app'
-]
+For production deployment, see the [Deployment Guide](DEPLOYMENT.md).
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
-    }
-  }
-}))
-```
+**Key differences for production:**
 
-### 5. Configure Supabase for Production
+1. **Enable Email Confirmation**
+   - Go to **Authentication** → **Email Auth**
+   - Turn **ON** "Confirm email"
 
-**Update Site URL:**
-1. Go to Supabase dashboard → **Authentication** → **URL Configuration**
-2. Set **Site URL** to your production frontend: `https://your-app.vercel.app`
+2. **Configure Site URL**
+   - Go to **Authentication** → **URL Configuration**
+   - Set **Site URL** to your production frontend URL
 
-**Add Redirect URLs:**
-1. In **URL Configuration**, add:
-   - `https://your-app.vercel.app/**`
-   - `http://localhost:5173/**` (keep for local dev)
+3. **Add Redirect URLs**
+   - Add production URL: `https://your-app.vercel.app/**`
+   - Keep localhost for development: `http://localhost:5173/**`
 
-**Enable Email Confirmation:**
-1. Go to **Authentication** → **Email Auth**
-2. Turn **ON** "Confirm email" for production security
-3. Update email templates if needed
+4. **Update Environment Variables**
+   - Set production URLs for `ALLOW_ORIGIN` and `VITE_API_BASE_URL`
 
-### 6. Test Production Deployment
-
-1. Visit your production URL
-2. Sign up for a new account
-3. Confirm email (check inbox)
-4. Log in
-5. Try creating/editing time entries
-6. Verify data persists
+See [Deployment Guide](DEPLOYMENT.md) for complete production setup instructions.
 
 ---
 
 ## Troubleshooting
 
-### Local Development Issues
+### "Missing Supabase environment variables"
 
-#### "Missing Supabase environment variables"
-
-**Cause:** `.env` file not found or missing `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`
+**Cause:** `.env` file not found or missing variables
 
 **Fix:**
 1. Ensure `.env` exists in project root
-2. Restart frontend: `make start` or `cd time-tracker && npm run dev`
-3. Verify Vite picks up `.env` from parent dir (check `vite.config.ts` has `envDir: '..'`)
+2. Verify it has `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`
+3. Restart frontend: `make start` or `cd time-tracker && npm run dev`
 
-#### "Invalid login credentials"
+### "Invalid login credentials"
 
 **Cause:** User account not confirmed or doesn't exist
 
@@ -354,7 +267,7 @@ app.use(cors({
 2. Confirm user email: Click user → **"..."** → **"Confirm email"**
 3. OR disable email confirmation (see step 1 above)
 
-#### "401 Unauthorized" API Errors
+### "401 Unauthorized" API Errors
 
 **Cause:** Not logged in or invalid token
 
@@ -363,7 +276,7 @@ app.use(cors({
 2. Clear browser localStorage and log in again
 3. Check browser console for auth errors
 
-#### No Data After Login
+### No Data After Login
 
 **Cause:** Data imported for different user, or RLS policies blocking access
 
@@ -372,27 +285,7 @@ app.use(cors({
 2. Check user ID matches in dashboard → **Table Editor** → **weeks** → `user_id` column
 3. Verify RLS policies exist: dashboard → **Database** → **Policies**
 
-### Production Issues
-
-#### CORS Errors in Production
-
-**Cause:** Backend `ALLOW_ORIGIN` doesn't match frontend URL
-
-**Fix:**
-1. Update backend environment variable: `ALLOW_ORIGIN=https://your-frontend.vercel.app`
-2. Redeploy backend
-3. Verify with: `curl -I https://your-api.railway.app/api/health`
-
-#### Email Confirmation Links Not Working
-
-**Cause:** Supabase Site URL not set correctly
-
-**Fix:**
-1. Go to Supabase dashboard → **Authentication** → **URL Configuration**
-2. Set **Site URL** to `https://your-frontend.vercel.app`
-3. Add to **Redirect URLs**: `https://your-frontend.vercel.app/**`
-
-#### Users Can See Other Users' Data
+### Users Can See Other Users' Data
 
 **Cause:** RLS policies not applied or incorrect
 
@@ -403,64 +296,16 @@ app.use(cors({
 
 ---
 
-## Advanced Topics
+## Extending Authentication
 
-### Manual Token Management (Optional)
+### Adding OAuth Providers
 
-For development workflows where you don't want to log in every time:
-
-**Get Token:**
-```bash
-node api/scripts/get-auth-token.js your@email.com yourpassword
-```
-
-**Add to `.env`:**
-```env
-VITE_AUTH_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
-**Note:** This bypasses the login UI. Only use for local development automation.
-
-### CLI Scripts
-
-**Create User:**
-```bash
-node api/scripts/create-user.js email@example.com password123
-```
-
-**Get Auth Token:**
-```bash
-node api/scripts/get-auth-token.js email@example.com password123
-```
-
-**Import Data:**
-```bash
-node api/scripts/import-local-data.js <your-auth-token>
-```
-
-### Multi-User Testing
-
-Test data isolation locally:
-
-```bash
-# Create two users
-node api/scripts/create-user.js user1@test.com pass1
-node api/scripts/create-user.js user2@test.com pass2
-
-# Confirm both in Supabase dashboard
-# Log in as user1 in Chrome
-# Log in as user2 in Incognito/Firefox
-# Verify each user sees only their own data
-```
-
-### Extending Authentication
-
-Add more auth providers (Google, GitHub, etc.):
+Supabase supports Google, GitHub, and other OAuth providers.
 
 **In Supabase Dashboard:**
 1. Go to **Authentication** → **Providers**
 2. Enable desired provider (e.g., Google OAuth)
-3. Configure OAuth credentials
+3. Configure OAuth credentials from provider (Google Cloud Console, etc.)
 
 **In Your Code:**
 
@@ -477,14 +322,45 @@ async function signInWithGoogle() {
 }
 ```
 
+Update your login component to include the OAuth button:
+
+```tsx
+<button onClick={signInWithGoogle}>
+  Sign in with Google
+</button>
+```
+
+### Adding Password Reset
+
+Supabase includes built-in password reset functionality:
+
+```typescript
+// Request password reset
+await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: `${window.location.origin}/update-password`
+})
+
+// Update password (on reset page)
+await supabase.auth.updateUser({
+  password: newPassword
+})
+```
+
+Configure reset email template in Supabase dashboard → **Authentication** → **Email Templates**.
+
 ---
 
-## Questions?
+## Additional Resources
 
 **Official Docs:**
 - [Supabase Auth](https://supabase.com/docs/guides/auth)
 - [Row Level Security](https://supabase.com/docs/guides/auth/row-level-security)
 - [JavaScript Client](https://supabase.com/docs/reference/javascript/auth-signup)
+
+**Related Guides:**
+- [CLI Scripts Guide](SCRIPTS.md) - User management and data import
+- [Deployment Guide](DEPLOYMENT.md) - Production setup
+- [Database Schema](DATABASE_SCHEMA.md) - Database structure
 
 **Common Issues:**
 - Check browser console for detailed error messages

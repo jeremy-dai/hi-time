@@ -1,4 +1,5 @@
 import type { TimeBlock, CategoryKey } from '../types/time'
+import { CATEGORY_KEYS } from '../types/time'
 import type { WeekStats } from './analytics'
 import type {
   EnhancedAnalysis,
@@ -652,10 +653,9 @@ export function generateMultiWeekComparison(
 export function analyzeCategoryTrends(
   comparisons: WeekComparison[]
 ): Record<CategoryKey, CategoryTrendData> {
-  const categories: CategoryKey[] = ['R', 'W', 'M', 'G', 'P']
   const trends: Record<CategoryKey, CategoryTrendData> = {} as Record<CategoryKey, CategoryTrendData>
 
-  for (const category of categories) {
+  for (const category of CATEGORY_KEYS.filter(k => k !== '')) {
     const weeks = comparisons.map(c => c.categoryHours[category] || 0)
     const average = weeks.reduce((sum, h) => sum + h, 0) / weeks.length
 

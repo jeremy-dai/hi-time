@@ -429,4 +429,61 @@ app.put('/api/settings', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Memories API
+app.get('/api/memories/:year', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('year_memories')
+    .select('memories')
+    .eq('year', year)
+    .single();
+
+  if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found"
+    console.error('Error fetching memories:', error);
+    return res.status(500).json({ error: 'Failed to fetch memories' });
+  }
+
+  res.json({
+    memories: data ? { year, memories: data.memories } : null
+  });
+});
+
+app.put('/api/memories/:year', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  const { memories } = req.body || {};
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  if (!memories || typeof memories !== 'object') {
+    return res.status(400).json({ error: 'memories object is required' });
+  }
+
+  // RLS requires user_id to match authenticated user
+  const { error } = await req.supabase
+    .from('year_memories')
+    .upsert({
+      user_id: req.user.id,
+      year,
+      memories,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,year'
+    });
+
+  if (error) {
+    console.error('Error saving memories:', error);
+    return res.status(500).json({ error: 'Failed to save memories' });
+  }
+
+  res.json({ ok: true });
+});
+
 export default app;

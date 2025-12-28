@@ -90,12 +90,19 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
 └── .env.example         # Environment variable template
 ```
 
-## 📖 Technical Documentation
+## 📖 Documentation
 
-- [Authentication Setup](AUTHENTICATION_SETUP.md)
-- [Database Schema](DATABASE_SCHEMA.md)
-- [Database Efficiency Analysis](DATABASE_EFFICIENCY_ANALYSIS.md)
-- [API Documentation](API.md)
+### Getting Started
+- [Authentication Setup](docs/AUTHENTICATION_SETUP.md) - Configure Supabase auth, RLS policies, and user management
+- [CLI Scripts Guide](docs/SCRIPTS.md) - Create users, get auth tokens, and import data
+
+### Technical References
+- [Database Schema](docs/DATABASE_SCHEMA.md) - Database structure and relationships
+- [Database Efficiency Analysis](docs/DATABASE_EFFICIENCY.md) - Performance optimization details
+- [API Documentation](docs/API.md) - Backend API endpoints and usage
+
+### Deployment
+- [Production Deployment](docs/DEPLOYMENT.md) - Deploy to Vercel, Railway, Render, and more
 
 ## 📝 Usage Guide
 
@@ -164,15 +171,47 @@ vercel
 
 Your app will be live at `https://your-project.vercel.app`
 
-### Populate Supabase database with CSV files.
-Run the script (requires auth token):
+## 📊 Importing Existing Data
+
+### CSV Import (Recommended)
+
+**CSV Format:** The app uses a standardized CSV format where:
+- Columns are **always** in order: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday
+- Files are named `YYYY-MM-DD.csv` where the date is the **Sunday** of that week
+- Each row represents a 30-minute time slot (08:00, 08:30, 09:00, etc.)
+
+#### Quick Import Steps
+
+**1. Get Your User ID**
 ```bash
-node api/scripts/import-local-data.js <your-auth-token>
+cd api
+node scripts/get-user-id.js
 ```
 
-- Read CSV files from raw_data/ .
-- Parse filenames like 2025 Time-10.3.csv .
-  - It interprets this as Year 2025, Month 10, Week 3 .
-  - It converts this into an approximate ISO Week Number (e.g., Week 42) for the database.
-- Parse the CSV content using the existing parseTimeCSV logic.
-- Upsert the data into your Supabase weeks table.
+**2. Prepare CSV Files**
+
+Place CSV files in `raw_data/` directory with Sunday-date naming:
+```
+2024-12-29.csv  → Week starting Sunday Dec 29, 2024 (ISO Week 2024-W52)
+2025-01-05.csv  → Week starting Sunday Jan 5, 2025 (ISO Week 2025-W01)
+2025-01-12.csv  → Week starting Sunday Jan 12, 2025 (ISO Week 2025-W02)
+```
+
+**3. Run Batch Import**
+```bash
+node scripts/import-local-data-direct.js <your-user-id>
+```
+
+The script will:
+- ✅ Parse all CSV files in `raw_data/`
+- ✅ Calculate correct ISO week numbers automatically
+- ✅ Perform single batch upsert to database (fast & reliable)
+- ✅ Map columns correctly: Sunday (col 1) → database index 6, Monday (col 2) → index 0, etc.
+
+**4. Clear Browser Cache & Refresh**
+
+After import, clear localStorage in your browser (F12 → Application → Local Storage → Clear All) and refresh the page to load the new data.
+
+---
+
+For detailed instructions and troubleshooting, see the [CLI Scripts Guide](docs/SCRIPTS.md).

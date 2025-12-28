@@ -58,27 +58,6 @@ export default function Dashboard({
     return allYearWeeks.filter(key => key <= lastCompleteWeekKey && key.startsWith(`${isoYear}-`))
   }, [currentDate, lastCompleteWeekKey])
 
-  // Calculate date range string for Annual
-  const annualDateRangeLabel = useMemo(() => {
-    if (annualWeekKeys.length === 0) return ''
-    
-    // Get year from first key
-    const firstKey = annualWeekKeys[0]
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_year, _week] = firstKey.split('-W').map(Number)
-    
-    // Approximate start date of first week (Jan 1ish)
-    // Actually we can just use Jan 1 of that year for display purposes or calculate exact start of week 1
-    const { isoYear } = getISOWeekYear(currentDate)
-    
-    // End date is end of last complete week
-    const end = endOfISOWeek(lastCompleteWeekDate)
-    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    
-    return `Jan 1, ${isoYear} - ${endStr}`
-  }, [annualWeekKeys, currentDate, lastCompleteWeekDate])
-
-
   // Load data when switching views
   useEffect(() => {
     const loadDataForView = async () => {
@@ -128,7 +107,6 @@ export default function Dashboard({
           weeksStore={weeksStore}
           year={getISOWeekYear(currentDate).isoYear}
           weekKeys={annualWeekKeys}
-          dateRangeLabel={annualDateRangeLabel}
           onRefresh={() => loadWeeksForRange(annualWeekKeys)}
         />
       )}

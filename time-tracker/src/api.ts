@@ -253,3 +253,47 @@ export async function saveSettings(settings: UserSettings): Promise<boolean> {
     return false
   }
 }
+
+export interface YearMemories {
+  year: number
+  memories: Record<string, DailyMemory>
+}
+
+export interface DailyMemory {
+  date: string
+  memory: string
+  tags?: string[]
+  mood?: 'great' | 'good' | 'neutral' | 'bad' | 'terrible'
+  createdAt: number
+  updatedAt: number
+}
+
+export async function getYearMemories(year: number): Promise<YearMemories | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/memories/${year}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<YearMemories>>(res, `/memories/${year}`)
+    return data.memories || null
+  } catch (error) {
+    console.error(`Failed to get memories for year ${year}:`, error)
+    return null
+  }
+}
+
+export async function saveYearMemories(yearMemories: YearMemories): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/memories/${yearMemories.year}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ memories: yearMemories.memories }),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/memories/${yearMemories.year}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to save memories for year ${yearMemories.year}:`, error)
+    return false
+  }
+}

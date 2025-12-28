@@ -1,11 +1,11 @@
-import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf } from 'lucide-react'
+import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, BookHeart } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 import { cn } from '../utils/classNames'
 import { getISOWeekYear } from '../utils/date'
 
 interface SidebarProps {
-  active: 'log' | 'trends' | 'annual' | 'settings'
-  onNavigate: (tab: 'log' | 'trends' | 'annual' | 'settings') => void
+  active: 'log' | 'trends' | 'annual' | 'memories' | 'settings'
+  onNavigate: (tab: 'log' | 'trends' | 'annual' | 'memories' | 'settings') => void
   userEmail?: string
   onLogout: () => void
   currentDate?: Date
@@ -155,6 +155,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           label="Annual"
           active={active === 'annual'}
           onClick={() => onNavigate('annual')}
+        />
+        <SidebarItem
+          icon={<BookHeart size={20} />}
+          label="Memories"
+          active={active === 'memories'}
+          onClick={() => onNavigate('memories')}
         />
         <div className="mt-8 text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">System</div>
         <SidebarItem

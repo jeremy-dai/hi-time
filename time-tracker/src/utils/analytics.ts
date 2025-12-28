@@ -81,11 +81,6 @@ export interface YTDStats {
   lowestWeek: { weekKey: string; hours: number } | null
   categoryTotals: Record<string, number>
   categoryAverages: Record<string, number>
-  monthlyBreakdown: Array<{
-    month: string
-    hours: number
-    categoryHours: Record<string, number>
-  }>
   weeklyData: Array<{
     weekKey: string
     hours: number
@@ -222,7 +217,6 @@ export function aggregateYTDData(
     .sort()
 
   const weeklyData: YTDStats['weeklyData'] = []
-  const monthlyMap: Record<string, { hours: number; categoryHours: Record<string, number> }> = {}
   const categoryTotals: Record<string, number> = {}
 
   let totalHours = 0
@@ -254,31 +248,7 @@ export function aggregateYTDData(
         lowestWeek = { weekKey, hours }
       }
     }
-
-    // Aggregate by month
-    const [yearStr, weekStr] = weekKey.split('-W')
-    const weekNum = Number(weekStr)
-    const approxDate = isoWeekToDate(Number(yearStr), weekNum)
-    const monthKey = `${approxDate.getFullYear()}-${String(approxDate.getMonth() + 1).padStart(2, '0')}`
-
-    if (!monthlyMap[monthKey]) {
-      monthlyMap[monthKey] = { hours: 0, categoryHours: {} }
-    }
-
-    monthlyMap[monthKey].hours += hours
-    Object.entries(stats.categoryHours).forEach(([cat, catHours]) => {
-      monthlyMap[monthKey].categoryHours[cat] =
-        (monthlyMap[monthKey].categoryHours[cat] || 0) + catHours
-    })
   })
-
-  const monthlyBreakdown = Object.keys(monthlyMap)
-    .sort()
-    .map(month => ({
-      month,
-      hours: monthlyMap[month].hours,
-      categoryHours: monthlyMap[month].categoryHours
-    }))
 
   const averagePerWeek = yearWeeks.length > 0 ? totalHours / yearWeeks.length : 0
 
@@ -299,20 +269,9 @@ export function aggregateYTDData(
     lowestWeek,
     categoryTotals,
     categoryAverages,
-    monthlyBreakdown,
     weeklyData,
     streakMetrics
   }
 }
 
-/**
- * Get monthly aggregates with category breakdown
- */
-export function getMonthlyAggregates(
-  weeksStore: Record<string, TimeBlock[][]>,
-  year: number
-): YTDStats['monthlyBreakdown'] {
-  const ytdStats = aggregateYTDData(weeksStore, year)
-  return ytdStats.monthlyBreakdown
-}
 

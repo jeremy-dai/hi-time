@@ -2,26 +2,24 @@ import { useMemo, useState } from 'react'
 import type { TimeBlock } from '../../types/time'
 import { aggregateYTDData } from '../../utils/analytics'
 import YTDKPICards from './YTDKPICards'
-import MonthlyBreakdownChart from './MonthlyBreakdownChart'
+import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
 import AnnualProductivityStreak from './AnnualProductivityStreak'
-import { RefreshCw, CalendarRange } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
 interface AnnualDashboardProps {
   weeksStore: Record<string, TimeBlock[][]>
   year: number
   weekKeys: string[]
-  dateRangeLabel: string
   onRefresh: () => void
 }
 
-export default function AnnualDashboard({ 
-  weeksStore, 
-  year, 
+export default function AnnualDashboard({
+  weeksStore,
+  year,
   weekKeys,
-  dateRangeLabel,
-  onRefresh 
+  onRefresh
 }: AnnualDashboardProps) {
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
 
@@ -33,7 +31,7 @@ export default function AnnualDashboard({
         filteredStore[key] = weeksStore[key]
       }
     })
-    
+
     return aggregateYTDData(filteredStore, year)
   }, [weeksStore, year, weekKeys])
 
@@ -57,43 +55,27 @@ export default function AnnualDashboard({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Date Range Banner */}
-      <div className={cn(
-        'rounded-lg p-4 flex items-start space-x-3',
-        'bg-blue-50 text-blue-900'
-      )}>
-        <CalendarRange className="w-5 h-5 mt-0.5 text-blue-600" />
-        <div>
-          <h3 className="font-semibold text-sm">
-            Analysis Period: {dateRangeLabel}
-          </h3>
-          <p className="text-sm mt-1 opacity-90">
-            Showing Year-to-Date data excluding the current incomplete week.
-          </p>
-        </div>
-      </div>
-
+    <div className="space-y-4">
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className={cn('text-xl font-semibold', 'text-gray-900')}>
+          <h2 className={cn('text-lg font-semibold', 'text-gray-900')}>
             {year} Year-to-Date
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500">
             Last updated: {formatLastRefreshed()}
           </p>
         </div>
         <button
           onClick={handleRefresh}
           className={cn(
-            'flex items-center space-x-2 px-4 py-2 rounded-lg',
+            'flex items-center space-x-1.5 px-3 py-1.5 rounded-lg',
             'bg-blue-600 hover:bg-blue-700 text-white',
-            'transition-colors duration-200',
+            'transition-colors duration-200 text-sm',
             'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
           )}
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3.5 h-3.5" />
           <span>Refresh</span>
         </button>
       </div>
@@ -104,8 +86,8 @@ export default function AnnualDashboard({
       {/* Productivity Streak */}
       <AnnualProductivityStreak streakMetrics={ytdStats.streakMetrics} />
 
-      {/* Monthly Breakdown Chart */}
-      <MonthlyBreakdownChart ytdStats={ytdStats} />
+      {/* Weekly Breakdown Chart */}
+      <AnnualWeeklyBreakdown ytdStats={ytdStats} />
 
       {/* Weekly Heatmap */}
       <WeeklyHeatmap ytdStats={ytdStats} weeksStore={weeksStore} weekKeys={weekKeys} />

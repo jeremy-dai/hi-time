@@ -123,3 +123,54 @@ Authorization: Bearer <SUPABASE_JWT_TOKEN>
     -   **Body**: `{ "settings": { "subcategories": { ... } } }`
     -   **Auth**: Required
     -   **Response**: `{ "ok": true }`
+
+### Memories
+
+#### Get Year Memories
+
+-   **GET** `/memories/:year`
+    -   **Description**: Fetch all memories for a specific year.
+    -   **Params**: `year` (e.g., 2025)
+    -   **Auth**: Required
+    -   **Response**:
+        ```json
+        {
+          "memories": {
+            "year": 2025,
+            "memories": {
+              "2025-01-01": {
+                "date": "2025-01-01",
+                "memory": "Had a great day!",
+                "tags": ["work", "achievement"],
+                "mood": "great",
+                "createdAt": 1704067200000,
+                "updatedAt": 1704067200000
+              }
+            }
+          }
+        }
+        ```
+    -   Returns `null` if no memories exist for the year.
+
+#### Save Year Memories
+
+-   **PUT** `/memories/:year`
+    -   **Description**: Create or update memories for a specific year.
+    -   **Params**: `year` (e.g., 2025)
+    -   **Body**:
+        ```json
+        {
+          "memories": {
+            "2025-01-01": {
+              "date": "2025-01-01",
+              "memory": "Had a great day!",
+              "tags": ["work", "achievement"],
+              "mood": "great",
+              "createdAt": 1704067200000,
+              "updatedAt": 1704067200000
+            }
+          }
+        }
+        ```
+    -   **Auth**: Required
+    -   **Response**: `{ "ok": true }`

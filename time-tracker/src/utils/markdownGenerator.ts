@@ -1,5 +1,6 @@
 import type { EnhancedAnalysis } from '../types/insights'
 import type { TimeBlock } from '../types/time'
+import { CATEGORY_KEYS } from '../types/time'
 import { CATEGORY_LABELS } from '../constants/colors'
 
 /**
@@ -333,13 +334,14 @@ function formatMultiWeekComparison(analysis: EnhancedAnalysis): string {
 
   lines.push('## Week-by-Week Comparison')
   lines.push('')
-  lines.push('| Week | Rest | Work | Mandatory | Play | Procrastination | Total |')
-  lines.push('|------|------|------|-----------|------|-----------------|-------|')
+
+  const categoryHeaders = CATEGORY_KEYS.filter(k => k !== '').map(k => CATEGORY_LABELS[k])
+  lines.push(`| Week | ${categoryHeaders.join(' | ')} | Total |`)
+  lines.push(`|------|${categoryHeaders.map(() => '------').join('|')}|-------|`)
 
   for (const week of multiWeekComparison) {
-    lines.push(
-      `| ${week.weekLabel} | ${(week.categoryHours['R'] || 0).toFixed(1)} | ${(week.categoryHours['W'] || 0).toFixed(1)} | ${(week.categoryHours['M'] || 0).toFixed(1)} | ${(week.categoryHours['G'] || 0).toFixed(1)} | ${(week.categoryHours['P'] || 0).toFixed(1)} | ${week.totalHours.toFixed(1)} |`
-    )
+    const categoryValues = CATEGORY_KEYS.filter(k => k !== '').map(k => (week.categoryHours[k] || 0).toFixed(1))
+    lines.push(`| ${week.weekLabel} | ${categoryValues.join(' | ')} | ${week.totalHours.toFixed(1)} |`)
   }
 
   lines.push('')
@@ -446,9 +448,7 @@ function formatCategoryTrends(analysis: EnhancedAnalysis): string {
   lines.push('## Category Trends')
   lines.push('')
 
-  const categories: Array<keyof typeof CATEGORY_LABELS> = ['R', 'W', 'M', 'G', 'P']
-
-  for (const cat of categories) {
+  for (const cat of CATEGORY_KEYS.filter(k => k !== '')) {
     const trend = categoryTrends[cat]
     if (!trend) continue
 

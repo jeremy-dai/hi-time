@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DailyBreakdown } from '../../types/insights'
 import { CATEGORY_COLORS_HEX } from '../../constants/colors'
+import { CATEGORY_KEYS } from '../../types/time'
 
 interface WeeklyBreakdownChartProps {
   dailyPattern: DailyBreakdown[]
@@ -61,11 +62,16 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
             }}
             labelStyle={{ color: '#111827', fontWeight: 'bold' }}
           />
-          <Bar dataKey="R" stackId="a" fill={CATEGORY_COLORS_HEX.R.bg} name="R" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="W" stackId="a" fill={CATEGORY_COLORS_HEX.W.bg} name="W" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="M" stackId="a" fill={CATEGORY_COLORS_HEX.M.bg} name="M" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="G" stackId="a" fill={CATEGORY_COLORS_HEX.G.bg} name="G" radius={[0, 0, 0, 0]} />
-          <Bar dataKey="P" stackId="a" fill={CATEGORY_COLORS_HEX.P.bg} name="P" radius={[4, 4, 0, 0]} />
+          {CATEGORY_KEYS.filter(k => k !== '').map((cat, idx, arr) => (
+            <Bar
+              key={cat}
+              dataKey={cat}
+              stackId="a"
+              fill={CATEGORY_COLORS_HEX[cat].bg}
+              name={cat}
+              radius={idx === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+            />
+          ))}
         </BarChart>
       </ResponsiveContainer>
     </div>

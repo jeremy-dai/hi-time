@@ -64,20 +64,39 @@ async function importLocalData() {
 
   for (const file of files) {
     console.log(`\nProcessing ${file}...`);
-    
-    // Parse filename: "2025_01.csv" -> Year 2025, Week 01
-    const match = file.match(/^(\d{4})_(\d{2})\.csv$/);
-    
+
+    // Parse filename: "YYYY-MM-DD.csv" (start date of the week)
+    const match = file.match(/^(\d{4})-(\d{2})-(\d{2})\.csv$/);
+
     let year, weekNumber;
 
     if (match) {
-      year = parseInt(match[1], 10);
-      weekNumber = parseInt(match[2], 10);
-      
-      console.log(`   -> Parsed: Year ${year}, Week ${weekNumber}`);
+      const fileYear = parseInt(match[1], 10);
+      const fileMonth = parseInt(match[2], 10) - 1; // JavaScript months are 0-indexed
+      const fileDay = parseInt(match[3], 10);
+
+      // Create date from filename
+      const startDate = new Date(fileYear, fileMonth, fileDay);
+
+      // Calculate ISO week and year
+      const d = new Date(startDate);
+      d.setHours(0, 0, 0, 0);
+      // Set to nearest Thursday: current date + 4 - current day number
+      // Make Sunday's day number 7
+      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+
+      // Get first day of year
+      const yearStart = new Date(d.getFullYear(), 0, 1);
+
+      // Calculate full weeks to nearest Thursday
+      weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      year = d.getFullYear();
+
+      console.log(`   -> Week start: ${startDate.toLocaleDateString()}`);
+      console.log(`   -> ISO Week: ${year}-W${String(weekNumber).padStart(2, '0')}`);
     } else {
        // Fallback or ignore other files
-       console.warn(`   ⚠️ Filename format not recognized (expected YYYY_WW.csv): ${file}. Skipping.`);
+       console.warn(`   ⚠️ Filename format not recognized (expected YYYY-MM-DD.csv): ${file}. Skipping.`);
        // Don't count as error if it's just a sample or other file
        continue;
     }

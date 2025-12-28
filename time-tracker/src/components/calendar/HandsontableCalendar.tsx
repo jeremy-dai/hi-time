@@ -6,6 +6,7 @@ import Handsontable from 'handsontable'
 import 'handsontable/styles/handsontable.min.css'
 import 'handsontable/styles/ht-theme-main.min.css'
 import type { TimeBlock, CategoryKey, SubcategoryRef } from '../../types/time'
+import { CATEGORY_KEYS } from '../../types/time'
 import type { UserSettings } from '../../api'
 import { TIME_SLOTS, DAYS_SHORT } from '../../constants/timesheet'
 import { CATEGORY_LABELS, CATEGORY_COLORS_HEX, GHOST_CATEGORY_COLORS_HEX, SUBCATEGORY_SHADES_HEX } from '../../constants/colors'
@@ -63,7 +64,7 @@ export function HandsontableCalendar({
   timezone = 'Asia/Shanghai'
 }: HandsontableCalendarProps) {
   const hotRef = useRef<any>(null)
-  const ROW_HEIGHT = 32
+  const ROW_HEIGHT = 28
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
@@ -83,9 +84,32 @@ export function HandsontableCalendar({
   // Calculate current time indicator position
   useEffect(() => {
     const calculatePosition = () => {
-      // Get current time in the specified timezone
+      // Check if currentDate is in the current week
       const now = new Date()
       const tz = timezone || 'Asia/Shanghai'
+
+      // Get the start of the current week (Sunday)
+      const currentWeekStart = new Date(now)
+      const currentDayOfWeek = currentWeekStart.getDay() // 0 is Sunday
+      currentWeekStart.setDate(currentWeekStart.getDate() - currentDayOfWeek)
+      currentWeekStart.setHours(0, 0, 0, 0)
+
+      // Get the start of the displayed week (Sunday)
+      const displayedWeekStart = new Date(currentDate)
+      const displayedDayOfWeek = displayedWeekStart.getDay()
+      displayedWeekStart.setDate(displayedWeekStart.getDate() - displayedDayOfWeek)
+      displayedWeekStart.setHours(0, 0, 0, 0)
+
+      // Compare if both weeks start on the same date
+      const isCurrentWeek = currentWeekStart.getTime() === displayedWeekStart.getTime()
+
+      // If not current week, hide indicator
+      if (!isCurrentWeek) {
+        setCurrentTimePosition(null)
+        return
+      }
+
+      // Get current time in the specified timezone
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: tz,
         hour12: false,
@@ -173,7 +197,7 @@ export function HandsontableCalendar({
     const interval = setInterval(calculatePosition, 5 * 60 * 1000)
 
     return () => clearInterval(interval)
-  }, [weekData, timezone])
+  }, [weekData, timezone, currentDate])
 
   // Transform weekData (7 days × 32 slots) to Handsontable format (32 rows × 8 cols)
   const tableData = useMemo(() => {
@@ -232,9 +256,9 @@ export function HandsontableCalendar({
     td.style.padding = '1px' // Reduced padding to allow inner container to fill more
     td.style.position = 'relative'
     td.style.verticalAlign = 'middle'
-    td.style.height = '32px' // Slightly taller for block look
-    td.style.minHeight = '32px'
-    td.style.maxHeight = '32px'
+    td.style.height = '28px' // Slightly taller for block look
+    td.style.minHeight = '28px'
+    td.style.maxHeight = '28px'
     td.style.overflow = 'hidden'
     td.style.border = 'none' // Remove cell borders for cleaner look
 
@@ -337,7 +361,7 @@ export function HandsontableCalendar({
     const content = document.createElement('div')
     content.style.flex = '1'
     content.style.minWidth = '0' // Allow truncation
-    content.style.fontSize = '11px'
+    content.style.fontSize = '12px'
     content.style.whiteSpace = 'nowrap'
     content.style.overflow = 'hidden'
     content.style.textOverflow = 'ellipsis'
@@ -883,9 +907,9 @@ export function HandsontableCalendar({
               </tr>
             </thead>
             <tbody>
-              {Object.entries(CATEGORY_LABELS)
-                .filter(([key]) => key !== '' && summaryTotals.totals[key])
-                .map(([key, label]) => {
+              {CATEGORY_KEYS.filter(k => k !== '' && summaryTotals.totals[k])
+                .map((key) => {
+                  const label = CATEGORY_LABELS[key]
                   const categoryTotal = summaryTotals.totals[key]
                   const colors = CATEGORY_COLORS_HEX[key as keyof typeof CATEGORY_COLORS_HEX]
                   const hasSubcategories = Object.keys(categoryTotal.subcategories).length > 0

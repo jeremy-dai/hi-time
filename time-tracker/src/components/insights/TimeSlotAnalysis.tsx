@@ -1,4 +1,5 @@
 import type { TimeSlotPattern } from '../../types/insights'
+import { CATEGORY_KEYS } from '../../types/time'
 import { cn } from '../../utils/classNames'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { CATEGORY_COLORS_HEX, CATEGORY_LABELS } from '../../constants/colors'
@@ -48,16 +49,13 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
     }
   })
 
-  // Get unique categories present in the data
-  const categories = Array.from(
-    new Set(
-      timeSlotData.flatMap(slot =>
-        Object.keys(slot.activityCounts).map(cat =>
-          CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS] || cat
-        )
-      )
-    )
+  // Get categories in fixed order that are present in the data
+  const presentCategories = new Set(
+    timeSlotData.flatMap(slot => Object.keys(slot.activityCounts))
   )
+  const categories = CATEGORY_KEYS
+    .filter(k => k !== '' && presentCategories.has(k))
+    .map(k => CATEGORY_LABELS[k])
 
   // Determine peak productivity time
   const productiveCategories = ['Work', 'Productive Work']

@@ -2,8 +2,10 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep
 
 export function startOfISOWeek(date: Date): Date {
   const d = new Date(date)
-  const day = d.getDay() // 0 is Sunday
-  d.setDate(d.getDate() - day)
+  const day = d.getDay() // 0 is Sunday, 1 is Monday, etc.
+  // Convert to ISO day: Monday=0, Tuesday=1, ..., Sunday=6
+  const isoDay = (day + 6) % 7
+  d.setDate(d.getDate() - isoDay)
   d.setHours(0, 0, 0, 0)
   return d
 }

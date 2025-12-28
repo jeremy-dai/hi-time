@@ -1,15 +1,13 @@
 import { cn } from '../../utils/classNames'
 import { CATEGORY_LABELS, CATEGORY_COLORS_HEX } from '../../constants/colors'
 import type { WeekStats } from '../../utils/analytics'
-import type { CategoryKey } from '../../types/time'
+import { CATEGORY_KEYS } from '../../types/time'
 import { BarChart3 } from 'lucide-react'
 
 interface KPICardsProps {
   latestWeekStats: WeekStats
-  fourWeekAverage: Record<CategoryKey, number>
+  fourWeekAverage: Record<string, number>
 }
-
-const order: Array<keyof typeof CATEGORY_LABELS> = ['R', 'W', 'M', 'G', 'P']
 
 export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsProps) {
   const totalHours = latestWeekStats.totalHours
@@ -26,7 +24,7 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
 
       {/* Bar chart with all info */}
       <div className="space-y-1.5">
-        {order.map((cat) => {
+        {CATEGORY_KEYS.filter(k => k !== '').map((cat) => {
           const hours = latestWeekStats.categoryHours[cat] || 0
           const avgHours = fourWeekAverage[cat] || 0
           const delta = hours - avgHours

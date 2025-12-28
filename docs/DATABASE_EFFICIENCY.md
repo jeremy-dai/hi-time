@@ -68,6 +68,30 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 
 ---
 
+## ✅ Memories Pattern (Local-First, Debounced Saving)
+
+### Workflow
+1. **User adds/edits memory** → Immediate `localStorage` save (instant UX)
+2. **After 5 seconds of inactivity** → Debounced sync to database
+3. **Database sync** → Update sync status indicator
+4. **Fallback on mount** → Load from database if localStorage is empty
+
+### Key Benefits
+- **Instant feedback**: `localStorage` provides immediate persistence
+- **Debounced writes**: Changes are batched with 5-second debounce to minimize database writes
+- **Offline support**: Works offline with localStorage, syncs when connection restored
+- **Sync status**: Visual indicator shows sync state (syncing/synced/pending/error)
+- **Year-based storage**: Memories organized by year for efficient loading
+
+### Implementation Details
+- **Hook**: `useYearMemories` (custom hook)
+- **Storage Key**: `memories-{year}` (per-year localStorage)
+- **Database Table**: `year_memories` (JSONB column stores all memories for a year)
+- **Sync Strategy**: Debounced (5s) + on unmount
+- **Offline Resilience**: Falls back to localStorage if database unavailable
+
+---
+
 ## 📊 Caching Strategy Overview
 
 ### Data Types and Storage
@@ -77,6 +101,7 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 | **Weeksheet Data** | `week-{weekKey}` | `CachedData<TimeBlock[][]>` | 1 hour | `useLocalStorageSync` (30s) |
 | **Week Metadata** | `week-metadata-{weekKey}` | `CachedData<{startingHour, theme}>` | 1 hour | Coupled with weeksheet sync |
 | **User Settings** | `user-settings` | `CachedData<UserSettings>` | 1 hour | `useLocalStorageSync` (30s) |
+| **Year Memories** | `memories-{year}` | `YearMemories` | None (always fresh) | Debounced (5s) |
 
 **CachedData Format**:
 ```typescript
@@ -95,14 +120,14 @@ All cached data includes a timestamp and is validated before use:
 
 ## 📊 Efficiency Comparison
 
-| Aspect | Timesheet | Week Metadata | User Settings | Dashboard |
-| :--- | :--- | :--- | :--- | :--- |
-| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | None (read-only) ✅ |
-| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
-| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | In-memory only |
-| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | N/A |
-| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (parallel fetch) ✅ |
-| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Loading states ✅ |
+| Aspect | Timesheet | Week Metadata | User Settings | Memories | Dashboard |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | Debounced 5s ✅ | None (read-only) ✅ |
+| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
+| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | localStorage only | In-memory only |
+| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ❌ No (always fresh) | N/A |
+| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (5s debounce) ✅ | Yes (parallel fetch) ✅ |
+| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Sync status indicator ✅ | Loading states ✅ |
 
 ---
 

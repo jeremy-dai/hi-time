@@ -16,7 +16,22 @@ export interface CategoryColors {
   [key: string]: string
 }
 
-// Category keys - use CATEGORY_LABELS from constants/colors.ts for display names
-export const CATEGORY_KEYS = ['R', 'W', 'G', 'P', 'M', ''] as const
+// Category keys in display order: Work, Mandatory, Procrastination, Rest, Play
+// In stacked bars, Work appears at bottom (rendered first)
+export const CATEGORY_KEYS = ['W', 'M', 'P', 'R', 'G', ''] as const
 
 export type CategoryKey = typeof CATEGORY_KEYS[number]
+
+export interface DailyMemory {
+  date: string // YYYY-MM-DD
+  memory: string
+  tags?: string[]
+  mood?: 'great' | 'good' | 'neutral' | 'bad' | 'terrible'
+  createdAt: number
+  updatedAt: number
+}
+
+export interface YearMemories {
+  year: number
+  memories: Record<string, DailyMemory>
+}

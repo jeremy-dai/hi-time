@@ -7,6 +7,9 @@ ALTER TABLE weeks ENABLE ROW LEVEL SECURITY;
 -- Enable RLS on the user_settings table
 ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 
+-- Enable RLS on the year_memories table
+ALTER TABLE year_memories ENABLE ROW LEVEL SECURITY;
+
 -- Policy for weeks table
 -- Users can only access weeks where user_id matches their authenticated user ID
 CREATE POLICY "Users can only access their own weeks"
@@ -19,6 +22,14 @@ WITH CHECK (auth.uid()::text = user_id);
 -- Users can only access settings where user_id matches their authenticated user ID
 CREATE POLICY "Users can only access their own settings"
 ON user_settings
+FOR ALL
+USING (auth.uid()::text = user_id)
+WITH CHECK (auth.uid()::text = user_id);
+
+-- Policy for year_memories table
+-- Users can only access memories where user_id matches their authenticated user ID
+CREATE POLICY "Users can only access their own memories"
+ON year_memories
 FOR ALL
 USING (auth.uid()::text = user_id)
 WITH CHECK (auth.uid()::text = user_id);

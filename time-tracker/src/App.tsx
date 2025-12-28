@@ -3,9 +3,10 @@ import type { TimeBlock } from './types/time'
 import HandsontableCalendar from './components/calendar/HandsontableCalendar'
 import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
+import Memories from './components/Memories'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
-import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, saveSettings, type UserSettings } from './api'
+import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
 import AppLayout from './components/layout/AppLayout'
 import Header from './components/layout/Header'
 import { parseTimeCSV } from './utils/csvParser'
@@ -15,7 +16,7 @@ import { useLocalStorageSync } from './hooks/useLocalStorageSync'
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'settings'>('log')
+  const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'memories' | 'settings'>('log')
   const [isNavigating, setIsNavigating] = useState(false)
   const [currentDateState, setCurrentDateState] = useState<Date>(() => new Date())
   const currentWeekKey = useMemo(() => formatWeekKey(currentDateState), [currentDateState])
@@ -130,17 +131,6 @@ function App() {
     const s = await getSettings()
     if (s) {
       setUserSettings(s)
-    }
-  }
-
-  const handleTimezoneChange = async (newTimezone: string) => {
-    const updatedSettings = { ...userSettings, timezone: newTimezone }
-    setUserSettings(updatedSettings)
-    // Save to database
-    try {
-      await saveSettings(updatedSettings)
-    } catch (error) {
-      console.error('Failed to save timezone setting:', error)
     }
   }
 
@@ -477,8 +467,6 @@ function App() {
           onChangeStartingHour={(hour) => handleMetadataChange({ startingHour: hour })}
           weekTheme={currentWeekMetadata.theme}
           onChangeWeekTheme={(theme) => handleMetadataChange({ theme })}
-          timezone={currentTimezone}
-          onChangeTimezone={handleTimezoneChange}
         />
       ) : undefined}
     >
@@ -520,6 +508,7 @@ function App() {
           viewMode="annual"
         />
       )}
+      {activeTab === 'memories' && <Memories />}
       {activeTab === 'settings' && <Settings onSettingsSaved={loadUserSettings} />}
     </AppLayout>
   )
