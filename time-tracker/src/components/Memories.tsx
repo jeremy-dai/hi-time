@@ -77,9 +77,28 @@ export default function Memories() {
 
   return (
     <div className="h-full overflow-auto bg-white rounded-3xl p-6 shadow-sm">
-      {/* Header */}
+      {/* Analysis Period Banner with Year Selector */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className={cn(
+          'rounded-lg p-4 flex items-center justify-between',
+          'bg-blue-50 text-blue-900'
+        )}>
+          <div className="flex items-center space-x-3">
+            <CalendarRange className="w-5 h-5 text-blue-600" />
+            <div>
+              <h3 className="font-semibold text-sm">
+                Annual Memories: {dateRangeLabel}
+              </h3>
+              <p className="text-xs mt-0.5 opacity-90">
+                <span className={cn('font-medium', getSyncStatusColor())}>
+                  {getSyncStatusText()}
+                </span>
+                {' • '}
+                Last synced: {formatLastSynced()}
+              </p>
+            </div>
+          </div>
+
           {/* Year Selector */}
           <div className="relative">
             <select
@@ -100,36 +119,6 @@ export default function Memories() {
               ))}
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
-
-          {/* Sync Status */}
-          <div className="flex items-center gap-4 text-xs text-gray-500">
-            <div className="flex items-center gap-2">
-              <span>Status:</span>
-              <span className={cn('font-medium', getSyncStatusColor())}>
-                {getSyncStatusText()}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span>Last synced:</span>
-              <span className="font-medium">{formatLastSynced()}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Date Range Banner */}
-        <div className={cn(
-          'rounded-lg p-4 flex items-center space-x-3',
-          'bg-blue-50 text-blue-900'
-        )}>
-          <CalendarRange className="w-5 h-5 text-blue-600" />
-          <div>
-            <h3 className="font-semibold text-sm">
-              Annual Memories: {dateRangeLabel}
-            </h3>
-            <p className="text-xs mt-0.5 opacity-90">
-              Viewing memories for {selectedYear}
-            </p>
           </div>
         </div>
       </div>

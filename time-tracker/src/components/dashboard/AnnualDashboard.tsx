@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { TimeBlock } from '../../types/time'
 import { aggregateYTDData } from '../../utils/analytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
@@ -30,7 +30,6 @@ export default function AnnualDashboard({
   onUpdateWeekTheme,
   onYearChange
 }: AnnualDashboardProps) {
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
   const { memories } = useYearMemories(year)
 
   // Generate year options (current year and past 10 years)
@@ -67,19 +66,47 @@ export default function AnnualDashboard({
     return aggregateYTDData(filteredStore, year)
   }, [weeksStore, year, weekKeys])
 
-  // Calculate date range for the selected year
+  // Calculate date range based on actual week data
   const dateRangeLabel = useMemo(() => {
-    const start = new Date(year, 0, 1) // January 1st
-    const end = new Date(year, 11, 31) // December 31st
+    if (weekKeys.length === 0) {
+      // No data, show full year
+      const start = new Date(year, 0, 1)
+      const end = new Date(year, 11, 31)
+      const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      return `${startStr} - ${endStr}`
+    }
+
+    // Parse first and last week keys to get actual date range
+    // Week keys are in format "YYYY-WXX" (e.g., "2025-W01")
+    const firstWeekKey = weekKeys[weekKeys.length - 1] // Oldest week (earliest in year)
+    const lastWeekKey = weekKeys[0] // Most recent week
+
+    // Parse the week number from the key (e.g., "2025-W01" -> 1)
+    const parseWeekNumber = (key: string) => parseInt(key.split('-W')[1])
+
+    // Helper to get a date from ISO week number
+    const getDateFromISOWeek = (year: number, week: number) => {
+      const jan4 = new Date(year, 0, 4)
+      const jan4Day = (jan4.getDay() + 6) % 7 // Convert to ISO day (0=Mon)
+      const weekStart = new Date(jan4)
+      weekStart.setDate(jan4.getDate() - jan4Day + (week - 1) * 7)
+      return weekStart
+    }
+
+    const firstWeekNum = parseWeekNumber(firstWeekKey)
+    const lastWeekNum = parseWeekNumber(lastWeekKey)
+
+    const start = startOfISOWeek(getDateFromISOWeek(year, firstWeekNum))
+    const end = endOfISOWeek(getDateFromISOWeek(year, lastWeekNum))
 
     const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     return `${startStr} - ${endStr}`
-  }, [year])
+  }, [year, weekKeys])
 
   const handleRefresh = () => {
     onRefresh()
-    setLastRefreshed(new Date())
   }
 
   const handleExport = () => {
@@ -93,34 +120,26 @@ export default function AnnualDashboard({
     downloadAnnualMarkdownReport(content, year)
   }
 
-  const formatLastRefreshed = () => {
-    const now = new Date()
-    const diffMs = now.getTime() - lastRefreshed.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins === 1) return '1 minute ago'
-    if (diffMins < 60) return `${diffMins} minutes ago`
-
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours === 1) return '1 hour ago'
-    return `${diffHours} hours ago`
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header with year selector, export and refresh buttons */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      {/* Analysis Period Banner with Year Selector and Buttons */}
+      <div className={cn(
+        'rounded-lg p-4 flex items-center justify-between',
+        'bg-blue-50 text-blue-900'
+      )}>
+        <div className="flex items-center space-x-3">
+          <CalendarRange className="w-5 h-5 text-blue-600" />
           <div>
-            <h2 className={cn('text-lg font-semibold', 'text-gray-900')}>
-              Year-to-Date
-            </h2>
-            <p className="text-xs text-gray-500">
-              Last updated: {formatLastRefreshed()}
+            <h3 className="font-semibold text-sm">
+              Analysis Period: {dateRangeLabel}
+            </h3>
+            <p className="text-xs mt-0.5 opacity-90">
+              {weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}
             </p>
           </div>
+        </div>
 
+        <div className="flex items-center space-x-2">
           {/* Year Selector */}
           <div className="relative">
             <select
@@ -142,31 +161,29 @@ export default function AnnualDashboard({
             </select>
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
           </div>
-        </div>
 
-        <div className="flex items-center space-x-2">
           <button
             onClick={handleExport}
             className={cn(
-              'flex items-center space-x-1.5 px-3 py-1.5 rounded-lg',
+              'flex items-center space-x-1.5 px-4 py-2 rounded-xl font-medium text-sm',
               'bg-blue-600 hover:bg-blue-700 text-white',
-              'transition-colors duration-200 text-sm',
+              'shadow-sm hover:shadow-md transition-all',
               'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
             )}
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-4 h-4" />
             <span>Export</span>
           </button>
           <button
             onClick={handleRefresh}
             className={cn(
-              'flex items-center space-x-1.5 px-3 py-1.5 rounded-lg',
+              'flex items-center space-x-1.5 px-4 py-2 rounded-xl font-medium text-sm',
               'bg-blue-600 hover:bg-blue-700 text-white',
-              'transition-colors duration-200 text-sm',
+              'shadow-sm hover:shadow-md transition-all',
               'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
             )}
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-4 h-4" />
             <span>Refresh</span>
           </button>
         </div>
