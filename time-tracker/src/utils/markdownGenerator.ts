@@ -87,10 +87,6 @@ export function generateTrendsReport(analysis: EnhancedAnalysis): string {
   sections.push(formatAverageDailyPattern(analysis))
   sections.push('')
 
-  // Work-Life Balance (4-Week Average)
-  sections.push(formatWorkLifeBalance(analysis))
-  sections.push('')
-
   // ========== INSIGHTS CONTEXT FOR AI ==========
   sections.push('---')
   sections.push('')
@@ -293,7 +289,7 @@ function formatLatestWeekWorkGoal(analysis: EnhancedAnalysis): string {
   lines.push('## Work Goal Progress')
   lines.push('')
   lines.push(`**Target:** ${workGoalMetrics.targetHours} hours/week`)
-  lines.push(`**Actual:** ${workGoalMetrics.actualHours.toFixed(1)} hours (Work + Mandatory)`)
+  lines.push(`**Actual:** ${workGoalMetrics.actualHours.toFixed(1)} hours (Work only)`)
   lines.push(`**Progress:** ${workGoalMetrics.goalPercentage.toFixed(1)}%`)
   lines.push(`**Status:** ${workGoalMetrics.status.charAt(0).toUpperCase() + workGoalMetrics.status.slice(1)}`)
   lines.push(`**Delta:** ${workGoalMetrics.delta >= 0 ? '+' : ''}${workGoalMetrics.delta.toFixed(1)} hours`)
@@ -546,25 +542,6 @@ function formatAverageDailyPattern(analysis: EnhancedAnalysis): string {
   return lines.join('\n')
 }
 
-function formatWorkLifeBalance(analysis: EnhancedAnalysis): string {
-  const { workLifeBalance } = analysis.trends
-  const lines: string[] = []
-
-  lines.push('## Work-Life Balance (4-Week Average)')
-  lines.push('')
-  lines.push('### Time Allocation')
-  lines.push('')
-  lines.push(`- **Work** (Work + Mandatory): ${workLifeBalance.workHours.toFixed(1)}h (${workLifeBalance.workPercentage.toFixed(1)}%)`)
-  lines.push(`- **Rest:** ${workLifeBalance.restHours.toFixed(1)}h (${workLifeBalance.restPercentage.toFixed(1)}%)`)
-  lines.push(`- **Play:** ${workLifeBalance.playHours.toFixed(1)}h (${workLifeBalance.playPercentage.toFixed(1)}%)`)
-  lines.push(`- **Procrastination:** ${workLifeBalance.procrastinationHours.toFixed(1)}h (${workLifeBalance.procrastinationPercentage.toFixed(1)}%)`)
-  lines.push('')
-  lines.push(`**Work-to-Rest Ratio:** ${workLifeBalance.workRestRatio.toFixed(2)}:1`)
-  lines.push('')
-
-  return lines.join('\n')
-}
-
 // ========== INSIGHTS CONTEXT FOR AI ==========
 
 function formatInsightsContext(analysis: EnhancedAnalysis): string {
@@ -611,12 +588,6 @@ function formatInsightsContext(analysis: EnhancedAnalysis): string {
         longest: analysis.trends.streakMetrics.longestStreak,
         productive_days: analysis.trends.streakMetrics.productiveDays,
         total_days: analysis.trends.streakMetrics.totalDays
-      },
-      work_life_balance: {
-        work_hours: analysis.trends.workLifeBalance.workHours,
-        rest_hours: analysis.trends.workLifeBalance.restHours,
-        play_hours: analysis.trends.workLifeBalance.playHours,
-        work_rest_ratio: analysis.trends.workLifeBalance.workRestRatio
       },
       category_trends: Object.fromEntries(
         Object.entries(analysis.trends.categoryTrends).map(([cat, trend]) => [

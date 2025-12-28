@@ -86,48 +86,51 @@ export default function CurrentWeekDashboard({
 
       {/* LATEST WEEK SECTION */}
       <div>
-        <h2 className={cn('text-base font-bold mb-2', 'text-gray-700')}>
+        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
           📊 Latest Week Overview
         </h2>
 
-        {/* Category Summary Cards */}
-        <div className="space-y-2">
-          <KPICards
-            latestWeekStats={currentStats}
-            fourWeekAverage={fourWeekAverage as any}
-          />
+        <div className="space-y-6">
+          {/* Category Summary and Weekly Work Goal - Side by Side */}
+          <div className="grid grid-cols-2 gap-6">
+            <KPICards
+              latestWeekStats={currentStats}
+              fourWeekAverage={fourWeekAverage as any}
+            />
+            <WeeklyWorkGoal metrics={enhancedAnalysis.latestWeek.workGoalMetrics} />
+          </div>
 
-          {/* Weekly Work Goal */}
-          <WeeklyWorkGoal metrics={enhancedAnalysis.latestWeek.workGoalMetrics} />
+          {/* Top Activities (latest week) - Most actionable insight */}
+          <TopActivitiesBreakdown activities={enhancedAnalysis.latestWeek.topActivities} />
         </div>
       </div>
 
-      {/* COMBINED ANALYSIS SECTION */}
+      {/* TRENDS & DETAILED ANALYSIS SECTION */}
       <div>
         <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
           📈 Trends & Detailed Analysis
         </h2>
 
         <div className="space-y-6">
-          {/* Top Activities (latest week) - Most actionable insight */}
-          <TopActivitiesBreakdown activities={enhancedAnalysis.latestWeek.topActivities} />
+          {/* 4-Week Trend and Average Daily Breakdown - Side by Side */}
+          <div className="grid grid-cols-2 gap-6">
+            {/* 4-Week Trend Chart - Shows progression over time */}
+            <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
 
-          {/* 4-Week Trend Chart - Shows progression over time */}
-          <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
-
-          {/* Average Daily Breakdown - Pattern across week */}
-          <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
-            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
-              Average Daily Breakdown (4 Weeks)
+            {/* Average Daily Breakdown - Pattern across week */}
+            <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
+              <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
+                Average Daily Breakdown (4 Weeks)
+              </div>
+              <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
             </div>
-            <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
           </div>
 
-          {/* Weekly Rhythm Heatmap - Time patterns */}
-          <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
-
-          {/* Time Slot Patterns - Detailed time slot analysis */}
-          <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
+          {/* Weekly Rhythm Heatmap and Time Slot Patterns - Side by Side */}
+          <div className="grid grid-cols-2 gap-6">
+            <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
+            <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
+          </div>
         </div>
       </div>
     </div>

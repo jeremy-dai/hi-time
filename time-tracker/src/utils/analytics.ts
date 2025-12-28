@@ -132,7 +132,7 @@ export function aggregateMultiWeekData(
 
 /**
  * Calculate annual productivity streak from weeks store
- * A productive day is defined as 8+ hours of work (W + M categories)
+ * A productive day is defined as 8+ hours of work (W category only)
  * Streak allows up to 2 skipped days without breaking
  */
 function calculateAnnualStreak(
@@ -149,7 +149,7 @@ function calculateAnnualStreak(
       let workHours = 0
 
       for (const block of dayBlocks) {
-        if (block && (block.category === 'W' || block.category === 'M')) {
+        if (block && block.category === 'W') {
           workHours += 0.5
         }
       }

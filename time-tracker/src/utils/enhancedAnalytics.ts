@@ -191,7 +191,7 @@ export function generateExecutiveSummary(
  * Calculate work-life balance metrics
  */
 export function calculateWorkLifeBalance(categoryHours: Record<string, number>): WorkLifeMetrics {
-  const workHours = (categoryHours['W'] || 0) + (categoryHours['M'] || 0)
+  const workHours = categoryHours['W'] || 0
   const restHours = categoryHours['R'] || 0
   const playHours = categoryHours['G'] || 0
   const procrastinationHours = categoryHours['P'] || 0
@@ -409,7 +409,7 @@ export function analyzeProductiveStreak(
       let workHours = 0
 
       for (const block of dayBlocks) {
-        if (block && (block.category === 'W' || block.category === 'M')) {
+        if (block && block.category === 'W') {
           workHours += 0.5
         }
       }
@@ -481,11 +481,11 @@ export function calculateWeeklyWorkGoal(
   multiWeekStats: { categoryHours: Record<CategoryKey, number>; weeks: number },
   targetHours: number = 40
 ): WorkGoalMetrics {
-  // Latest week work hours (Work + Mandatory)
-  const actualHours = (latestWeekStats.categoryHours['W'] || 0) + (latestWeekStats.categoryHours['M'] || 0)
+  // Latest week work hours (Work only, excluding Mandatory)
+  const actualHours = latestWeekStats.categoryHours['W'] || 0
 
-  // 4-week average
-  const avgWorkHours = (multiWeekStats.categoryHours['W'] || 0) + (multiWeekStats.categoryHours['M'] || 0)
+  // 4-week average (Work only, excluding Mandatory)
+  const avgWorkHours = multiWeekStats.categoryHours['W'] || 0
   const weeklyAverage = multiWeekStats.weeks > 0 ? avgWorkHours / multiWeekStats.weeks : 0
 
   const goalPercentage = (actualHours / targetHours) * 100

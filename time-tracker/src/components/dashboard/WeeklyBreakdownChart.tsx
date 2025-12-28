@@ -10,10 +10,10 @@ interface WeeklyBreakdownChartProps {
 
 export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownChartProps) {
   const data = useMemo(() => {
-    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-    // Re-order from Sunday-first to Monday-first
+    // Order from Sunday to Saturday
     const orderedData = dayOrder.map((dayName, index) => {
       const dayData = dailyPattern.find(d => d.dayName === dayName)
       if (!dayData) {

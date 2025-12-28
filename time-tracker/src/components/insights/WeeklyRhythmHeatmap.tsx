@@ -25,9 +25,14 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
 
     for (const timeSlot of uniqueSlots) {
       const row: WeeklyRhythmData[] = []
-      for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
+      // Reorder to Sunday-Saturday: [0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat]
+      const dayOrder = [6, 0, 1, 2, 3, 4, 5] // Map from Mon-Sun indices to Sun-Sat
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+      for (let i = 0; i < 7; i++) {
+        const originalDayIndex = dayOrder[i]
         const data = rhythmData.find(
-          d => d.dayIndex === dayIndex && d.timeSlot === timeSlot
+          d => d.dayIndex === originalDayIndex && d.timeSlot === timeSlot
         )
         if (data) {
           row.push(data)
@@ -35,8 +40,8 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
           // Create empty cell if no data
           const slotStart = rhythmData.find(d => d.timeSlot === timeSlot)?.timeSlotStart || 6
           row.push({
-            day: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][dayIndex],
-            dayIndex,
+            day: dayNames[i],
+            dayIndex: originalDayIndex,
             timeSlot,
             timeSlotStart: slotStart,
             averageHours: 0,
@@ -62,7 +67,7 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
     return 'bg-yellow-400 border border-yellow-500'
   }
 
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <div className={cn(

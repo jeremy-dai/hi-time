@@ -101,19 +101,15 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
         </div>
       )}
 
-      <div className="h-[400px] w-full">
+      <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={chartData}
-            margin={{ top: 10, right: 0, left: -10, bottom: 20 }}
+            margin={{ top: 10, right: 0, left: -10, bottom: 5 }}
           >
             <XAxis
               dataKey="time"
-              angle={-45}
-              textAnchor="end"
-              height={40}
-              tick={{ fontSize: 11 }}
-              stroke="#9ca3af"
+              hide={true}
             />
             <YAxis
               width={25}

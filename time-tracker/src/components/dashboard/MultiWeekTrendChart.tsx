@@ -10,7 +10,8 @@ interface MultiWeekTrendChartProps {
 
 export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendChartProps) {
   const chartData = useMemo(() => {
-    return multiWeekStats.weeks.map(({ weekKey, stats }) => {
+    // Reverse the weeks array to show oldest to newest (left to right)
+    return multiWeekStats.weeks.slice().reverse().map(({ weekKey, stats }) => {
       // Format week key for display (e.g., "2025-W50" -> "W50")
       const weekLabel = weekKey.split('-W')[1] ? `W${weekKey.split('-W')[1]}` : weekKey
 

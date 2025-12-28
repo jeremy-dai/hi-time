@@ -41,10 +41,10 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
 
   return (
     <div className={cn(
-      'rounded-3xl p-6',
+      'rounded-3xl p-4',
       'bg-white shadow-sm'
     )}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className={cn(
           'text-lg font-semibold',
           'text-gray-900'
@@ -60,19 +60,19 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
             <tr className={cn(
               'border-b border-gray-200'
             )}>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">
+              <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600">
                 Rank
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">
+              <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600">
                 Activity
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600">
+              <th className="px-2 py-1.5 text-left text-xs font-semibold text-gray-600">
                 Type
               </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600">
+              <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600">
                 Hours
               </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600">
+              <th className="px-2 py-1.5 text-right text-xs font-semibold text-gray-600">
                 %
               </th>
             </tr>
@@ -92,9 +92,9 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                   )}
                 >
                   {/* Rank */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-1.5">
                     <div className={cn(
-                      'flex items-center justify-center w-7 h-7 rounded-full',
+                      'flex items-center justify-center w-6 h-6 rounded-full',
                       index === 0 ? 'bg-yellow-100 text-yellow-700' :
                       index === 1 ? 'bg-gray-200 text-gray-700' :
                       index === 2 ? 'bg-orange-100 text-orange-700' :
@@ -107,7 +107,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                   </td>
 
                   {/* Activity */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-1.5">
                     <span className={cn(
                       'text-sm font-medium',
                       'text-gray-900'
@@ -117,9 +117,9 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                   </td>
 
                   {/* Type */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-1.5">
                     <span
-                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium"
+                      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       style={{
                         backgroundColor: categoryColors?.bg || '#f3f4f6',
                         color: categoryColors?.text || '#4b5563'
@@ -130,7 +130,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                   </td>
 
                   {/* Hours */}
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2 py-1.5 text-right">
                     <span className={cn(
                       'text-sm font-semibold',
                       'text-gray-900'
@@ -140,9 +140,9 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                   </td>
 
                   {/* Percentage */}
-                  <td className="px-4 py-3">
+                  <td className="px-2 py-1.5">
                     <div className="flex items-center justify-end gap-2">
-                      <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="w-12 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -165,15 +165,15 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
 
       {/* Summary Footer */}
       <div className={cn(
-        'mt-4 p-3 rounded-xl',
+        'mt-2 p-2 rounded-lg',
         'bg-gray-50',
         'border border-gray-200'
       )}>
         <p className="text-xs text-gray-600">
           <span className="font-semibold">
-            Showing top {activities.length} activities
+            Top {activities.length}
           </span>{' '}
-          accounting for{' '}
+          ={' '}
           <span className="font-semibold">
             {activities.reduce((sum, a) => sum + a.percentage, 0).toFixed(1)}%
           </span>{' '}
