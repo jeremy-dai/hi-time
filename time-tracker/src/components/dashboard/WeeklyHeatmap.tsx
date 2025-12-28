@@ -4,30 +4,60 @@ import { cn } from '../../utils/classNames'
 
 interface WeeklyHeatmapProps {
   ytdStats: YTDStats
-  weeksStore: Record<string, any[][]>
-  weekKeys: string[]
 }
 
-export default function WeeklyHeatmap({ ytdStats, weeksStore: _weeksStore, weekKeys: _weekKeys }: WeeklyHeatmapProps) {
-  const [hoveredWeek, setHoveredWeek] = useState<{ weekKey: string; hours: number; workHours: number } | null>(null)
+interface DayData {
+  date: Date
+  dateStr: string
+  workHours: number
+  totalHours: number
+  weekKey: string
+}
 
-  const { maxWorkHours, weekData } = useMemo(() => {
-    // Calculate work hours (W category) for each week
-    const dataWithWorkHours = ytdStats.weeklyData.map(week => {
-      const workHours = week.categoryHours['W'] || 0
-      return {
-        ...week,
-        workHours
+export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
+  const [hoveredDay, setHoveredDay] = useState<DayData | null>(null)
+
+  // Transform weekly data to daily data using actual daily hours
+  const { maxWorkHours, dailyData } = useMemo(() => {
+    const days: DayData[] = []
+
+    ytdStats.weeklyData.forEach(week => {
+      // Parse week key (e.g., "2025-W01")
+      const [yearStr, weekStr] = week.weekKey.split('-W')
+      const year = parseInt(yearStr, 10)
+      const weekNum = parseInt(weekStr, 10)
+
+      // Calculate the start date of this week (Monday using ISO week calculation)
+      const jan4 = new Date(year, 0, 4)
+      const jan4Day = jan4.getDay() || 7 // Convert Sunday=0 to 7
+      const weekStart = new Date(jan4)
+      weekStart.setDate(jan4.getDate() - jan4Day + 1 + (weekNum - 1) * 7)
+
+      // Generate 7 days for this week with actual daily data
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(weekStart)
+        date.setDate(weekStart.getDate() + i)
+
+        // Get actual hours for this day from dailyHours and dailyByCategory
+        const dayTotalHours = week.dailyHours[i] || 0
+        const dayCategories = week.dailyByCategory[i] || {}
+        const dayWorkHours = dayCategories['W'] || 0
+
+        days.push({
+          date,
+          dateStr: date.toISOString().split('T')[0],
+          workHours: dayWorkHours,
+          totalHours: dayTotalHours,
+          weekKey: week.weekKey
+        })
       }
     })
-    const max = Math.max(...dataWithWorkHours.map(w => w.workHours), 1)
-    return {
-      maxWorkHours: max,
-      weekData: dataWithWorkHours
-    }
+
+    const max = Math.max(...days.map(d => d.workHours), 1)
+    return { maxWorkHours: max, dailyData: days }
   }, [ytdStats])
 
-  const getProductiveColor = (workHours: number) => {
+  const getContributionColor = (workHours: number) => {
     if (workHours === 0) return 'bg-gray-100'
     const intensity = workHours / maxWorkHours
     if (intensity > 0.75) return 'bg-yellow-500'
@@ -36,54 +66,72 @@ export default function WeeklyHeatmap({ ytdStats, weeksStore: _weeksStore, weekK
     return 'bg-yellow-200'
   }
 
-  // Organize data into a 2D grid structure with months as rows and weeks as columns
+  // Organize days into a grid (weeks as columns, weekdays as rows)
   const gridData = useMemo(() => {
-    // Group weeks by month and year
-    const monthsMap: Record<string, typeof weekData> = {}
-    weekData.forEach((week) => {
-      const [yearStr, weekStr] = week.weekKey.split('-W')
-      const weekNum = parseInt(weekStr, 10)
+    if (dailyData.length === 0) return { weeks: [], monthLabels: [] }
 
-      // Approximate month from week number (rough estimate)
-      const monthIndex = Math.floor((weekNum - 1) / 4.33)
-      const monthKey = `${yearStr}-${String(monthIndex + 1).padStart(2, '0')}`
+    // Sort by date
+    const sortedDays = [...dailyData].sort((a, b) => a.date.getTime() - b.date.getTime())
 
-      if (!monthsMap[monthKey]) {
-        monthsMap[monthKey] = []
-      }
-      monthsMap[monthKey].push(week)
+    // Find the first Sunday on or before the first date
+    const firstDate = new Date(sortedDays[0].date)
+    const firstDayOfWeek = firstDate.getDay()
+    const startDate = new Date(firstDate)
+    startDate.setDate(firstDate.getDate() - firstDayOfWeek)
+
+    // Find the last Saturday on or after the last date
+    const lastDate = new Date(sortedDays[sortedDays.length - 1].date)
+    const lastDayOfWeek = lastDate.getDay()
+    const endDate = new Date(lastDate)
+    endDate.setDate(lastDate.getDate() + (6 - lastDayOfWeek))
+
+    // Create a map for quick lookup
+    const dayMap = new Map<string, DayData>()
+    sortedDays.forEach(day => {
+      dayMap.set(day.dateStr, day)
     })
 
-    // Convert to sorted array of months with week arrays
-    const sortedMonths = Object.keys(monthsMap).sort()
+    // Build week columns
+    const weeks: (DayData | null)[][] = []
+    let currentDate = new Date(startDate)
 
-    // Find the maximum number of weeks in any month
-    const maxWeeks = Math.max(...Object.values(monthsMap).map(weeks => weeks.length), 0)
+    while (currentDate <= endDate) {
+      const week: (DayData | null)[] = []
 
-    // Build grid structure: each row is a month, each column is a week position
-    const grid = sortedMonths.map(monthKey => {
-      const weeks = monthsMap[monthKey].sort((a, b) => {
-        const weekA = parseInt(a.weekKey.split('-W')[1], 10)
-        const weekB = parseInt(b.weekKey.split('-W')[1], 10)
-        return weekA - weekB
-      })
-
-      // Pad with nulls to ensure consistent column count
-      const paddedWeeks = [...weeks]
-      while (paddedWeeks.length < maxWeeks) {
-        paddedWeeks.push(null as any)
+      for (let i = 0; i < 7; i++) {
+        const dateStr = currentDate.toISOString().split('T')[0]
+        const dayData = dayMap.get(dateStr) || null
+        week.push(dayData)
+        currentDate.setDate(currentDate.getDate() + 1)
       }
 
-      return {
-        monthKey,
-        weeks: paddedWeeks
+      weeks.push(week)
+    }
+
+    // Calculate month labels (only show when month changes)
+    const monthLabels: { weekIndex: number; label: string }[] = []
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    let lastMonth = -1
+
+    weeks.forEach((week, index) => {
+      // Check the middle day of the week for more stable month detection
+      const midDay = week[3] || week.find(d => d !== null)
+      if (midDay) {
+        const month = midDay.date.getMonth()
+        if (month !== lastMonth) {
+          monthLabels.push({
+            weekIndex: index,
+            label: monthNames[month]
+          })
+          lastMonth = month
+        }
       }
     })
 
-    return { grid, maxWeeks }
-  }, [weekData])
+    return { weeks, monthLabels }
+  }, [dailyData])
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
@@ -91,124 +139,106 @@ export default function WeeklyHeatmap({ ytdStats, weeksStore: _weeksStore, weekK
         Weekly Activity Heatmap
       </div>
 
-      {weekData.length === 0 ? (
+      {dailyData.length === 0 ? (
         <div className="text-gray-500 text-center py-8">
-          No weekly data available
+          No activity data available
         </div>
       ) : (
         <div className="w-full overflow-x-auto">
-          {/* Header Row - Week Labels */}
-          <div className={`grid gap-1 mb-2`} style={{ gridTemplateColumns: `60px repeat(${gridData.maxWeeks}, 1fr)` }}>
-            <div /> {/* Empty corner */}
-            {Array.from({ length: gridData.maxWeeks }, (_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  'text-center text-sm font-semibold py-1',
-                  'text-gray-700'
-                )}
+          {/* Month labels */}
+          <div className="relative mb-2" style={{ paddingLeft: '48px', height: '20px' }}>
+            {gridData.monthLabels.map(({ weekIndex, label }) => (
+              <span
+                key={`${weekIndex}-${label}`}
+                className="absolute text-xs font-medium text-gray-700"
+                style={{ left: `${48 + weekIndex * 16}px` }}
               >
-                W{i + 1}
-              </div>
+                {label}
+              </span>
             ))}
           </div>
 
-          {/* Heatmap Grid */}
-          {gridData.grid.map((row, rowIndex) => {
-            const monthIndex = parseInt(row.monthKey.split('-')[1], 10) - 1
-            const monthLabel = monthNames[monthIndex] || row.monthKey
-
-            return (
-              <div key={row.monthKey} className={`grid gap-1 mb-0.5`} style={{ gridTemplateColumns: `60px repeat(${gridData.maxWeeks}, 1fr)` }}>
-                {/* Month Label */}
-                <div className={cn(
-                  'flex items-center justify-end pr-2 text-sm font-medium',
-                  'text-gray-700'
-                )}>
-                  {monthLabel}
+          {/* GitHub-style grid */}
+          <div className="flex gap-1">
+            {/* Day labels */}
+            <div className="flex flex-col gap-1 pr-2">
+              {dayLabels.map((label, index) => (
+                <div
+                  key={label}
+                  className="text-xs text-gray-600 h-3 flex items-center justify-end"
+                  style={{
+                    visibility: index % 2 === 1 ? 'visible' : 'hidden' // Only show Mon, Wed, Fri
+                  }}
+                >
+                  {label}
                 </div>
+              ))}
+            </div>
 
-                {/* Cells for each week */}
-                {row.weeks.map((week, colIndex) => {
-                  if (!week) {
-                    // Empty cell
-                    return (
-                      <div
-                        key={`${rowIndex}-${colIndex}`}
-                        className="h-8"
-                      />
-                    )
-                  }
-
-                  const weekNum = week.weekKey.split('-W')[1]
-                  return (
+            {/* Contribution squares */}
+            <div className="flex gap-1">
+              {gridData.weeks.map((week, weekIndex) => (
+                <div key={weekIndex} className="flex flex-col gap-1">
+                  {week.map((day, dayIndex) => (
                     <div
-                      key={week.weekKey}
+                      key={`${weekIndex}-${dayIndex}`}
                       className="relative"
-                      onMouseEnter={() => setHoveredWeek({ weekKey: week.weekKey, hours: week.hours, workHours: week.workHours })}
-                      onMouseLeave={() => setHoveredWeek(null)}
+                      onMouseEnter={() => day && setHoveredDay(day)}
+                      onMouseLeave={() => setHoveredDay(null)}
                     >
                       <div
                         className={cn(
-                          'h-8 rounded flex items-center justify-center cursor-pointer',
-                          'transition-all duration-200 hover:scale-110 hover:shadow-lg hover:z-10',
-                          'border border-gray-200',
-                          getProductiveColor(week.workHours)
+                          'w-3 h-3 rounded-sm cursor-pointer',
+                          'transition-all duration-150',
+                          'hover:ring-2 hover:ring-gray-400 hover:ring-offset-1',
+                          day ? getContributionColor(day.workHours) : 'bg-gray-50',
+                          !day && 'cursor-default'
                         )}
-                      >
-                        <span
-                          className={cn(
-                            'text-[10px] font-medium',
-                            week.workHours > 0
-                              ? 'text-gray-900'
-                              : 'text-gray-600'
-                          )}
-                        >
-                          {weekNum}
-                        </span>
-                      </div>
+                        title={day ? `${day.dateStr}: ${day.workHours.toFixed(1)}h work` : ''}
+                      />
 
                       {/* Tooltip */}
-                      {hoveredWeek?.weekKey === week.weekKey && (
+                      {hoveredDay && day && hoveredDay.dateStr === day.dateStr && (
                         <div className={cn(
                           'absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2',
-                          'w-48 p-3 rounded-lg shadow-lg',
-                          'bg-white border border-gray-200',
-                          'text-xs pointer-events-none'
+                          'w-40 p-2 rounded-lg shadow-xl',
+                          'bg-gray-900 text-white',
+                          'text-xs pointer-events-none whitespace-nowrap'
                         )}>
-                          <div className="font-semibold text-gray-900 mb-1">
-                            {week.weekKey}
+                          <div className="font-semibold mb-1">
+                            {day.date.toLocaleDateString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
                           </div>
-                          <div className="text-gray-600">
-                            Work: {week.workHours.toFixed(1)}h
+                          <div>
+                            Work: {day.workHours.toFixed(1)}h
                           </div>
-                          <div className="text-gray-500">
-                            Total: {week.hours.toFixed(1)}h
+                          <div className="text-gray-300 text-[10px]">
+                            Total: {day.totalHours.toFixed(1)}h
                           </div>
                         </div>
                       )}
                     </div>
-                  )
-                })}
-              </div>
-            )
-          })}
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Legend */}
-          <div className="mt-4 flex items-center justify-center gap-3">
-            <span className={cn('text-xs', 'text-gray-600')}>
-              Less work
-            </span>
+          <div className="mt-6 flex items-center gap-2 text-xs text-gray-600">
+            <span>Less</span>
             <div className="flex gap-1">
-              <div className="w-5 h-5 rounded bg-gray-100 border border-gray-200" />
-              <div className="w-5 h-5 rounded bg-yellow-200 border border-gray-200" />
-              <div className="w-5 h-5 rounded bg-yellow-300 border border-gray-200" />
-              <div className="w-5 h-5 rounded bg-yellow-400 border border-gray-200" />
-              <div className="w-5 h-5 rounded bg-yellow-500 border border-gray-200" />
+              <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
+              <div className="w-3 h-3 rounded-sm bg-yellow-200" />
+              <div className="w-3 h-3 rounded-sm bg-yellow-300" />
+              <div className="w-3 h-3 rounded-sm bg-yellow-400" />
+              <div className="w-3 h-3 rounded-sm bg-yellow-500" />
             </div>
-            <span className={cn('text-xs', 'text-gray-600')}>
-              More work
-            </span>
+            <span>More</span>
           </div>
         </div>
       )}

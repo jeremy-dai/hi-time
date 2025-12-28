@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useYearMemories } from '../hooks/useYearMemories'
 import AnnualMemoryCalendar from './dashboard/AnnualMemoryCalendar'
-import { ChevronDown, BookHeart } from 'lucide-react'
+import { ChevronDown, CalendarRange } from 'lucide-react'
 import { cn } from '../utils/classNames'
 
 export default function Memories() {
@@ -17,6 +17,16 @@ export default function Memories() {
     }
     return years
   }, [currentYear])
+
+  // Calculate date range for the selected year
+  const dateRangeLabel = useMemo(() => {
+    const start = new Date(selectedYear, 0, 1) // January 1st
+    const end = new Date(selectedYear, 11, 31) // December 31st
+
+    const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    return `${startStr} - ${endStr}`
+  }, [selectedYear])
 
   const formatLastSynced = () => {
     if (!lastSynced) return 'Never'
@@ -70,26 +80,16 @@ export default function Memories() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-              <BookHeart className="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Memories</h1>
-              <p className="text-sm text-gray-500">Capture and reflect on your daily moments</p>
-            </div>
-          </div>
-
           {/* Year Selector */}
           <div className="relative">
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className={cn(
-                'appearance-none pl-4 pr-10 py-2.5 rounded-lg font-semibold',
+                'appearance-none pl-4 pr-10 py-2 rounded-lg font-semibold',
                 'bg-white border-2 border-gray-200',
-                'text-gray-900 text-lg',
-                'hover:border-purple-300 focus:border-purple-500 focus:outline-none',
+                'text-gray-900 text-base',
+                'hover:border-blue-300 focus:border-blue-500 focus:outline-none',
                 'transition-colors cursor-pointer'
               )}
             >
@@ -99,21 +99,37 @@ export default function Memories() {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+          </div>
+
+          {/* Sync Status */}
+          <div className="flex items-center gap-4 text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              <span>Status:</span>
+              <span className={cn('font-medium', getSyncStatusColor())}>
+                {getSyncStatusText()}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>Last synced:</span>
+              <span className="font-medium">{formatLastSynced()}</span>
+            </div>
           </div>
         </div>
 
-        {/* Sync Status */}
-        <div className="flex items-center gap-4 text-xs text-gray-500">
-          <div className="flex items-center gap-2">
-            <span>Status:</span>
-            <span className={cn('font-medium', getSyncStatusColor())}>
-              {getSyncStatusText()}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Last synced:</span>
-            <span className="font-medium">{formatLastSynced()}</span>
+        {/* Date Range Banner */}
+        <div className={cn(
+          'rounded-lg p-4 flex items-center space-x-3',
+          'bg-blue-50 text-blue-900'
+        )}>
+          <CalendarRange className="w-5 h-5 text-blue-600" />
+          <div>
+            <h3 className="font-semibold text-sm">
+              Annual Memories: {dateRangeLabel}
+            </h3>
+            <p className="text-xs mt-0.5 opacity-90">
+              Viewing memories for {selectedYear}
+            </p>
           </div>
         </div>
       </div>

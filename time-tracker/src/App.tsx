@@ -418,6 +418,30 @@ function App() {
     setWeekData([...currentWeekData])
   }
 
+  // Update theme for any week (used by Annual Dashboard)
+  const handleUpdateWeekTheme = useCallback(async (weekKey: string, theme: string) => {
+    const existingMetadata = weekMetadataStoreRef.current[weekKey] || { startingHour: 8, theme: null }
+    const updatedMetadata = { ...existingMetadata, theme: theme || null }
+
+    // Update local state
+    const updated = { ...weekMetadataStoreRef.current, [weekKey]: updatedMetadata }
+    weekMetadataStoreRef.current = updated
+    setWeekMetadataStore(updated)
+
+    // Cache to localStorage
+    const cachedMetadata = {
+      data: updatedMetadata,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(`week-metadata-${weekKey}`, JSON.stringify(cachedMetadata))
+
+    // Save to database
+    const weekData = weekStoreRef.current[weekKey]
+    if (weekData) {
+      await putWeek(weekKey, weekData, updatedMetadata)
+    }
+  }, [])
+
   // Show loading while checking authentication or navigating
   if (authLoading || isNavigating) {
     return (
@@ -490,10 +514,12 @@ function App() {
         <Dashboard
           weekData={currentWeekData}
           weeksStore={weekStore}
+          weekMetadataStore={weekMetadataStoreRef.current}
           currentWeekKey={currentWeekKey}
           currentDate={currentDateState}
           loadWeeksForRange={loadWeeksForRange}
           loadYearWeeks={loadYearWeeks}
+          onUpdateWeekTheme={handleUpdateWeekTheme}
           viewMode="trends"
         />
       )}
@@ -501,10 +527,12 @@ function App() {
         <Dashboard
           weekData={currentWeekData}
           weeksStore={weekStore}
+          weekMetadataStore={weekMetadataStoreRef.current}
           currentWeekKey={currentWeekKey}
           currentDate={currentDateState}
           loadWeeksForRange={loadWeeksForRange}
           loadYearWeeks={loadYearWeeks}
+          onUpdateWeekTheme={handleUpdateWeekTheme}
           viewMode="annual"
         />
       )}

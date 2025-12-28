@@ -85,6 +85,8 @@ export interface YTDStats {
     weekKey: string
     hours: number
     categoryHours: Record<string, number>
+    dailyHours: number[]
+    dailyByCategory: Record<number, Record<string, number>>
   }>
   streakMetrics: {
     currentStreak: number
@@ -230,7 +232,9 @@ export function aggregateYTDData(
     weeklyData.push({
       weekKey,
       hours,
-      categoryHours: stats.categoryHours
+      categoryHours: stats.categoryHours,
+      dailyHours: stats.dailyHours,
+      dailyByCategory: stats.dailyByCategory
     })
 
     totalHours += hours

@@ -40,13 +40,13 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
           <div className="flex justify-center mb-1">
             <Flame className="w-6 h-6 text-orange-500" />
           </div>
-          <div className="text-2xl font-bold text-orange-600">
+          <div className="text-3xl font-bold text-orange-600 mb-0.5">
             {currentStreak}
           </div>
-          <div className="text-xs font-medium text-orange-900">
+          <div className="text-xs font-medium text-orange-900 mb-1.5">
             Current Streak
           </div>
-          <div className="text-[10px] text-orange-700">
+          <div className="text-[10px] text-orange-700 font-medium">
             {currentStreak === 1 ? 'day' : 'days'}
           </div>
         </div>
@@ -60,13 +60,13 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
           <div className="flex justify-center mb-1">
             <TrendingUp className="w-6 h-6 text-purple-500" />
           </div>
-          <div className="text-2xl font-bold text-purple-600">
+          <div className="text-3xl font-bold text-purple-600 mb-0.5">
             {longestStreak}
           </div>
-          <div className="text-xs font-medium text-purple-900">
+          <div className="text-xs font-medium text-purple-900 mb-1.5">
             Longest Streak
           </div>
-          <div className="text-[10px] text-purple-700">
+          <div className="text-[10px] text-purple-700 font-medium">
             this year
           </div>
         </div>
@@ -75,19 +75,34 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
         <div className={cn(
           'rounded-xl p-3 text-center',
           'bg-gradient-to-br from-blue-50 to-blue-100',
-          'border border-blue-200'
+          'border border-blue-200',
+          'relative overflow-hidden'
         )}>
-          <div className="flex justify-center mb-1">
-            <Calendar className="w-6 h-6 text-blue-500" />
-          </div>
-          <div className="text-2xl font-bold text-blue-600">
-            {productiveDays}/{totalDays}
-          </div>
-          <div className="text-xs font-medium text-blue-900">
-            Productive Days
-          </div>
-          <div className="text-[10px] text-blue-700">
-            {productivePercentage.toFixed(0)}% of year
+          {/* Background progress indicator */}
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-blue-200/40 to-blue-300/40 transition-all duration-500"
+            style={{ width: `${productivePercentage}%` }}
+          />
+
+          {/* Content */}
+          <div className="relative">
+            <div className="flex justify-center mb-1">
+              <Calendar className="w-6 h-6 text-blue-500" />
+            </div>
+
+            {/* Percentage as main metric */}
+            <div className="text-3xl font-bold text-blue-600 mb-0.5">
+              {productivePercentage.toFixed(0)}%
+            </div>
+
+            <div className="text-xs font-medium text-blue-900 mb-1.5">
+              Productive Days
+            </div>
+
+            {/* Compact day count */}
+            <div className="text-[10px] text-blue-700 font-medium">
+              {productiveDays} of {totalDays} days
+            </div>
           </div>
         </div>
       </div>

@@ -8,20 +8,30 @@ import AnnualDashboard from './dashboard/AnnualDashboard'
 interface DashboardProps {
   weekData: TimeBlock[][]
   weeksStore: Record<string, TimeBlock[][]>
+  weekMetadataStore: Record<string, { startingHour: number; theme: string | null }>
   currentWeekKey: string
   currentDate: Date
   loadWeeksForRange: (weekKeys: string[]) => Promise<void>
   loadYearWeeks: (year: number) => Promise<void>
+  onUpdateWeekTheme: (weekKey: string, theme: string) => Promise<void>
   viewMode: 'trends' | 'annual'
 }
 
 export default function Dashboard({
   weeksStore,
+  weekMetadataStore,
   currentDate,
   loadWeeksForRange,
+  onUpdateWeekTheme,
   viewMode
 }: DashboardProps) {
   const [isLoadingData, setIsLoadingData] = useState(false)
+
+  // State for selected year in Annual view (defaults to current year)
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const { isoYear } = getISOWeekYear(currentDate)
+    return isoYear
+  })
 
   // Calculate the last complete week (previous week)
   // We ALWAYS exclude the current week from analysis as requested
@@ -49,14 +59,20 @@ export default function Dashboard({
     return `${startStr} - ${endStr}`
   }, [lastCompleteWeekDate])
 
-  // Calculate keys for Annual view (all weeks of current year up to last complete week)
+  // Calculate keys for Annual view (all weeks of selected year up to last complete week)
   const annualWeekKeys = useMemo(() => {
-    const { isoYear } = getISOWeekYear(currentDate)
-    // Get all weeks of the current year
+    // Get all weeks of the selected year
     const allYearWeeks = getCurrentYearWeeks()
-    // Filter to only include weeks <= lastCompleteWeekKey and matching the current year
-    return allYearWeeks.filter(key => key <= lastCompleteWeekKey && key.startsWith(`${isoYear}-`))
-  }, [currentDate, lastCompleteWeekKey])
+    const currentYearIso = getISOWeekYear(currentDate).isoYear
+
+    // If viewing current year, filter to only include weeks <= lastCompleteWeekKey
+    if (selectedYear === currentYearIso) {
+      return allYearWeeks.filter(key => key <= lastCompleteWeekKey && key.startsWith(`${selectedYear}-`))
+    }
+
+    // For past years, include all weeks of that year
+    return allYearWeeks.filter(key => key.startsWith(`${selectedYear}-`))
+  }, [selectedYear, currentDate, lastCompleteWeekKey])
 
   // Load data when switching views
   useEffect(() => {
@@ -105,9 +121,12 @@ export default function Dashboard({
       {!isLoadingData && viewMode === 'annual' && (
         <AnnualDashboard
           weeksStore={weeksStore}
-          year={getISOWeekYear(currentDate).isoYear}
+          weekMetadataStore={weekMetadataStore}
+          year={selectedYear}
           weekKeys={annualWeekKeys}
           onRefresh={() => loadWeeksForRange(annualWeekKeys)}
+          onUpdateWeekTheme={onUpdateWeekTheme}
+          onYearChange={setSelectedYear}
         />
       )}
     </div>

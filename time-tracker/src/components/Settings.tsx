@@ -420,7 +420,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                 <button
                   onClick={handleBulkExport}
                   disabled={exporting}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-green-600 text-white font-semibold text-sm rounded-xl hover:bg-green-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-semibold text-sm rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 >
                   {exporting ? 'Exporting...' : 'Export CSV'}
                 </button>

@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import type { DailyMemory } from '../../types/time'
 import { cn } from '../../utils/classNames'
-import MemoryEditor from './MemoryEditor'
 
 interface AnnualMemoryCalendarProps {
   year: number
@@ -34,8 +33,17 @@ export default function AnnualMemoryCalendar({
   onUpdateMemory,
   onDeleteMemory
 }: AnnualMemoryCalendarProps) {
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [hoveredDate, setHoveredDate] = useState<string | null>(null)
+  const [editingDate, setEditingDate] = useState<string | null>(null)
+  const [editingMemory, setEditingMemory] = useState('')
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Focus textarea when editing
+  useEffect(() => {
+    if (editingDate && textareaRef.current) {
+      textareaRef.current.focus()
+      textareaRef.current.select()
+    }
+  }, [editingDate])
 
   const calendarData = useMemo(() => {
     const months = []
@@ -59,134 +67,142 @@ export default function AnnualMemoryCalendar({
     return months
   }, [year, memories])
 
-  const handleSave = (date: string, memory: DailyMemory) => {
-    onUpdateMemory(date, memory)
-    setSelectedDate(null)
+  const handleCellClick = (dateStr: string) => {
+    const existingMemory = memories[dateStr]
+    setEditingDate(dateStr)
+    setEditingMemory(existingMemory?.memory || '')
   }
 
-  const handleDelete = (date: string) => {
-    onDeleteMemory(date)
-    setSelectedDate(null)
+  const handleBlur = () => {
+    if (!editingDate) return
+
+    // Save the memory if there's text
+    if (editingMemory.trim()) {
+      const existingMemory = memories[editingDate]
+      const newMemory: DailyMemory = {
+        date: editingDate,
+        memory: editingMemory.trim(),
+        mood: existingMemory?.mood,
+        tags: existingMemory?.tags,
+        createdAt: existingMemory?.createdAt || Date.now(),
+        updatedAt: Date.now()
+      }
+      onUpdateMemory(editingDate, newMemory)
+    } else if (memories[editingDate]) {
+      // If empty and memory exists, delete it
+      onDeleteMemory(editingDate)
+    }
+
+    setEditingDate(null)
+    setEditingMemory('')
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleBlur()
+    } else if (e.key === 'Escape') {
+      setEditingDate(null)
+      setEditingMemory('')
+    }
   }
 
   const totalMemories = Object.keys(memories).length
 
   return (
-    <div className={cn('rounded-3xl p-6', 'bg-white shadow-sm')}>
-      <div className="flex items-center justify-between mb-4">
+    <div className={cn('rounded-3xl p-4', 'bg-white shadow-sm')}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
         <div>
           <div className={cn('text-lg font-semibold', 'text-gray-900')}>
             {year} Memories
           </div>
-          <div className="text-sm text-gray-600 mt-1">
-            {totalMemories} {totalMemories === 1 ? 'memory' : 'memories'} recorded
+          <div className="text-xs text-gray-600 mt-0.5">
+            {totalMemories} {totalMemories === 1 ? 'memory' : 'memories'} recorded • Click to edit, Enter to save, Esc to cancel
           </div>
         </div>
       </div>
 
-      {/* Calendar Grid */}
+      {/* Year Calendar - Compact Table View with Inline Editing */}
       <div className="w-full overflow-x-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-w-max">
-          {calendarData.map((monthData) => (
-            <div key={monthData.month} className="border border-gray-200 rounded-lg p-3">
-              {/* Month Header */}
-              <div className="text-center font-semibold text-gray-900 mb-2 pb-2 border-b border-gray-200">
-                {monthData.monthName}
-              </div>
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr>
+              <th className="border border-gray-300 bg-gray-100 px-1 py-1 text-center font-semibold text-gray-700 w-16 sticky left-0 z-10">
+                Day
+              </th>
+              {MONTH_NAMES.map((monthName) => (
+                <th key={monthName} className="border border-gray-300 bg-gray-100 px-1 py-1 text-center font-semibold text-gray-700 min-w-[120px]">
+                  {monthName}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 31 }, (_, dayIndex) => {
+              const day = dayIndex + 1
+              return (
+                <tr key={day}>
+                  <td className="border border-gray-300 bg-gray-50 px-1 py-0.5 text-center font-medium text-gray-600 sticky left-0 z-10">
+                    {day}
+                  </td>
+                  {calendarData.map((monthData) => {
+                    const dayData = monthData.days.find(d => d.day === day)
+                    if (!dayData) {
+                      return (
+                        <td key={monthData.month} className="border border-gray-300 bg-gray-100" />
+                      )
+                    }
 
-              {/* Days Grid */}
-              <div className="grid grid-cols-7 gap-1">
-                {monthData.days.map((dayData) => {
-                  const hasMemory = !!dayData.memory
-                  const moodColor = dayData.memory?.mood
-                    ? MOOD_COLORS[dayData.memory.mood]
-                    : 'bg-purple-100 border-purple-300'
+                    const hasMemory = !!dayData.memory
+                    const isEditing = editingDate === dayData.dateStr
 
-                  return (
-                    <button
-                      key={dayData.dateStr}
-                      onClick={() => setSelectedDate(dayData.dateStr)}
-                      onMouseEnter={() => setHoveredDate(dayData.dateStr)}
-                      onMouseLeave={() => setHoveredDate(null)}
-                      className={cn(
-                        'relative aspect-square rounded text-xs font-medium',
-                        'transition-all duration-150 border',
-                        'hover:scale-110 hover:shadow-md hover:z-10',
-                        hasMemory
-                          ? cn(moodColor, 'text-gray-900')
-                          : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
-                      )}
-                      title={hasMemory ? 'Click to edit memory' : 'Click to add memory'}
-                    >
-                      <span className="absolute inset-0 flex items-center justify-center">
-                        {dayData.day}
-                      </span>
-                      {hasMemory && dayData.memory.mood && (
-                        <span className="absolute top-0 right-0 text-[8px]">
-                          {MOOD_EMOJIS[dayData.memory.mood]}
-                        </span>
-                      )}
-
-                      {/* Tooltip on hover */}
-                      {hoveredDate === dayData.dateStr && hasMemory && dayData.memory && (
-                        <div className={cn(
-                          'absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2',
-                          'w-48 p-2 rounded-lg shadow-lg',
-                          'bg-white border border-gray-200',
-                          'text-xs text-left pointer-events-none'
-                        )}>
-                          <div className="font-semibold text-gray-900 mb-1">
-                            {MONTH_NAMES[monthData.month]} {dayData.day}
+                    return (
+                      <td
+                        key={monthData.month}
+                        className={cn(
+                          'border border-gray-300 px-0 py-0 cursor-text transition-colors relative',
+                          isEditing && 'ring-2 ring-blue-500 ring-inset bg-blue-50',
+                          !isEditing && 'hover:bg-blue-50',
+                          !hasMemory && !isEditing && 'bg-white'
+                        )}
+                        onClick={() => !isEditing && handleCellClick(dayData.dateStr)}
+                      >
+                        {isEditing ? (
+                          <textarea
+                            ref={textareaRef}
+                            value={editingMemory}
+                            onChange={(e) => setEditingMemory(e.target.value)}
+                            onBlur={handleBlur}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Type memory..."
+                            className={cn(
+                              'w-full h-full min-h-[40px] px-1 py-0.5 text-[10px] leading-tight',
+                              'focus:outline-none resize-none',
+                              'text-gray-900 placeholder-gray-400 bg-transparent'
+                            )}
+                          />
+                        ) : (
+                          <div className="min-h-[40px] px-1 py-0.5">
+                            {hasMemory && (
+                              <div className="text-[10px] leading-tight text-gray-800">
+                                {dayData.memory.mood && (
+                                  <span className="mr-0.5">{MOOD_EMOJIS[dayData.memory.mood]}</span>
+                                )}
+                                {dayData.memory.memory}
+                              </div>
+                            )}
                           </div>
-                          <div className="text-gray-700 line-clamp-3">
-                            {dayData.memory.memory}
-                          </div>
-                          {dayData.memory.tags && dayData.memory.tags.length > 0 && (
-                            <div className="mt-1 text-gray-500 text-[10px]">
-                              {dayData.memory.tags.join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
-
-      {/* Legend */}
-      <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-gray-50 border border-gray-200" />
-          <span className="text-gray-600">No memory</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded bg-purple-100 border border-purple-300" />
-          <span className="text-gray-600">Has memory</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-600">Mood:</span>
-          {Object.entries(MOOD_EMOJIS).map(([mood, emoji]) => (
-            <span key={mood} title={mood} className="text-lg">
-              {emoji}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Memory Editor Modal */}
-      {selectedDate && (
-        <MemoryEditor
-          date={selectedDate}
-          memory={memories[selectedDate]}
-          onSave={(memory) => handleSave(selectedDate, memory)}
-          onDelete={memories[selectedDate] ? () => handleDelete(selectedDate) : undefined}
-          onClose={() => setSelectedDate(null)}
-        />
-      )}
     </div>
   )
 }
