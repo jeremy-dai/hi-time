@@ -246,6 +246,153 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...
 
 ---
 
+### 1.1. Toast Notification System (NEW)
+
+**Location**: `components/shared/Toast.tsx`, `components/shared/ToastContext.tsx`
+
+**Features**:
+- Global toast notifications positioned top-right
+- 4 variants: success (emerald), error (red), warning (amber), info (emerald)
+- Auto-dismiss after 4 seconds with countdown bar
+- Manual dismiss with X button
+- Stacks up to 5 toasts with slide-in animations
+
+**Setup** (already done in App.tsx):
+```tsx
+import { ToastProvider } from './components/shared/ToastContext'
+import { ToastContainer } from './components/shared/Toast'
+
+<ToastProvider>
+  <ToastContainer />
+  <YourApp />
+</ToastProvider>
+```
+
+**Usage**:
+```tsx
+import { useToast } from './components/shared/ToastContext'
+
+function MyComponent() {
+  const { showToast } = useToast()
+
+  showToast('Settings saved successfully!', 'success')
+  showToast('Please fix validation errors', 'warning')
+  showToast('Failed to save', 'error')
+  showToast('Processing your request', 'info')
+}
+```
+
+---
+
+### 1.2. IconButton Component (NEW)
+
+**Location**: `components/shared/IconButton.tsx`
+
+**Features**:
+- 3 sizes: `sm` (28px), `md` (36px), `lg` (44px)
+- 3 variants: `default` (gray), `danger` (red), `ghost` (transparent)
+- Emerald focus rings for accessibility
+- Disabled state support
+
+**Usage**:
+```tsx
+import { IconButton } from './components/shared/IconButton'
+
+<IconButton
+  size="sm"
+  variant="danger"
+  icon={<XIcon />}
+  onClick={handleDelete}
+  title="Delete item"
+/>
+```
+
+---
+
+### 1.3. ClearableInput Component (NEW)
+
+**Location**: `components/shared/ClearableInput.tsx`
+
+**Features**:
+- Built-in clear button (appears only when input has content)
+- Character counter with color warnings
+- Character limit enforcement
+- Custom background color support
+
+**Usage**:
+```tsx
+import { ClearableInput } from './components/shared/ClearableInput'
+
+<ClearableInput
+  value={value}
+  onChange={setValue}
+  placeholder="Enter text"
+  maxLength={30}
+  showCharCount={true}
+  backgroundColor="#e0f2f1"
+/>
+```
+
+---
+
+### 1.4. SkeletonLoader Component (NEW)
+
+**Location**: `components/shared/SkeletonLoader.tsx`
+
+**Features**:
+- Shimmer animation with emerald-tinted gradient
+- 3 variants: `card`, `grid`, `text`
+- GPU-accelerated animations
+
+**Usage**:
+```tsx
+import { SkeletonLoader } from './components/shared/SkeletonLoader'
+
+// Loading a card
+<SkeletonLoader variant="card" height="120px" />
+
+// Loading a grid of inputs
+<SkeletonLoader variant="grid" count={5} />
+
+// Loading text lines
+<SkeletonLoader variant="text" count={3} />
+```
+
+---
+
+### 1.5. Modal Component (NEW)
+
+**Location**: `components/shared/Modal.tsx`
+
+**Features**:
+- Full keyboard accessibility (ESC to close, focus trap)
+- Click outside to dismiss (optional)
+- 3 variants: `default`, `danger`, `warning`
+- Smooth animations
+
+**Usage**:
+```tsx
+import { Modal } from './components/shared/Modal'
+
+<Modal
+  isOpen={isOpen}
+  onClose={() => setIsOpen(false)}
+  title="Confirm Delete"
+  description="This action cannot be undone."
+  icon={<WarningIcon />}
+  variant="danger"
+  actions={
+    <>
+      <button onClick={onCancel}>Cancel</button>
+      <button onClick={onConfirm}>Delete</button>
+    </>
+  }
+  closeOnBackdrop={true}
+/>
+```
+
+---
+
 ### 2. Dashboard Cards
 
 **Variants**:

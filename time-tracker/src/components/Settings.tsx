@@ -6,14 +6,19 @@ import Card from './shared/Card'
 import { useLocalStorageSync } from '../hooks/useLocalStorageSync'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { normalizeSubcategories } from '../utils/subcategoryHelpers'
+import { useToast } from './shared/ToastContext'
+import { IconButton } from './shared/IconButton'
+import { ClearableInput } from './shared/ClearableInput'
+import { SkeletonLoader } from './shared/SkeletonLoader'
+import { Modal } from './shared/Modal'
 
 interface SettingsProps {
   onSettingsSaved?: () => void
 }
 
 export function Settings({ onSettingsSaved }: SettingsProps) {
+  const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
-  const [message, setMessage] = useState('')
   const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const [exportStartWeek, setExportStartWeek] = useState('')
@@ -88,13 +93,47 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
     }
   }, [settings, setSettings])
 
-  async function handleBulkExport() {
+  // Helper function to sort time dividers chronologically
+  function sortTimeDividers(dividers: string[]): string[] {
+    return [...dividers].sort((a, b) => {
+      const [aHour, aMin] = a.split(':').map(Number)
+      const [bHour, bMin] = b.split(':').map(Number)
+      return aHour * 60 + aMin - (bHour * 60 + bMin)
+    })
+  }
+
+  // Helper function to calculate week difference
+  function calculateWeekDiff(startWeek: string, endWeek: string): number {
+    const start = new Date(startWeek)
+    const end = new Date(endWeek)
+    const diffTime = Math.abs(end.getTime() - start.getTime())
+    const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7))
+    return diffWeeks
+  }
+
+  // Validate export date range
+  function validateExportRange(): { valid: boolean; error?: string } {
     if (!exportStartWeek || !exportEndWeek) {
-      setMessage('Please select both start and end weeks')
+      return { valid: false, error: 'Please select both start and end weeks' }
+    }
+    if (exportStartWeek > exportEndWeek) {
+      return { valid: false, error: 'Start week must be before end week' }
+    }
+    const weekDiff = calculateWeekDiff(exportStartWeek, exportEndWeek)
+    if (weekDiff > 52) {
+      return { valid: false, error: 'Export range cannot exceed 52 weeks' }
+    }
+    return { valid: true }
+  }
+
+  async function handleBulkExport() {
+    const validation = validateExportRange()
+    if (!validation.valid) {
+      showToast(validation.error!, 'warning')
       return
     }
+
     setExporting(true)
-    setMessage('')
     try {
       const csv = await exportBulkCSV(exportStartWeek, exportEndWeek)
       const blob = new Blob([csv], { type: 'text/csv' })
@@ -103,9 +142,12 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       a.href = url
       a.download = `timesheet_export_${exportStartWeek}_to_${exportEndWeek}.csv`
       a.click()
-      setMessage('Export successful!')
+
+      const weekDiff = calculateWeekDiff(exportStartWeek, exportEndWeek)
+      showToast(`Successfully exported ${weekDiff} weeks of data!`, 'success')
     } catch (e) {
-      setMessage('Export failed')
+      const errorMsg = e instanceof Error ? e.message : 'Export failed'
+      showToast(`Export failed: ${errorMsg}`, 'error')
     } finally {
       setExporting(false)
     }
@@ -164,19 +206,44 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
     setSettings(updated)
   }
 
-  if (loading || !settings) return <div className="p-8">Loading settings...</div>
+  if (loading || !settings) {
+    return (
+      <div className="space-y-6 max-w-6xl">
+        <SkeletonLoader variant="card" height="120px" />
+        <SkeletonLoader variant="card" height="400px" />
+        <SkeletonLoader variant="card" height="200px" />
+      </div>
+    )
+  }
 
   function addTimeDivider() {
     if (!settings) return
-    const newDividers = [...(settings.timeDividers || []), '12:00']
+    const newTime = '12:00'
+
+    // Check for duplicates
+    if (settings.timeDividers?.includes(newTime)) {
+      showToast('This time divider already exists', 'warning')
+      return
+    }
+
+    const newDividers = sortTimeDividers([...(settings.timeDividers || []), newTime])
     setSettings({ ...settings, timeDividers: newDividers })
   }
 
   function updateTimeDivider(index: number, value: string) {
     if (!settings) return
-    const newDividers = [...(settings.timeDividers || [])]
-    newDividers[index] = value
-    setSettings({ ...settings, timeDividers: newDividers })
+    const currentDividers = [...(settings.timeDividers || [])]
+
+    // Check if the new value is a duplicate (excluding the current index)
+    const isDuplicate = currentDividers.some((time, i) => i !== index && time === value)
+    if (isDuplicate) {
+      showToast('This time divider already exists', 'warning')
+      return
+    }
+
+    currentDividers[index] = value
+    const sortedDividers = sortTimeDividers(currentDividers)
+    setSettings({ ...settings, timeDividers: sortedDividers })
   }
 
   function removeTimeDivider(index: number) {
@@ -201,16 +268,25 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       ...settings,
       subcategories: {}
     })
-    setMessage('All subcategories cleared')
-    setTimeout(() => setMessage(''), 3000)
+    showToast('All subcategories cleared', 'success')
     setShowClearConfirm(false)
   }
 
   return (
     <div className="space-y-6 max-w-6xl">
       {/* Sync Status Bar */}
-      <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+      <div className={`flex items-center justify-between p-4 rounded-xl border shadow-sm transition-colors ${
+        settingsHasUnsavedChanges
+          ? 'bg-amber-50 border-amber-200'
+          : 'bg-white border-gray-100'
+      }`}>
         <div className="flex items-center gap-3">
+          {settingsHasUnsavedChanges && (
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+            </span>
+          )}
           {settingsSyncStatus && (
             <SyncStatusIndicator
               status={settingsSyncStatus}
@@ -229,17 +305,11 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
           {settingsHasUnsavedChanges && (
             <button
               onClick={syncSettingsNow}
-              className="px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-500 transition-colors shadow-sm"
+              className="px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors shadow-sm"
             >
               Save Now
             </button>
           )}
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-gray-100 text-gray-700 font-medium text-sm rounded-xl hover:bg-gray-200 transition-colors"
-          >
-            Reload Page
-          </button>
         </div>
       </div>
 
@@ -286,22 +356,25 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                   <p className="text-xs text-gray-400 italic">None</p>
                 )}
                 {(settings?.timeDividers || []).map((time, index) => (
-                  <div key={index} className="flex items-center gap-1 bg-gray-50 rounded-xl pl-2 pr-1 py-1">
+                  <div key={index} className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 hover:border hover:border-gray-200 transition-colors">
+                    <span className="text-gray-400 text-xs cursor-move" title="Drag to reorder (coming soon)">⋮⋮</span>
                     <input
                       type="time"
                       value={time}
                       onChange={(e) => updateTimeDivider(index, e.target.value)}
-                      className="bg-transparent border-none text-sm text-gray-900 focus:outline-none w-24"
+                      className="bg-transparent border-none text-sm font-medium text-gray-900 focus:outline-none w-28"
                     />
-                    <button
+                    <IconButton
+                      size="sm"
+                      variant="danger"
+                      icon={
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      }
                       onClick={() => removeTimeDivider(index)}
-                      className="p-1 text-red-600 hover:bg-red-100 rounded transition-colors"
-                      title="Remove"
-                    >
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                      title="Remove divider"
+                    />
                   </div>
                 ))}
                 <button
@@ -333,49 +406,46 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
             </button>
           </div>
 
-          {loading ? (
-            <div className="text-center py-12 text-gray-500">Loading settings...</div>
-          ) : (
-            <div className="space-y-6">
-              {CATEGORY_KEYS.filter(k => k !== '').map(cat => (
-                <div key={cat} className="pb-6 border-b border-gray-100 last:border-0">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm"
-                      style={{
-                        backgroundColor: CATEGORY_COLORS_HEX[cat].bg,
-                        color: CATEGORY_COLORS_HEX[cat].text
-                      }}
-                    >
-                      {cat}
-                    </span>
-                    <span className="font-bold text-base text-gray-900">{CATEGORY_LABELS[cat]}</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {[0, 1, 2, 3, 4].map((index) => {
-                      const savedSubs = settings?.subcategories[cat] || []
-                      const subDef = savedSubs.find(s => s.index === index)
-                      const value = subDef?.name || ''
-                      const shade = SUBCATEGORY_SHADES_HEX[cat][index]
-
-                      return (
-                        <input
-                          key={`${cat}-${index}`}
-                          type="text"
-                          placeholder={`Subcategory ${index + 1}`}
-                          className="w-full rounded-xl px-4 py-3 text-sm font-medium border border-transparent focus:outline-none focus:ring-2 focus:ring-gray-400/30 transition-all placeholder:text-gray-400 text-gray-900 shadow-sm"
-                          style={{ backgroundColor: shade }}
-                          value={value}
-                          onChange={(e) => updateSubcategory(cat, index, e.target.value)}
-                        />
-                      )
-                    })}
-                  </div>
+          <div className="space-y-6">
+            {CATEGORY_KEYS.filter(k => k !== '').map(cat => (
+              <div key={cat} className="pb-6 border-b border-gray-100 last:border-0">
+                <div className="flex items-center gap-3 mb-4">
+                  <span
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shadow-sm"
+                    style={{
+                      backgroundColor: CATEGORY_COLORS_HEX[cat].bg,
+                      color: CATEGORY_COLORS_HEX[cat].text
+                    }}
+                  >
+                    {cat}
+                  </span>
+                  <span className="font-bold text-base text-gray-900">{CATEGORY_LABELS[cat]}</span>
                 </div>
-              ))}
-            </div>
-          )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {[0, 1, 2, 3, 4].map((index) => {
+                    const savedSubs = settings?.subcategories[cat] || []
+                    const subDef = savedSubs.find(s => s.index === index)
+                    const value = subDef?.name || ''
+                    const shade = SUBCATEGORY_SHADES_HEX[cat][index]
+
+                    return (
+                      <div key={`${cat}-${index}`} className="relative">
+                        <ClearableInput
+                          value={value}
+                          onChange={(val) => updateSubcategory(cat, index, val)}
+                          placeholder={`Subcategory ${index + 1}`}
+                          maxLength={30}
+                          showCharCount={value.length > 0}
+                          backgroundColor={shade}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </Card>
 
@@ -420,15 +490,21 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                 <button
                   onClick={handleBulkExport}
                   disabled={exporting}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
                 >
+                  {exporting && (
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  )}
                   {exporting ? 'Exporting...' : 'Export CSV'}
                 </button>
               </div>
-              {message && (
-                <div className="mt-3 px-4 py-2 bg-amber-50 text-amber-700 text-sm rounded-xl border border-amber-200">
-                  {message}
-                </div>
+              {exportStartWeek && exportEndWeek && exportStartWeek <= exportEndWeek && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Exporting {calculateWeekDiff(exportStartWeek, exportEndWeek)} weeks of data
+                </p>
               )}
             </div>
           </div>
@@ -436,47 +512,35 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       </Card>
 
       {/* Clear All Confirmation Modal */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowClearConfirm(false)}
-          />
-
-          {/* Modal */}
-          <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-900 mb-1">Clear All Subcategories?</h3>
-                <p className="text-sm text-gray-600">
-                  This will permanently remove all subcategories from all categories. This action cannot be undone.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setShowClearConfirm(false)}
-                className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleClearAll}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold text-sm rounded-xl hover:bg-red-500 transition-colors shadow-sm"
-              >
-                Clear All
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={showClearConfirm}
+        onClose={() => setShowClearConfirm(false)}
+        title="Clear All Subcategories?"
+        description="This will permanently remove all subcategories from all categories. This action cannot be undone."
+        icon={
+          <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        }
+        variant="danger"
+        actions={
+          <>
+            <button
+              onClick={() => setShowClearConfirm(false)}
+              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleClearAll}
+              className="flex-1 px-4 py-2.5 bg-red-600 text-white font-semibold text-sm rounded-xl hover:bg-red-500 transition-colors shadow-sm"
+            >
+              Clear All
+            </button>
+          </>
+        }
+        closeOnBackdrop={true}
+      />
     </div>
   )
 }

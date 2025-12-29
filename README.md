@@ -16,6 +16,7 @@ A modern time logging and analysis application designed to help you track, categ
   - Weekly breakdowns and trends
   - Category distribution charts
   - Productivity scores
+- **Polished UI**: Modern design system with reusable components (toast notifications, modals, skeleton loaders)
 - **Data Portability**: Import/Export weekly data via CSV.
 
 ## 🏗️ Architecture
@@ -100,6 +101,7 @@ This project is a **Monorepo** managed with NPM Workspaces, consisting of:
 - [Database Schema](docs/DATABASE_SCHEMA.md) - Database structure and relationships
 - [Database Efficiency Analysis](docs/DATABASE_EFFICIENCY.md) - Performance optimization details
 - [API Documentation](docs/API.md) - Backend API endpoints and usage
+- **[Design System](time-tracker/DESIGN_SYSTEM.md)** - UI components, colors, typography, and usage patterns
 
 ### Deployment
 - [Production Deployment](docs/DEPLOYMENT.md) - Deploy to Vercel, Railway, Render, and more

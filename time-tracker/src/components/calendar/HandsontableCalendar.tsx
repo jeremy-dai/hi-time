@@ -519,6 +519,32 @@ export function HandsontableCalendar({
 
     event.preventDefault()
 
+    const hot = hotRef.current?.hotInstance
+    if (!hot) return
+
+    // Check if the right-clicked cell is part of the current selection
+    const selected = hot.getSelected()
+    let isInSelection = false
+
+    if (selected && selected.length > 0) {
+      selected.forEach(([startRow, startCol, endRow, endCol]: number[]) => {
+        const minRow = Math.min(startRow, endRow)
+        const maxRow = Math.max(startRow, endRow)
+        const minCol = Math.min(startCol, endCol)
+        const maxCol = Math.max(startCol, endCol)
+
+        if (coords.row >= minRow && coords.row <= maxRow &&
+            coords.col >= minCol && coords.col <= maxCol) {
+          isInSelection = true
+        }
+      })
+    }
+
+    // If the right-clicked cell is not in the current selection, select it
+    if (!isInSelection) {
+      hot.selectCell(coords.row, coords.col)
+    }
+
     // Get viewport dimensions to prevent overflow
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
@@ -1101,7 +1127,7 @@ export function HandsontableCalendar({
 
                     {/* Subcategory submenu */}
                     {normalizedSubs.length > 0 && (
-                      <div className="absolute left-full top-0 ml-1 bg-white border rounded-xl shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50">
+                      <div className="absolute left-full top-0 bg-white border rounded-xl shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50 -ml-px">
                         <div className="px-2 py-1 font-medium text-gray-900 text-xs">
                           Subcategory
                         </div>

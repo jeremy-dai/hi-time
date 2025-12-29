@@ -4,8 +4,8 @@ import { cn } from '../utils/classNames'
 import { getISOWeekYear } from '../utils/date'
 
 interface SidebarProps {
-  active: 'log' | 'trends' | 'annual' | 'memories' | 'settings'
-  onNavigate: (tab: 'log' | 'trends' | 'annual' | 'memories' | 'settings') => void
+  active: 'timesheet' | 'trends' | 'annual' | 'memories' | 'settings'
+  onNavigate: (tab: 'timesheet' | 'trends' | 'annual' | 'memories' | 'settings') => void
   userEmail?: string
   onLogout: () => void
   currentDate?: Date
@@ -141,12 +141,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         <SidebarItem
           icon={<Calendar size={20} />}
           label="Timesheet"
-          active={active === 'log'}
-          onClick={() => onNavigate('log')}
+          active={active === 'timesheet'}
+          onClick={() => onNavigate('timesheet')}
         />
         <SidebarItem
           icon={<TrendingUp size={20} />}
-          label="Reports"
+          label="Trends"
           active={active === 'trends'}
           onClick={() => onNavigate('trends')}
         />

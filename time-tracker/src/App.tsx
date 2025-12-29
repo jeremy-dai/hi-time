@@ -13,20 +13,26 @@ import { parseTimeCSV } from './utils/csvParser'
 import { Login } from './components/Login'
 import { useAuth } from './hooks/useAuth'
 import { useLocalStorageSync } from './hooks/useLocalStorageSync'
+import { ToastProvider } from './components/shared/ToastContext'
+import { ToastContainer } from './components/shared/Toast'
+import { Modal } from './components/shared/Modal'
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
-  // Initialize activeTab from localStorage, default to 'log' if not found
-  const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'memories' | 'settings'>(() => {
+  const [showStartingHourWarning, setShowStartingHourWarning] = useState(false)
+  const [pendingStartingHour, setPendingStartingHour] = useState<number | null>(null)
+
+  // Initialize activeTab from localStorage, default to 'timesheet' if not found
+  const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'settings'>(() => {
     try {
       const saved = localStorage.getItem('active-tab')
-      if (saved && ['log', 'trends', 'annual', 'memories', 'settings'].includes(saved)) {
-        return saved as 'log' | 'trends' | 'annual' | 'memories' | 'settings'
+      if (saved && ['timesheet', 'trends', 'annual', 'memories', 'settings'].includes(saved)) {
+        return saved as 'timesheet' | 'trends' | 'annual' | 'memories' | 'settings'
       }
     } catch (err) {
       console.error('Failed to load active tab from localStorage:', err)
     }
-    return 'log'
+    return 'timesheet'
   })
   const [isNavigating, setIsNavigating] = useState(false)
   const [currentDateState, setCurrentDateState] = useState<Date>(() => {
@@ -410,18 +416,19 @@ function App() {
       const hasData = currentWeekData.some(day => day.some(block => block.category || block.notes))
 
       if (hasData) {
-        const confirmed = window.confirm(
-          `Warning: This week already has time entries. Changing the starting hour won't update existing time slots.\n\n` +
-          `Current range: ${currentWeekMetadata.startingHour}:00 - ${(currentWeekMetadata.startingHour + 17) % 24}:00\n` +
-          `New range: ${newMetadata.startingHour}:00 - ${(newMetadata.startingHour + 17) % 24}:00\n\n` +
-          `Continue anyway?`
-        )
-
-        if (!confirmed) {
-          return
-        }
+        // Show modal instead of window.confirm
+        setPendingStartingHour(newMetadata.startingHour)
+        setShowStartingHourWarning(true)
+        return
       }
     }
+
+    // If no confirmation needed, apply changes directly
+    applyMetadataChange(newMetadata)
+  }
+
+  // Apply metadata changes (called after confirmation or if no confirmation needed)
+  const applyMetadataChange = async (newMetadata: { startingHour?: number; theme?: string | null }) => {
 
     const updatedMetadata = { ...currentWeekMetadata, ...newMetadata }
     const updated = { ...weekMetadataStoreRef.current, [currentWeekKey]: updatedMetadata }
@@ -505,7 +512,9 @@ function App() {
   }
 
   return (
-    <AppLayout
+    <ToastProvider>
+      <ToastContainer />
+      <AppLayout
       sidebar={
         <Sidebar
           active={activeTab}
@@ -515,7 +524,7 @@ function App() {
           currentDate={currentDateState}
         />
       }
-      header={activeTab === 'log' ? (
+      header={activeTab === 'timesheet' ? (
         <Header
           currentDate={currentDateState}
           onChangeDate={(d) => setCurrentDate(d)}
@@ -542,7 +551,7 @@ function App() {
         />
       ) : undefined}
     >
-      {activeTab === 'log' && currentWeekData && (
+      {activeTab === 'timesheet' && currentWeekData && (
         <div className="flex flex-col h-full bg-white rounded-xl p-3 shadow-sm overflow-hidden animate-in fade-in duration-200">
           {/* Timesheet Grid */}
           <div className="flex-1 overflow-auto bg-white rounded-xl">
@@ -598,7 +607,51 @@ function App() {
           <Settings onSettingsSaved={loadUserSettings} />
         </div>
       )}
-    </AppLayout>
+      </AppLayout>
+
+      {/* Starting Hour Warning Modal */}
+      <Modal
+        isOpen={showStartingHourWarning}
+        onClose={() => {
+          setShowStartingHourWarning(false)
+          setPendingStartingHour(null)
+        }}
+        title="Change Starting Hour?"
+        description={`This week already has time entries. Changing the starting hour won't update existing time slots.\n\nCurrent range: ${currentWeekMetadata.startingHour}:00 - ${(currentWeekMetadata.startingHour + 17) % 24}:00\nNew range: ${pendingStartingHour}:00 - ${((pendingStartingHour || 0) + 17) % 24}:00`}
+        icon={
+          <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        }
+        variant="warning"
+        actions={
+          <>
+            <button
+              onClick={() => {
+                setShowStartingHourWarning(false)
+                setPendingStartingHour(null)
+              }}
+              className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                if (pendingStartingHour !== null) {
+                  applyMetadataChange({ startingHour: pendingStartingHour })
+                }
+                setShowStartingHourWarning(false)
+                setPendingStartingHour(null)
+              }}
+              className="flex-1 px-4 py-2.5 bg-amber-600 text-white font-semibold text-sm rounded-xl hover:bg-amber-500 transition-colors shadow-sm"
+            >
+              Continue Anyway
+            </button>
+          </>
+        }
+        closeOnBackdrop={false}
+      />
+    </ToastProvider>
   )
 }
 
