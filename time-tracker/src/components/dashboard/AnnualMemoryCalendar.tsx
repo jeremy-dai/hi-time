@@ -11,22 +11,6 @@ interface AnnualMemoryCalendarProps {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-const MOOD_COLORS = {
-  terrible: 'bg-red-200 border-red-400',
-  bad: 'bg-orange-200 border-orange-400',
-  neutral: 'bg-gray-200 border-gray-400',
-  good: 'bg-blue-200 border-emerald-400',
-  great: 'bg-green-200 border-green-400'
-}
-
-const MOOD_EMOJIS = {
-  terrible: '😫',
-  bad: '😞',
-  neutral: '😐',
-  good: '🙂',
-  great: '😄'
-}
-
 export default function AnnualMemoryCalendar({
   year,
   memories,
@@ -186,9 +170,6 @@ export default function AnnualMemoryCalendar({
                           <div className="min-h-[40px] px-1 py-0.5">
                             {hasMemory && (
                               <div className="text-[10px] leading-tight text-gray-800">
-                                {dayData.memory.mood && (
-                                  <span className="mr-0.5">{MOOD_EMOJIS[dayData.memory.mood]}</span>
-                                )}
                                 {dayData.memory.memory}
                               </div>
                             )}
