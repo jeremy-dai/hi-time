@@ -72,6 +72,7 @@ export function HandsontableCalendar({
     row: number
     col: number
   } | null>(null)
+  const savedSelectionRef = useRef<number[][] | null>(null)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
   const [currentTimeString, setCurrentTimeString] = useState<string>('')
   const [tooltipState, setTooltipState] = useState<{
@@ -522,11 +523,12 @@ export function HandsontableCalendar({
     const hot = hotRef.current?.hotInstance
     if (!hot) return
 
-    // Check if the right-clicked cell is part of the current selection
+    // Get the current selection before anything else
     const selected = hot.getSelected()
     let isInSelection = false
 
     if (selected && selected.length > 0) {
+      // Check if the right-clicked cell is part of the current selection
       selected.forEach(([startRow, startCol, endRow, endCol]: number[]) => {
         const minRow = Math.min(startRow, endRow)
         const maxRow = Math.max(startRow, endRow)
@@ -540,9 +542,14 @@ export function HandsontableCalendar({
       })
     }
 
-    // If the right-clicked cell is not in the current selection, select it
+    // Save the selection or create a new one
     if (!isInSelection) {
+      // Right-clicked outside selection - select just this cell
       hot.selectCell(coords.row, coords.col)
+      savedSelectionRef.current = [[coords.row, coords.col, coords.row, coords.col]]
+    } else {
+      // Right-clicked within selection - save the current selection
+      savedSelectionRef.current = selected
     }
 
     // Get viewport dimensions to prevent overflow
@@ -588,8 +595,8 @@ export function HandsontableCalendar({
       ? { index: subcategoryIndex, name: subcategoryName }
       : null
 
-    // Get selected cells
-    const selected = hot.getSelected()
+    // Use the saved selection instead of getting current selection
+    const selected = savedSelectionRef.current
 
     if (selected && selected.length > 0) {
       const updates: { day: number; timeIndex: number; block: TimeBlock }[] = []
@@ -642,6 +649,8 @@ export function HandsontableCalendar({
       onUpdateBlock(day, timeIndex, block)
     }
 
+    // Clear saved selection and close menu
+    savedSelectionRef.current = null
     setContextMenu(null)
   }
 
