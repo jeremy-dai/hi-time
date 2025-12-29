@@ -416,9 +416,18 @@ function App() {
     }
     localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(cachedMetadata))
 
+    // Persist metadata immediately so theme/starting hour changes aren't lost
+    const weekDataForSave = weekStoreRef.current[currentWeekKey] || currentWeekData
+    if (weekDataForSave) {
+      try {
+        await putWeek(currentWeekKey, weekDataForSave, updatedMetadata)
+      } catch (err) {
+        console.error('[App] Failed to persist metadata change:', err)
+      }
+    }
+
     // Trigger the sync hook by updating weekData to mark as "unsaved changes"
-    // This ensures metadata changes go through the same sync mechanism as timesheet data
-    // Create a shallow copy to force change detection (metadata changes need to trigger sync)
+    // This keeps local cache aligned with metadata changes for the current session
     setWeekData([...currentWeekData])
   }
 
@@ -439,11 +448,26 @@ function App() {
     }
     localStorage.setItem(`week-metadata-${weekKey}`, JSON.stringify(cachedMetadata))
 
-    // Save to database
-    const weekData = weekStoreRef.current[weekKey]
-    if (weekData) {
-      await putWeek(weekKey, weekData, updatedMetadata)
+    // Save to database - load week data if not in store
+    let weekData = weekStoreRef.current[weekKey]
+    if (!weekData) {
+      // Load from database to get the week data
+      const result = await getWeek(weekKey)
+      if (result) {
+        weekData = result.weekData
+        // Update store with loaded data
+        weekStoreRef.current = { ...weekStoreRef.current, [weekKey]: weekData }
+        setWeekStore(weekStoreRef.current)
+      } else {
+        // Week doesn't exist yet, create empty week data
+        weekData = createEmptyWeekData(updatedMetadata.startingHour)
+        weekStoreRef.current = { ...weekStoreRef.current, [weekKey]: weekData }
+        setWeekStore(weekStoreRef.current)
+      }
     }
+
+    // Now save with the week data and updated metadata
+    await putWeek(weekKey, weekData, updatedMetadata)
   }, [])
 
   // Show loading while checking authentication or navigating

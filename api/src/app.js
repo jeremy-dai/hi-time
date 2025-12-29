@@ -245,21 +245,16 @@ app.put('/api/weeks/:week_key', async (req, res) => {
   const sanitizedWeekData = sanitizeWeekData(weekData);
 
   // Prepare upsert data
+  // Frontend should always send complete metadata to avoid race conditions
   const upsertData = {
     user_id: req.user.id,
     year: parsed.year,
     week_number: parsed.week,
     week_data: sanitizedWeekData,
+    starting_hour: startingHour ?? 8, // Use provided or default
+    theme: theme === undefined ? null : theme, // Explicitly handle null vs undefined
     updated_at: new Date().toISOString(),
   };
-
-  // Add optional fields if provided
-  if (startingHour !== undefined && startingHour !== null) {
-    upsertData.starting_hour = startingHour;
-  }
-  if (theme !== undefined) {
-    upsertData.theme = theme;
-  }
 
   // RLS requires user_id to match authenticated user
   const { error } = await req.supabase

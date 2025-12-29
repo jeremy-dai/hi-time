@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { TimeBlock } from '../types/time'
 import { cn } from '../utils/classNames'
-import { formatWeekKey, addWeeks, getISOWeekYear, getCurrentYearWeeks, startOfISOWeek, endOfISOWeek } from '../utils/date'
+import { formatWeekKey, addWeeks, getISOWeekYear, startOfISOWeek, endOfISOWeek } from '../utils/date'
 import CurrentWeekDashboard from './dashboard/CurrentWeekDashboard'
 import AnnualDashboard from './dashboard/AnnualDashboard'
 

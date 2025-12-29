@@ -151,12 +151,15 @@ export async function putWeek(
     const dbWeekData = transformWeekDataToDb(weekData)
     const body: { weekData: TimeBlock[][]; startingHour?: number; theme?: string | null } = { weekData: dbWeekData }
 
-    // Add optional metadata fields if provided
-    if (metadata?.startingHour !== undefined) {
-      body.startingHour = metadata.startingHour
-    }
-    if (metadata?.theme !== undefined) {
-      body.theme = metadata.theme
+    // Always send complete metadata to avoid backend having to fetch existing data
+    // This prevents race conditions and improves performance
+    if (metadata) {
+      body.startingHour = metadata.startingHour ?? 8
+      body.theme = metadata.theme ?? null
+    } else {
+      // If no metadata provided, use defaults
+      body.startingHour = 8
+      body.theme = null
     }
 
     const res = await fetch(`${API_BASE}/weeks/${weekKey}`, {
