@@ -16,7 +16,18 @@ import { useLocalStorageSync } from './hooks/useLocalStorageSync'
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
-  const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'memories' | 'settings'>('log')
+  // Initialize activeTab from localStorage, default to 'log' if not found
+  const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'memories' | 'settings'>(() => {
+    try {
+      const saved = localStorage.getItem('active-tab')
+      if (saved && ['log', 'trends', 'annual', 'memories', 'settings'].includes(saved)) {
+        return saved as 'log' | 'trends' | 'annual' | 'memories' | 'settings'
+      }
+    } catch (err) {
+      console.error('Failed to load active tab from localStorage:', err)
+    }
+    return 'log'
+  })
   const [isNavigating, setIsNavigating] = useState(false)
   const [currentDateState, setCurrentDateState] = useState<Date>(() => {
     const now = new Date()
@@ -141,6 +152,15 @@ function App() {
   useEffect(() => {
     loadUserSettings()
   }, [])
+
+  // Persist activeTab to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('active-tab', activeTab)
+    } catch (err) {
+      console.error('Failed to save active tab to localStorage:', err)
+    }
+  }, [activeTab])
 
   // Initialize weekData with empty data if null
   const currentWeekData = weekData || createEmptyWeekData(currentWeekMetadata.startingHour)
