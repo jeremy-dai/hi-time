@@ -32,15 +32,16 @@ export default function AnnualDashboard({
 }: AnnualDashboardProps) {
   const { memories } = useYearMemories(year)
 
-  // Generate year options (current year and past 10 years)
-  const currentYear = new Date().getFullYear()
+  // Generate year options (selected year and past 10 years)
+  // This ensures the dropdown includes the current year being viewed, even if it's in the future
+  // (e.g., when today is Dec 29, 2025 but we're viewing Week 1 of ISO year 2026)
   const yearOptions = useMemo(() => {
     const years = []
     for (let i = 0; i < 10; i++) {
-      years.push(currentYear - i)
+      years.push(year - i)
     }
     return years
-  }, [currentYear])
+  }, [year])
 
   // Extract themes from metadata store
   const weekThemes = useMemo(() => {
@@ -70,40 +71,60 @@ export default function AnnualDashboard({
   const dateRangeLabel = useMemo(() => {
     if (weekKeys.length === 0) {
       // No data, show full year
-      const start = new Date(year, 0, 1)
-      const end = new Date(year, 11, 31)
-      const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      const start = new Date(Date.UTC(year, 0, 1))
+      const end = new Date(Date.UTC(year, 11, 31))
+      const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' })
+      const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
       return `${startStr} - ${endStr}`
     }
 
-    // Parse first and last week keys to get actual date range
-    // Week keys are in format "YYYY-WXX" (e.g., "2025-W01")
-    const firstWeekKey = weekKeys[weekKeys.length - 1] // Oldest week (earliest in year)
-    const lastWeekKey = weekKeys[0] // Most recent week
+    // Week keys are sorted newest first, so reverse to get chronological order
+    const sortedKeys = [...weekKeys].sort()
+    const firstWeekKey = sortedKeys[0] // Earliest week
+    const lastWeekKey = sortedKeys[sortedKeys.length - 1] // Latest week
 
-    // Parse the week number from the key (e.g., "2025-W01" -> 1)
-    const parseWeekNumber = (key: string) => parseInt(key.split('-W')[1])
+    // Parse week key to get a representative date in that week
+    const parseWeekKeyToDate = (weekKey: string): Date => {
+      const [yearStr, weekStr] = weekKey.split('-W')
+      const year = parseInt(yearStr)
+      const week = parseInt(weekStr)
 
-    // Helper to get a date from ISO week number
-    const getDateFromISOWeek = (year: number, week: number) => {
-      const jan4 = new Date(year, 0, 4)
-      const jan4Day = (jan4.getDay() + 6) % 7 // Convert to ISO day (0=Mon)
-      const weekStart = new Date(jan4)
-      weekStart.setDate(jan4.getDate() - jan4Day + (week - 1) * 7)
-      return weekStart
+      // Start with Jan 1 of the year
+      const jan1 = new Date(Date.UTC(year, 0, 1))
+      const jan1Day = jan1.getUTCDay() // 0 = Sunday
+
+      // Find the Sunday that starts Week 1
+      // Week 1 always contains Jan 1, and weeks start on Sunday
+      const week1Sunday = new Date(jan1)
+      if (jan1Day !== 0) {
+        // Go back to previous Sunday
+        week1Sunday.setUTCDate(jan1.getUTCDate() - jan1Day)
+      }
+
+      // Add the appropriate number of weeks
+      const targetDate = new Date(week1Sunday)
+      targetDate.setUTCDate(week1Sunday.getUTCDate() + (week - 1) * 7)
+      return targetDate
     }
 
-    const firstWeekNum = parseWeekNumber(firstWeekKey)
-    const lastWeekNum = parseWeekNumber(lastWeekKey)
+    const firstWeekDate = parseWeekKeyToDate(firstWeekKey)
+    const lastWeekDate = parseWeekKeyToDate(lastWeekKey)
 
-    const start = startOfISOWeek(getDateFromISOWeek(year, firstWeekNum))
-    const end = endOfISOWeek(getDateFromISOWeek(year, lastWeekNum))
+    const start = startOfISOWeek(firstWeekDate)
+    const end = endOfISOWeek(lastWeekDate)
 
-    const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    // Show year on start date if it's different from end date year
+    const startYear = start.getUTCFullYear()
+    const endYear = end.getUTCFullYear()
+    const startStr = start.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: startYear !== endYear ? 'numeric' : undefined,
+      timeZone: 'UTC'
+    })
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
     return `${startStr} - ${endStr}`
-  }, [year, weekKeys])
+  }, [weekKeys])
 
   const handleRefresh = () => {
     onRefresh()

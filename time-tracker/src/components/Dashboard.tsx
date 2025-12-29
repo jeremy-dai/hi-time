@@ -27,16 +27,19 @@ export default function Dashboard({
 }: DashboardProps) {
   const [isLoadingData, setIsLoadingData] = useState(false)
 
-  // State for selected year in Annual view (defaults to current year)
-  const [selectedYear, setSelectedYear] = useState(() => {
-    const { isoYear } = getISOWeekYear(currentDate)
-    return isoYear
-  })
-
   // Calculate the last complete week (previous week)
   // We ALWAYS exclude the current week from analysis as requested
   const lastCompleteWeekDate = useMemo(() => addWeeks(currentDate, -1), [currentDate])
   const lastCompleteWeekKey = useMemo(() => formatWeekKey(lastCompleteWeekDate), [lastCompleteWeekDate])
+
+  // State for selected year in Annual view (defaults to year of last complete week)
+  // This handles edge cases where current week is in a new ISO year but has no complete weeks yet
+  // (e.g., Dec 29, 2025 is in ISO week 2026-W01, but last complete week is 2025-W52)
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const lastWeek = addWeeks(currentDate, -1)
+    const { isoYear } = getISOWeekYear(lastWeek)
+    return isoYear
+  })
 
   // Calculate the keys we need for Trends view (last 4 complete weeks)
   const trendsWeekKeys = useMemo(() => {
@@ -61,18 +64,34 @@ export default function Dashboard({
 
   // Calculate keys for Annual view (all weeks of selected year up to last complete week)
   const annualWeekKeys = useMemo(() => {
-    // Get all weeks of the selected year
-    const allYearWeeks = getCurrentYearWeeks()
-    const currentYearIso = getISOWeekYear(currentDate).isoYear
+    const { isoYear: lastCompleteYear } = getISOWeekYear(lastCompleteWeekDate)
 
-    // If viewing current year, filter to only include weeks <= lastCompleteWeekKey
-    if (selectedYear === currentYearIso) {
-      return allYearWeeks.filter(key => key <= lastCompleteWeekKey && key.startsWith(`${selectedYear}-`))
+    // Determine max week for the selected year
+    let maxWeek: number
+    if (selectedYear === lastCompleteYear) {
+      // For the year containing the last complete week, use that week's number
+      const { isoWeek } = getISOWeekYear(lastCompleteWeekDate)
+      maxWeek = isoWeek
+    } else if (selectedYear < lastCompleteYear) {
+      // For past years, most have 52 weeks, some have 53
+      // Calculate the last week of the selected year
+      const lastDayOfYear = new Date(Date.UTC(selectedYear, 11, 31))
+      const { isoYear: lastDayYear, isoWeek: lastDayWeek } = getISOWeekYear(lastDayOfYear)
+      // If Dec 31 belongs to next year's W01, the year has 52 weeks, otherwise use the week number
+      maxWeek = lastDayYear === selectedYear ? lastDayWeek : 52
+    } else {
+      // Future years have no data yet
+      return []
     }
 
-    // For past years, include all weeks of that year
-    return allYearWeeks.filter(key => key.startsWith(`${selectedYear}-`))
-  }, [selectedYear, currentDate, lastCompleteWeekKey])
+    // Generate week keys from W01 to maxWeek for the selected year
+    const keys: string[] = []
+    for (let week = 1; week <= maxWeek; week++) {
+      const w = String(week).padStart(2, '0')
+      keys.push(`${selectedYear}-W${w}`)
+    }
+    return keys
+  }, [selectedYear, lastCompleteWeekDate])
 
   // Load data when switching views
   useEffect(() => {
