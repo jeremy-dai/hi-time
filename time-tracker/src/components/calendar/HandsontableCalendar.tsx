@@ -89,20 +89,28 @@ export function HandsontableCalendar({
       const now = new Date()
       const tz = timezone || 'Asia/Shanghai'
 
-      // Get the start of the current week (Sunday)
+      // Get the start of the current week (Sunday) in UTC
       const currentWeekStart = new Date(now)
-      const currentDayOfWeek = currentWeekStart.getDay() // 0 is Sunday
-      currentWeekStart.setDate(currentWeekStart.getDate() - currentDayOfWeek)
-      currentWeekStart.setHours(0, 0, 0, 0)
+      const currentDayOfWeek = currentWeekStart.getUTCDay() // 0 is Sunday in UTC
+      const utcCurrentWeekStart = new Date(Date.UTC(
+        currentWeekStart.getUTCFullYear(),
+        currentWeekStart.getUTCMonth(),
+        currentWeekStart.getUTCDate()
+      ))
+      utcCurrentWeekStart.setUTCDate(utcCurrentWeekStart.getUTCDate() - currentDayOfWeek)
 
-      // Get the start of the displayed week (Sunday)
+      // Get the start of the displayed week (Sunday) in UTC
       const displayedWeekStart = new Date(currentDate)
-      const displayedDayOfWeek = displayedWeekStart.getDay()
-      displayedWeekStart.setDate(displayedWeekStart.getDate() - displayedDayOfWeek)
-      displayedWeekStart.setHours(0, 0, 0, 0)
+      const displayedDayOfWeek = displayedWeekStart.getUTCDay()
+      const utcDisplayedWeekStart = new Date(Date.UTC(
+        displayedWeekStart.getUTCFullYear(),
+        displayedWeekStart.getUTCMonth(),
+        displayedWeekStart.getUTCDate()
+      ))
+      utcDisplayedWeekStart.setUTCDate(utcDisplayedWeekStart.getUTCDate() - displayedDayOfWeek)
 
-      // Compare if both weeks start on the same date
-      const isCurrentWeek = currentWeekStart.getTime() === displayedWeekStart.getTime()
+      // Compare if both weeks start on the same date (using UTC)
+      const isCurrentWeek = utcCurrentWeekStart.getTime() === utcDisplayedWeekStart.getTime()
 
       // If not current week, hide indicator
       if (!isCurrentWeek) {

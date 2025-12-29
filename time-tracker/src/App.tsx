@@ -18,7 +18,11 @@ function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
   const [activeTab, setActiveTab] = useState<'log' | 'trends' | 'annual' | 'memories' | 'settings'>('log')
   const [isNavigating, setIsNavigating] = useState(false)
-  const [currentDateState, setCurrentDateState] = useState<Date>(() => new Date())
+  const [currentDateState, setCurrentDateState] = useState<Date>(() => {
+    const now = new Date()
+    // Convert to UTC date at noon to avoid day boundary issues
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12))
+  })
   const currentWeekKey = useMemo(() => formatWeekKey(currentDateState), [currentDateState])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})

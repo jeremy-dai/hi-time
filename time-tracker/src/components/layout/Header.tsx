@@ -20,9 +20,9 @@ interface HeaderProps {
 }
 
 function toInputDate(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const dd = String(d.getUTCDate()).padStart(2, '0')
   return `${y}-${m}-${dd}`
 }
 
@@ -85,7 +85,8 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
                 if (!val) return
                 const parts = val.split('-').map(Number)
                 if (parts.length === 3 && !parts.some(isNaN)) {
-                  const dt = new Date(parts[0], parts[1] - 1, parts[2])
+                  // Create date in UTC (noon to avoid day boundary issues)
+                  const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 12))
                   const sunday = startOfISOWeek(dt)
                   onChangeDate(sunday)
                 }

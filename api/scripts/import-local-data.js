@@ -75,25 +75,48 @@ async function importLocalData() {
       const fileMonth = parseInt(match[2], 10) - 1; // JavaScript months are 0-indexed
       const fileDay = parseInt(match[3], 10);
 
-      // Create date from filename
-      const startDate = new Date(fileYear, fileMonth, fileDay);
+      // Create date from filename in UTC (noon to avoid day boundary issues)
+      const startDate = new Date(Date.UTC(fileYear, fileMonth, fileDay, 12));
 
-      // Calculate ISO week and year
-      const d = new Date(startDate);
-      d.setHours(0, 0, 0, 0);
-      // Set to nearest Thursday: current date + 4 - current day number
-      // Make Sunday's day number 7
-      d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+      // Calculate US week number (Sunday-based, UTC) to match frontend
+      const d = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+      year = d.getUTCFullYear();
 
-      // Get first day of year
-      const yearStart = new Date(d.getFullYear(), 0, 1);
+      // Check if date is in December and might be in next year's week 1
+      if (d.getUTCMonth() === 11 && d.getUTCDate() >= 25) {
+        const nextJan1 = new Date(Date.UTC(year + 1, 0, 1));
+        const nextJan1Day = nextJan1.getUTCDay();
 
-      // Calculate full weeks to nearest Thursday
-      weekNumber = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-      year = d.getFullYear();
+        // Find first Sunday on or before next year's Jan 1
+        const nextYearFirstSunday = new Date(nextJan1);
+        if (nextJan1Day !== 0) {
+          nextYearFirstSunday.setUTCDate(nextJan1.getUTCDate() - nextJan1Day);
+        }
 
-      console.log(`   -> Week start: ${startDate.toLocaleDateString()}`);
-      console.log(`   -> ISO Week: ${year}-W${String(weekNumber).padStart(2, '0')}`);
+        // If current date is on or after next year's week 1 start, use next year
+        if (d >= nextYearFirstSunday) {
+          weekNumber = 1;
+          year = year + 1;
+        }
+      }
+
+      // If not already set, calculate for current year
+      if (!weekNumber) {
+        const jan1 = new Date(Date.UTC(year, 0, 1));
+        const jan1Day = jan1.getUTCDay();
+
+        // Find first Sunday on or before Jan 1 (Week 1 always contains Jan 1)
+        const firstSunday = new Date(jan1);
+        if (jan1Day !== 0) {
+          firstSunday.setUTCDate(jan1.getUTCDate() - jan1Day);
+        }
+
+        const daysSinceFirstSunday = Math.floor((d.getTime() - firstSunday.getTime()) / 86400000);
+        weekNumber = Math.floor(daysSinceFirstSunday / 7) + 1;
+      }
+
+      console.log(`   -> Week start: ${startDate.toISOString().split('T')[0]}`);
+      console.log(`   -> US Week (UTC): ${year}-W${String(weekNumber).padStart(2, '0')}`);
     } else {
        // Fallback or ignore other files
        console.warn(`   ⚠️ Filename format not recognized (expected YYYY-MM-DD.csv): ${file}. Skipping.`);
