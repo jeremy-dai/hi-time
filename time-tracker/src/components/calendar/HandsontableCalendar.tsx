@@ -933,36 +933,28 @@ export function HandsontableCalendar({
         </div>
       )}
 
-      {/* Instructions */}
-      <div className="mt-6 text-xs text-gray-600 bg-gray-50 p-2 rounded-xl border">
-        <span className="font-semibold text-gray-900 mr-2">How to use:</span>
-        <span className="inline-block mr-3">↔️ Drag to select</span>
-        <span className="inline-block mr-3">📋 Cmd+C/V to copy/paste</span>
-        <span className="inline-block mr-3">⬇️ Drag corner to fill</span>
-        <span className="inline-block mr-3">🖱️ Right-click to set category</span>
-        <span className="inline-block mr-3">✏️ Double-click to edit notes</span>
-        <span className="inline-block">🔍 Hover for full text</span>
-      </div>
-
       {/* Summary Table */}
-      <div className="mt-6 p-5 rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-gray-900">Weekly Summary</h3>
-          <span className="text-xs text-gray-500 font-medium">Values shown in pomodoros (30 min blocks)</span>
-        </div>
-        <div className="overflow-x-auto -mx-1 px-1">
-          <table className="w-full text-xs border-collapse" style={{ tableLayout: 'fixed' }}>
+      <div
+        className="mt-1 pt-2 pb-2 pr-4 rounded-lg border border-gray-200 bg-white shadow-sm"
+        onMouseLeave={() => setTooltipState(null)}
+      >
+        <div className="overflow-x-auto">
+          <table className="text-xs" style={{ tableLayout: 'auto', width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <colgroup>
-              <col style={{ width: '20%' }} />
-              {DAYS_SHORT.map((_, idx) => (
-                <col key={idx} style={{ width: `${80 / DAYS_SHORT.length}%` }} />
-              ))}
+              <col style={{ width: '45px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
+              <col style={{ width: '110px' }} />
             </colgroup>
             <thead>
               <tr className="border-b-2 border-gray-300">
-                <th className="text-left py-3 px-3 font-bold text-gray-800 text-xs uppercase tracking-wide">Category</th>
+                <th className="text-left py-3 px-1 font-bold text-gray-800 text-[10px] uppercase tracking-tight" style={{ width: '45px' }}></th>
                 {DAYS_SHORT.map((day) => (
-                  <th key={day} className="text-right py-3 px-3 font-bold text-gray-800 text-xs uppercase tracking-wide">
+                  <th key={day} className="text-center py-3 px-2 font-bold text-gray-800 text-xs uppercase tracking-wide">
                     {day}
                   </th>
                 ))}
@@ -992,25 +984,32 @@ export function HandsontableCalendar({
                           backgroundColor: hexToRgba(colors.bg, 0.3)
                         }}
                       >
-                        <td className="py-2.5 px-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                              <div
-                                className="w-3.5 h-3.5 rounded shrink-0 shadow-sm ring-1 ring-black/5"
-                                style={{ backgroundColor: colors.bg }}
-                              />
-                              <span className="font-semibold text-sm" style={{ color: colors.text }}>{label}</span>
-                            </div>
-                            <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-emerald-50 text-blue-700 border border-emerald-100">
-                              {categoryTotal.total}
-                            </span>
+                        <td
+                          className="py-2.5 px-1 text-center"
+                          style={{
+                            width: '45px',
+                            backgroundColor: colors.bg,
+                            color: colors.text
+                          }}
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setTooltipState({
+                              visible: true,
+                              content: `${key} - ${label}: ${categoryTotal.total} pomodoros (${(categoryTotal.total * 0.5).toFixed(1)} hours)`,
+                              x: rect.left + rect.width / 2,
+                              y: rect.top - 8
+                            })
+                          }}
+                        >
+                          <div className="font-bold text-base leading-tight">
+                            {categoryTotal.total}
                           </div>
                         </td>
                         {categoryTotal.perDay.map((count, idx) => {
                           const showBravo = key === 'W' && count >= 16
                           return (
-                            <td key={`${key}-day-${idx}`} className="text-right py-2.5 px-3 font-medium text-sm" style={{ color: colors.text }}>
-                              <div className="flex items-center justify-end gap-1">
+                            <td key={`${key}-day-${idx}`} className="text-center py-2.5 px-2 font-medium text-sm" style={{ color: colors.text }}>
+                              <div className="flex items-center justify-center gap-1">
                                 {showBravo && (
                                   <span title="Bravo! Work hours >= 16 pomodoros">👏</span>
                                 )}
@@ -1034,17 +1033,27 @@ export function HandsontableCalendar({
                                 backgroundColor: hexToRgba(shadeColor, 0.22)
                               }}
                             >
-                              <td className="py-2 px-3 pl-8">
-                                <div className="flex items-center gap-2.5">
-                                  <div
-                                    className="w-3 h-3 rounded shrink-0 shadow-sm ring-1 ring-black/5"
-                                    style={{ backgroundColor: shadeColor }}
-                                  />
-                                  <span className="text-sm" style={{ color: colors.text }}>{subName}</span>
-                                </div>
+                              <td
+                                className="py-2 px-1 text-center"
+                                style={{
+                                  width: '45px',
+                                  backgroundColor: shadeColor,
+                                  color: colors.text
+                                }}
+                                onMouseEnter={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect()
+                                  setTooltipState({
+                                    visible: true,
+                                    content: `${label} > ${subName}: ${subData.total} pomodoros (${(subData.total * 0.5).toFixed(1)} hours)`,
+                                    x: rect.left + rect.width / 2,
+                                    y: rect.top - 8
+                                  })
+                                }}
+                              >
+                                <div className="font-semibold text-sm leading-tight">{subData.total}</div>
                               </td>
                               {subData.perDay.map((count, idx) => (
-                                <td key={`${subName}-day-${idx}`} className="text-right py-2 px-3 text-sm" style={{ color: colors.text }}>
+                                <td key={`${subName}-day-${idx}`} className="text-center py-2 px-2 text-sm" style={{ color: colors.text }}>
                                   {count || '-'}
                                 </td>
                               ))}
@@ -1055,12 +1064,21 @@ export function HandsontableCalendar({
                   )
                 })}
               <tr className="border-t-2 border-gray-400 bg-gray-50 font-bold">
-                <td className="py-3 px-3 text-gray-900 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>Total</span>
-                    <span className="px-2 py-1 text-[11px] font-semibold rounded-full bg-blue-100 text-blue-800 border border-emerald-200">
-                      {summaryTotals.weekTotal}
-                    </span>
+                <td
+                  className="py-3 px-1 text-center bg-gray-200 text-gray-900"
+                  style={{ width: '45px' }}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setTooltipState({
+                      visible: true,
+                      content: `Week Total: ${summaryTotals.weekTotal} pomodoros (${(summaryTotals.weekTotal * 0.5).toFixed(1)} hours)`,
+                      x: rect.left + rect.width / 2,
+                      y: rect.top - 8
+                    })
+                  }}
+                >
+                  <div className="font-extrabold text-base leading-tight">
+                    {summaryTotals.weekTotal}
                   </div>
                 </td>
                 {summaryTotals.perDayTotals.map((count, idx) => {
@@ -1069,9 +1087,9 @@ export function HandsontableCalendar({
                   return (
                     <td
                       key={`week-day-${idx}`}
-                      className={`text-right py-3 px-3 text-sm ${isValid ? 'text-green-700' : 'text-gray-900'}`}
+                      className={`text-center py-3 px-2 text-sm ${isValid ? 'text-green-700' : 'text-gray-900'}`}
                     >
-                      <div className="flex items-center justify-end gap-1.5">
+                      <div className="flex items-center justify-center gap-1.5">
                         {isValid && (
                           <span
                             className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold shadow-sm"
@@ -1089,6 +1107,17 @@ export function HandsontableCalendar({
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="mt-3 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-200">
+        <span className="font-semibold text-gray-900 mr-2">How to use:</span>
+        <span className="inline-block mr-3">↔️ Drag to select</span>
+        <span className="inline-block mr-3">📋 Cmd+C/V to copy/paste</span>
+        <span className="inline-block mr-3">⬇️ Drag corner to fill</span>
+        <span className="inline-block mr-3">🖱️ Right-click to set category</span>
+        <span className="inline-block mr-3">✏️ Double-click to edit notes</span>
+        <span className="inline-block">🔍 Hover for full text</span>
       </div>
 
       {/* Custom Context Menu */}
