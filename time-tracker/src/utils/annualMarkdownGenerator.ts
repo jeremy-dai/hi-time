@@ -70,10 +70,10 @@ export function generateAnnualReport(data: AnnualExportData): string {
   sections.push(formatDailyHeatmap(ytdStats, weeksStore))
   sections.push('')
 
-  // ========== SECTION 6: MEMORIES & REFLECTIONS ==========
+  // ========== SECTION 6: MEMORIES ==========
   sections.push('---')
   sections.push('')
-  sections.push('# 💭 Section 6: Year Memories & Reflections')
+  sections.push('# 💭 Section 6: Daily Memories')
   sections.push('')
   sections.push(formatMemoriesAndReflections(memories))
   sections.push('')
@@ -546,125 +546,25 @@ function formatMemoriesAndReflections(memories: Record<string, DailyMemory>): st
     return lines.join('\n')
   }
 
-  // Group by month
-  lines.push('## Monthly Memory Summaries')
+  lines.push(`**Total Memories:** ${memoryList.length}`)
   lines.push('')
 
-  const memorysByMonth = new Map<string, DailyMemory[]>()
+  // Sort all memories by date
+  const sortedMemories = memoryList.sort((a, b) => a.date.localeCompare(b.date))
 
-  for (const memory of memoryList) {
-    const monthKey = memory.date.substring(0, 7) // YYYY-MM
-    if (!memorysByMonth.has(monthKey)) {
-      memorysByMonth.set(monthKey, [])
-    }
-    memorysByMonth.get(monthKey)!.push(memory)
+  // Display as a simple table
+  lines.push('| Date | Memory |')
+  lines.push('|------|--------|')
+
+  for (const memory of sortedMemories) {
+    // Escape pipe characters in memory text to prevent table breaking
+    const escapedMemory = memory.memory.replace(/\|/g, '\\|')
+    lines.push(`| ${memory.date} | ${escapedMemory} |`)
   }
 
-  const sortedMonths = Array.from(memorysByMonth.keys()).sort()
-
-  for (const monthKey of sortedMonths) {
-    const monthMemories = memorysByMonth.get(monthKey)!
-    const [year, month] = monthKey.split('-')
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December']
-    const monthName = monthNames[parseInt(month) - 1]
-
-    lines.push(`### ${monthName} ${year} (${monthMemories.length} memories)`)
-    lines.push('')
-
-    // Sort by date
-    monthMemories.sort((a, b) => a.date.localeCompare(b.date))
-
-    for (const memory of monthMemories) {
-      const moodEmoji = getMoodEmoji(memory.mood)
-      const tagsStr = memory.tags && memory.tags.length > 0 ? ` *[${memory.tags.join(', ')}]*` : ''
-
-      lines.push(`**${memory.date}** ${moodEmoji}${tagsStr}`)
-      lines.push(`> ${memory.memory}`)
-      lines.push('')
-    }
-  }
-
-  // Mood analysis
-  lines.push('## Mood Analysis')
   lines.push('')
-
-  const moodCounts: Record<string, number> = {
-    great: 0,
-    good: 0,
-    neutral: 0,
-    bad: 0,
-    terrible: 0
-  }
-
-  for (const memory of memoryList) {
-    if (memory.mood) {
-      moodCounts[memory.mood]++
-    }
-  }
-
-  const totalWithMood = Object.values(moodCounts).reduce((a, b) => a + b, 0)
-
-  if (totalWithMood > 0) {
-    lines.push('| Mood | Count | Percentage |')
-    lines.push('|------|-------|------------|')
-
-    const moodOrder: Array<keyof typeof moodCounts> = ['great', 'good', 'neutral', 'bad', 'terrible']
-    for (const mood of moodOrder) {
-      const count = moodCounts[mood]
-      if (count > 0) {
-        const percentage = ((count / totalWithMood) * 100).toFixed(1)
-        const emoji = getMoodEmoji(mood)
-        lines.push(`| ${emoji} ${mood.charAt(0).toUpperCase() + mood.slice(1)} | ${count} | ${percentage}% |`)
-      }
-    }
-
-    lines.push('')
-  }
-
-  // Tag cloud
-  lines.push('## Tag Cloud')
-  lines.push('')
-
-  const tagCounts = new Map<string, number>()
-
-  for (const memory of memoryList) {
-    if (memory.tags) {
-      for (const tag of memory.tags) {
-        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
-      }
-    }
-  }
-
-  if (tagCounts.size > 0) {
-    const sortedTags = Array.from(tagCounts.entries())
-      .sort((a, b) => b[1] - a[1])
-
-    lines.push('| Tag | Frequency |')
-    lines.push('|-----|-----------|')
-
-    for (const [tag, count] of sortedTags) {
-      lines.push(`| ${tag} | ${count} |`)
-    }
-
-    lines.push('')
-  } else {
-    lines.push('*No tags used this year.*')
-    lines.push('')
-  }
 
   return lines.join('\n')
-}
-
-function getMoodEmoji(mood: string | undefined): string {
-  switch (mood) {
-    case 'great': return '😄'
-    case 'good': return '🙂'
-    case 'neutral': return '😐'
-    case 'bad': return '😕'
-    case 'terrible': return '😢'
-    default: return ''
-  }
 }
 
 // ========== SECTION 7: INSIGHTS CONTEXT ==========
@@ -683,10 +583,10 @@ function formatInsightsContext(
   lines.push('1. **Productivity Patterns:** What are my most productive periods this year and what patterns emerge?')
   lines.push('2. **Week Themes:** How do my week themes correlate with productivity levels and category allocation?')
   lines.push('3. **Category Trends:** What trends do you see in my time allocation across categories over the year?')
-  lines.push('4. **Streak Correlation:** How does my productivity streak pattern relate to my daily memories and mood?')
+  lines.push('4. **Streak Correlation:** How does my productivity streak pattern relate to my daily memories?')
   lines.push('5. **Burnout Indicators:** Are there any concerning patterns, burnout indicators, or periods of low productivity?')
   lines.push('6. **Life Priorities:** What do my daily memories reveal about my priorities and life balance?')
-  lines.push('7. **Mood vs. Productivity:** How does my mood tracking correlate with work hours and category distribution?')
+  lines.push('7. **Memory Insights:** What themes or patterns emerge from my recorded memories?')
   lines.push('8. **Future Planning:** What specific, actionable recommendations would you make for next year?')
   lines.push('9. **Focus Areas:** Which activities or categories should I focus more/less on based on this data?')
   lines.push('10. **Balance Assessment:** How balanced is my time allocation? Are there any categories being neglected?')
@@ -696,29 +596,7 @@ function formatInsightsContext(
   lines.push('')
   lines.push('```json')
 
-  // Build mood distribution
-  const moodDistribution: Record<string, number> = {
-    great: 0,
-    good: 0,
-    neutral: 0,
-    bad: 0,
-    terrible: 0
-  }
-
   const memoryList = Object.values(memories)
-  for (const memory of memoryList) {
-    if (memory.mood) {
-      moodDistribution[memory.mood]++
-    }
-  }
-
-  // Build unique tags
-  const uniqueTags = new Set<string>()
-  for (const memory of memoryList) {
-    if (memory.tags) {
-      memory.tags.forEach(tag => uniqueTags.add(tag))
-    }
-  }
 
   const structuredData = {
     year_overview: {
@@ -739,9 +617,7 @@ function formatInsightsContext(
       productive_percentage: (ytdStats.streakMetrics.productiveDays / ytdStats.streakMetrics.totalDays) * 100
     },
     memories_summary: {
-      total_memories: memoryList.length,
-      mood_distribution: moodDistribution,
-      unique_tags: Array.from(uniqueTags)
+      total_memories: memoryList.length
     },
     week_themes: weekThemes
   }
