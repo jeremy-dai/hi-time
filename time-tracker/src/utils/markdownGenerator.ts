@@ -1,5 +1,5 @@
 import type { EnhancedAnalysis } from '../types/insights'
-import type { TimeBlock } from '../types/time'
+import type { TimeBlock, WeekReview, DailyShipping } from '../types/time'
 import { CATEGORY_KEYS } from '../types/time'
 import { CATEGORY_LABELS } from '../constants/colors'
 
@@ -7,8 +7,14 @@ import { CATEGORY_LABELS } from '../constants/colors'
  * Generate complete markdown report with dual perspective:
  * - Latest week for detailed current insights
  * - 4-week trends for context and patterns
+ * - Optional weekly reviews for reflections
+ * - Optional daily shipping for accountability
  */
-export function generateTrendsReport(analysis: EnhancedAnalysis): string {
+export function generateTrendsReport(
+  analysis: EnhancedAnalysis,
+  weekReviews?: Record<number, WeekReview>,
+  dailyShipping?: Record<string, DailyShipping>
+): string {
   const sections: string[] = []
 
   // Title
@@ -86,6 +92,22 @@ export function generateTrendsReport(analysis: EnhancedAnalysis): string {
   // Average Daily Pattern
   sections.push(formatAverageDailyPattern(analysis))
   sections.push('')
+
+  // ========== WEEKLY REVIEWS ==========
+  if (weekReviews && Object.keys(weekReviews).length > 0) {
+    sections.push('---')
+    sections.push('')
+    sections.push(formatWeeklyReviews(analysis, weekReviews))
+    sections.push('')
+  }
+
+  // ========== DAILY SHIPPING ==========
+  if (dailyShipping && Object.keys(dailyShipping).length > 0) {
+    sections.push('---')
+    sections.push('')
+    sections.push(formatDailyShippingForWeek(analysis, dailyShipping))
+    sections.push('')
+  }
 
   // ========== INSIGHTS CONTEXT FOR AI ==========
   sections.push('---')
@@ -538,6 +560,136 @@ function formatAverageDailyPattern(analysis: EnhancedAnalysis): string {
 
     lines.push('')
   }
+
+  return lines.join('\n')
+}
+
+// ========== WEEKLY REVIEWS FORMATTER ==========
+
+function formatWeeklyReviews(analysis: EnhancedAnalysis, weekReviews: Record<number, WeekReview>): string {
+  const lines: string[] = []
+
+  lines.push('# 📝 Weekly Reviews')
+  lines.push('')
+  lines.push('## Reflections & Notes')
+  lines.push('')
+
+  // Get week numbers from the analysis
+  const weekKeys = analysis.trends.weekKeys
+  const weekReviewEntries: Array<{ weekKey: string; weekNumber: number; review: WeekReview }> = []
+
+  // Parse week keys and match with reviews
+  for (const weekKey of weekKeys) {
+    // Extract week number from format like "2025-W01"
+    const match = weekKey.match(/W(\d+)$/)
+    if (match) {
+      const weekNumber = parseInt(match[1], 10)
+      if (weekReviews[weekNumber]) {
+        weekReviewEntries.push({
+          weekKey,
+          weekNumber,
+          review: weekReviews[weekNumber]
+        })
+      }
+    }
+  }
+
+  // Display reviews in reverse chronological order (latest first)
+  if (weekReviewEntries.length > 0) {
+    for (const { weekKey, weekNumber, review } of weekReviewEntries) {
+      lines.push(`### Week ${weekNumber} (${weekKey})`)
+      lines.push('')
+      lines.push(review.review)
+      lines.push('')
+      lines.push(`*Last updated: ${new Date(review.updatedAt).toLocaleString()}*`)
+      lines.push('')
+    }
+  } else {
+    lines.push('*No weekly reviews found for this period.*')
+    lines.push('')
+  }
+
+  return lines.join('\n')
+}
+
+// ========== DAILY SHIPPING FORMATTER ==========
+
+function formatDailyShippingForWeek(analysis: EnhancedAnalysis, dailyShipping: Record<string, DailyShipping>): string {
+  const lines: string[] = []
+
+  lines.push('# 📦 Daily Shipping Log')
+  lines.push('')
+
+  // Get the date range for the 4-week period
+  const weekKeys = analysis.trends.weekKeys
+
+  // Extract start and end dates from week keys
+  const parseWeekKey = (weekKey: string): { year: number; week: number } => {
+    const match = weekKey.match(/(\d{4})-W(\d+)/)
+    if (!match) return { year: 0, week: 0 }
+    return { year: parseInt(match[1]), week: parseInt(match[2]) }
+  }
+
+  // Get ISO date from year and week number
+  const getDateFromWeek = (year: number, week: number, dayOfWeek: number): Date => {
+    const jan4 = new Date(year, 0, 4)
+    const dayOfWeekJan4 = jan4.getDay() || 7
+    const firstMonday = new Date(jan4.getTime() - (dayOfWeekJan4 - 1) * 86400000)
+    const targetDate = new Date(firstMonday.getTime() + (week - 1) * 7 * 86400000 + (dayOfWeek - 1) * 86400000)
+    return targetDate
+  }
+
+  // Collect all dates in the 4-week period
+  const allDatesInPeriod: string[] = []
+  for (const weekKey of weekKeys) {
+    const { year, week } = parseWeekKey(weekKey)
+    if (year > 0 && week > 0) {
+      for (let day = 1; day <= 7; day++) {
+        const date = getDateFromWeek(year, week, day)
+        const dateStr = date.toISOString().split('T')[0]
+        allDatesInPeriod.push(dateStr)
+      }
+    }
+  }
+
+  // Filter shipping entries for this period
+  const periodShipping = Object.entries(dailyShipping).filter(([dateKey]) =>
+    allDatesInPeriod.includes(dateKey)
+  )
+
+  if (periodShipping.length === 0) {
+    lines.push('*No shipping entries for this 4-week period.*')
+    lines.push('')
+    return lines.join('\n')
+  }
+
+  // Calculate stats
+  const totalEntries = periodShipping.length
+  const completedEntries = periodShipping.filter(([_, entry]) => entry.completed).length
+  const completionRate = totalEntries > 0 ? ((completedEntries / totalEntries) * 100).toFixed(1) : '0.0'
+
+  lines.push('## Period Summary')
+  lines.push('')
+  lines.push(`**Days Logged:** ${totalEntries} out of ${allDatesInPeriod.length} days`)
+  lines.push(`**Days Completed:** ${completedEntries}`)
+  lines.push(`**Completion Rate:** ${completionRate}%`)
+  lines.push('')
+
+  // Display entries chronologically (latest first for this report)
+  lines.push('## Shipping Entries')
+  lines.push('')
+  lines.push('| Date | What Did You Ship? | Status |')
+  lines.push('|------|-------------------|--------|')
+
+  const sortedShipping = periodShipping.sort(([a], [b]) => b.localeCompare(a))
+
+  for (const [dateKey, entry] of sortedShipping) {
+    const escapedShipped = entry.shipped.replace(/\|/g, '\\|')
+    const status = entry.completed ? '✅' : '⬜'
+    lines.push(`| ${dateKey} | ${escapedShipped} | ${status} |`)
+  }
+
+  lines.push('')
 
   return lines.join('\n')
 }

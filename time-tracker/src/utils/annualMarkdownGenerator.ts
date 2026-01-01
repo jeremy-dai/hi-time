@@ -1,5 +1,5 @@
 import type { YTDStats } from './analytics'
-import type { TimeBlock, DailyMemory } from '../types/time'
+import type { TimeBlock, DailyMemory, WeekReview, DailyShipping } from '../types/time'
 import { CATEGORY_KEYS } from '../types/time'
 import { CATEGORY_LABELS } from '../constants/colors'
 
@@ -11,6 +11,8 @@ export interface AnnualExportData {
   weekThemes: Record<string, string>
   memories: Record<string, DailyMemory>
   weeksStore: Record<string, TimeBlock[][]>
+  weekReviews: Record<number, WeekReview>
+  dailyShipping?: Record<string, DailyShipping>
   year: number
 }
 
@@ -19,7 +21,7 @@ export interface AnnualExportData {
  */
 export function generateAnnualReport(data: AnnualExportData): string {
   const sections: string[] = []
-  const { ytdStats, weekThemes, memories, weeksStore, year } = data
+  const { ytdStats, weekThemes, memories, weeksStore, weekReviews, dailyShipping, year } = data
 
   // Title
   const firstWeek = ytdStats.weeklyData[ytdStats.weeklyData.length - 1]?.weekKey || ''
@@ -78,7 +80,27 @@ export function generateAnnualReport(data: AnnualExportData): string {
   sections.push(formatMemoriesAndReflections(memories))
   sections.push('')
 
-  // ========== SECTION 7: INSIGHTS CONTEXT FOR AI ==========
+  // ========== SECTION 6.5: DAILY SHIPPING ==========
+  if (dailyShipping && Object.keys(dailyShipping).length > 0) {
+    sections.push('---')
+    sections.push('')
+    sections.push('# 📦 Section 6.5: Daily Shipping Log')
+    sections.push('')
+    sections.push(formatDailyShipping(dailyShipping))
+    sections.push('')
+  }
+
+  // ========== SECTION 7: WEEKLY REVIEWS ==========
+  if (weekReviews && Object.keys(weekReviews).length > 0) {
+    sections.push('---')
+    sections.push('')
+    sections.push('# 📝 Section 7: Weekly Reviews')
+    sections.push('')
+    sections.push(formatWeeklyReviews(ytdStats, weekReviews))
+    sections.push('')
+  }
+
+  // ========== SECTION 8: INSIGHTS CONTEXT FOR AI ==========
   sections.push('---')
   sections.push('')
   sections.push(formatInsightsContext(ytdStats, weekThemes, memories))
@@ -567,7 +589,130 @@ function formatMemoriesAndReflections(memories: Record<string, DailyMemory>): st
   return lines.join('\n')
 }
 
-// ========== SECTION 7: INSIGHTS CONTEXT ==========
+// ========== SECTION 6.5: DAILY SHIPPING ==========
+
+function formatDailyShipping(dailyShipping: Record<string, DailyShipping>): string {
+  const lines: string[] = []
+
+  const shippingList = Object.values(dailyShipping)
+
+  if (shippingList.length === 0) {
+    lines.push('*No shipping entries recorded for this year.*')
+    lines.push('')
+    return lines.join('\n')
+  }
+
+  // Calculate stats
+  const totalEntries = shippingList.length
+  const completedEntries = shippingList.filter(s => s.completed).length
+  const completionRate = totalEntries > 0 ? ((completedEntries / totalEntries) * 100).toFixed(1) : '0.0'
+
+  // Group by month
+  const byMonth: Record<number, DailyShipping[]> = {}
+  for (const entry of shippingList) {
+    if (!byMonth[entry.month]) {
+      byMonth[entry.month] = []
+    }
+    byMonth[entry.month].push(entry)
+  }
+
+  lines.push('## Shipping Summary')
+  lines.push('')
+  lines.push(`**Total Days Logged:** ${totalEntries}`)
+  lines.push(`**Days Completed:** ${completedEntries}`)
+  lines.push(`**Completion Rate:** ${completionRate}%`)
+  lines.push('')
+
+  // Monthly breakdown
+  lines.push('### Monthly Shipping Count')
+  lines.push('')
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  for (let month = 1; month <= 12; month++) {
+    const count = byMonth[month]?.length || 0
+    const completed = byMonth[month]?.filter(s => s.completed).length || 0
+    if (count > 0) {
+      lines.push(`- **${MONTHS[month - 1]}:** ${count} entries (${completed} completed)`)
+    }
+  }
+  lines.push('')
+
+  // All shipping entries chronologically
+  lines.push('### Daily Shipping Log')
+  lines.push('')
+  lines.push('| Date | What Did You Ship? | Status |')
+  lines.push('|------|-------------------|--------|')
+
+  // Sort by date (year-month-day)
+  const sortedShipping = shippingList.sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year
+    if (a.month !== b.month) return a.month - b.month
+    return a.day - b.day
+  })
+
+  for (const entry of sortedShipping) {
+    const dateStr = `${entry.year}-${String(entry.month).padStart(2, '0')}-${String(entry.day).padStart(2, '0')}`
+    const escapedShipped = entry.shipped.replace(/\|/g, '\\|')
+    const status = entry.completed ? '✅' : '⬜'
+    lines.push(`| ${dateStr} | ${escapedShipped} | ${status} |`)
+  }
+
+  lines.push('')
+
+  return lines.join('\n')
+}
+
+// ========== SECTION 7: WEEKLY REVIEWS ==========
+
+function formatWeeklyReviews(ytdStats: YTDStats, weekReviews: Record<number, WeekReview>): string {
+  const lines: string[] = []
+
+  lines.push('## Weekly Reflections & Notes')
+  lines.push('')
+
+  // Get all weeks from the YTD stats and match with reviews
+  const weekReviewEntries: Array<{ weekKey: string; weekNumber: number; review: WeekReview }> = []
+
+  for (const weekData of ytdStats.weeklyData) {
+    const weekKey = weekData.weekKey
+    // Extract week number from format like "2025-W01"
+    const match = weekKey.match(/W(\d+)$/)
+    if (match) {
+      const weekNumber = parseInt(match[1], 10)
+      if (weekReviews[weekNumber]) {
+        weekReviewEntries.push({
+          weekKey,
+          weekNumber,
+          review: weekReviews[weekNumber]
+        })
+      }
+    }
+  }
+
+  // Display reviews in chronological order (oldest first, same as weekly breakdown)
+  if (weekReviewEntries.length > 0) {
+    lines.push(`**Total Reviews:** ${weekReviewEntries.length} out of ${ytdStats.totalWeeks} weeks`)
+    lines.push('')
+
+    // Reverse to get oldest first (since weeklyData is newest first)
+    weekReviewEntries.reverse()
+
+    for (const { weekKey, weekNumber, review } of weekReviewEntries) {
+      lines.push(`### Week ${weekNumber} (${weekKey})`)
+      lines.push('')
+      lines.push(review.review)
+      lines.push('')
+      lines.push(`*Last updated: ${new Date(review.updatedAt).toLocaleString()}*`)
+      lines.push('')
+    }
+  } else {
+    lines.push('*No weekly reviews recorded for this year.*')
+    lines.push('')
+  }
+
+  return lines.join('\n')
+}
+
+// ========== SECTION 8: INSIGHTS CONTEXT ==========
 
 function formatInsightsContext(
   ytdStats: YTDStats,
