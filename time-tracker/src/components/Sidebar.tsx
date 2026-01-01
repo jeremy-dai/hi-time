@@ -1,11 +1,11 @@
-import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, BookHeart } from 'lucide-react'
+import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, BookHeart, FileText, Package } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 import { cn } from '../utils/classNames'
 import { getISOWeekYear } from '../utils/date'
 
 interface SidebarProps {
-  active: 'timesheet' | 'trends' | 'annual' | 'memories' | 'settings'
-  onNavigate: (tab: 'timesheet' | 'trends' | 'annual' | 'memories' | 'settings') => void
+  active: 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'
+  onNavigate: (tab: 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings') => void
   userEmail?: string
   onLogout: () => void
   currentDate?: Date
@@ -139,6 +139,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
       <div className="flex-1 space-y-1 pl-3">
         <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">Menu</div>
         <SidebarItem
+          icon={<Package size={20} />}
+          label="Today"
+          active={active === 'today'}
+          onClick={() => onNavigate('today')}
+        />
+        <SidebarItem
           icon={<Calendar size={20} />}
           label="Timesheet"
           active={active === 'timesheet'}
@@ -161,6 +167,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           label="Memories"
           active={active === 'memories'}
           onClick={() => onNavigate('memories')}
+        />
+        <SidebarItem
+          icon={<FileText size={20} />}
+          label="Review"
+          active={active === 'review'}
+          onClick={() => onNavigate('review')}
         />
         <div className="mt-8 text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">System</div>
         <SidebarItem

@@ -1,4 +1,4 @@
-import type { TimeBlock } from './types/time'
+import type { TimeBlock, AnnualReview } from './types/time'
 import { TIME_SLOTS } from './constants/timesheet'
 import { ApiError } from './utils/errorHandler'
 import { getAuthToken } from './lib/supabase'
@@ -297,6 +297,161 @@ export async function saveYearMemories(yearMemories: YearMemories): Promise<bool
     return true
   } catch (error) {
     console.error(`Failed to save memories for year ${yearMemories.year}:`, error)
+    return false
+  }
+}
+
+// Week Reviews API
+export interface YearWeekReviews {
+  year: number
+  reviews: Record<number, WeekReview>
+}
+
+export interface WeekReview {
+  year: number
+  weekNumber: number
+  review: string
+  createdAt: number
+  updatedAt: number
+}
+
+export async function getYearWeekReviews(year: number): Promise<YearWeekReviews | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/reviews/${year}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<YearWeekReviews>>(res, `/reviews/${year}`)
+    return data.reviews || null
+  } catch (error) {
+    console.error(`Failed to get week reviews for year ${year}:`, error)
+    return null
+  }
+}
+
+export async function saveWeekReview(review: WeekReview): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/reviews/${review.year}/${review.weekNumber}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ review: review.review }),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/reviews/${review.year}/${review.weekNumber}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to save week review for ${review.year} week ${review.weekNumber}:`, error)
+    return false
+  }
+}
+
+export async function deleteWeekReview(year: number, weekNumber: number): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/reviews/${year}/${weekNumber}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/reviews/${year}/${weekNumber}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete week review for ${year} week ${weekNumber}:`, error)
+    return false
+  }
+}
+
+// Annual Review API (using week_number = 0 convention)
+export async function getAnnualReview(year: number): Promise<AnnualReview | null> {
+  try {
+    const yearData = await getYearWeekReviews(year)
+    if (!yearData || !yearData.reviews[0]) {
+      return null
+    }
+    const weekReview = yearData.reviews[0]
+    return {
+      year: weekReview.year,
+      review: weekReview.review,
+      createdAt: weekReview.createdAt,
+      updatedAt: weekReview.updatedAt,
+    }
+  } catch (error) {
+    console.error(`Failed to get annual review for year ${year}:`, error)
+    return null
+  }
+}
+
+export async function saveAnnualReview(year: number, review: string): Promise<boolean> {
+  const annualReview: WeekReview = {
+    year,
+    weekNumber: 0,
+    review,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  }
+  return saveWeekReview(annualReview)
+}
+
+export async function deleteAnnualReview(year: number): Promise<boolean> {
+  return deleteWeekReview(year, 0)
+}
+
+// Daily Shipping API
+export interface YearDailyShipping {
+  year: number
+  entries: Record<string, DailyShipping>
+}
+
+export interface DailyShipping {
+  year: number
+  month: number
+  day: number
+  shipped: string
+  completed: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export async function getYearDailyShipping(year: number): Promise<YearDailyShipping | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/shipping/${year}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<YearDailyShipping>>(res, `/shipping/${year}`)
+    return data.shipping || null
+  } catch (error) {
+    console.error(`Failed to get daily shipping for year ${year}:`, error)
+    return null
+  }
+}
+
+export async function saveDailyShipping(entry: DailyShipping): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/shipping/${entry.year}/${entry.month}/${entry.day}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ shipped: entry.shipped, completed: entry.completed }),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/shipping/${entry.year}/${entry.month}/${entry.day}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to save daily shipping for ${entry.year}-${entry.month}-${entry.day}:`, error)
+    return false
+  }
+}
+
+export async function deleteDailyShipping(year: number, month: number, day: number): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/shipping/${year}/${month}/${day}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/shipping/${year}/${month}/${day}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete daily shipping for ${year}-${month}-${day}:`, error)
     return false
   }
 }

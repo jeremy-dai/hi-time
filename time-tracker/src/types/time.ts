@@ -35,3 +35,38 @@ export interface YearMemories {
   year: number
   memories: Record<string, DailyMemory>
 }
+
+export interface WeekReview {
+  year: number
+  weekNumber: number // ISO week number (1-53)
+  review: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface YearWeekReviews {
+  year: number
+  reviews: Record<number, WeekReview> // week number -> review
+}
+
+export interface DailyShipping {
+  year: number
+  month: number // 1-12
+  day: number // 1-31
+  shipped: string
+  completed: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export interface YearDailyShipping {
+  year: number
+  entries: Record<string, DailyShipping> // 'YYYY-MM-DD' -> shipping entry
+}
+
+export interface AnnualReview {
+  year: number
+  review: string
+  createdAt: number
+  updatedAt: number
+}

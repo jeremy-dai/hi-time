@@ -481,4 +481,229 @@ app.put('/api/memories/:year', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Week Reviews API
+app.get('/api/reviews/:year', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('week_reviews')
+    .select('*')
+    .eq('year', year)
+    .order('week_number', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching week reviews:', error);
+    return res.status(500).json({ error: 'Failed to fetch week reviews' });
+  }
+
+  // Transform array to keyed object
+  const reviews = {};
+  if (data) {
+    data.forEach(review => {
+      reviews[review.week_number] = {
+        year: review.year,
+        weekNumber: review.week_number,
+        review: review.review,
+        createdAt: new Date(review.created_at).getTime(),
+        updatedAt: new Date(review.updated_at).getTime(),
+      };
+    });
+  }
+
+  res.json({
+    reviews: { year, reviews }
+  });
+});
+
+app.put('/api/reviews/:year/:weekNumber', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  const weekNumber = parseInt(req.params.weekNumber, 10);
+  const { review } = req.body || {};
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  if (!weekNumber || isNaN(weekNumber) || weekNumber < 1 || weekNumber > 53) {
+    return res.status(400).json({ error: 'Invalid week number (must be 1-53)' });
+  }
+
+  if (!review || typeof review !== 'string') {
+    return res.status(400).json({ error: 'review string is required' });
+  }
+
+  // RLS requires user_id to match authenticated user
+  const { error } = await req.supabase
+    .from('week_reviews')
+    .upsert({
+      user_id: req.user.id,
+      year,
+      week_number: weekNumber,
+      review,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,year,week_number'
+    });
+
+  if (error) {
+    console.error('Error saving week review:', error);
+    return res.status(500).json({ error: 'Failed to save week review' });
+  }
+
+  res.json({ ok: true });
+});
+
+app.delete('/api/reviews/:year/:weekNumber', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  const weekNumber = parseInt(req.params.weekNumber, 10);
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  if (!weekNumber || isNaN(weekNumber)) {
+    return res.status(400).json({ error: 'Invalid week number' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { error } = await req.supabase
+    .from('week_reviews')
+    .delete()
+    .eq('year', year)
+    .eq('week_number', weekNumber);
+
+  if (error) {
+    console.error('Error deleting week review:', error);
+    return res.status(500).json({ error: 'Failed to delete week review' });
+  }
+
+  res.json({ ok: true });
+});
+
+// Daily Shipping API
+app.get('/api/shipping/:year', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { data, error } = await req.supabase
+    .from('daily_shipping')
+    .select('*')
+    .eq('year', year)
+    .order('month', { ascending: true })
+    .order('day', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching daily shipping:', error);
+    return res.status(500).json({ error: 'Failed to fetch daily shipping' });
+  }
+
+  // Transform array to keyed object (YYYY-MM-DD format)
+  const entries = {};
+  if (data) {
+    data.forEach(entry => {
+      const dateKey = `${entry.year}-${String(entry.month).padStart(2, '0')}-${String(entry.day).padStart(2, '0')}`;
+      entries[dateKey] = {
+        year: entry.year,
+        month: entry.month,
+        day: entry.day,
+        shipped: entry.shipped,
+        completed: entry.completed || false,
+        createdAt: new Date(entry.created_at).getTime(),
+        updatedAt: new Date(entry.updated_at).getTime(),
+      };
+    });
+  }
+
+  res.json({
+    shipping: { year, entries }
+  });
+});
+
+app.put('/api/shipping/:year/:month/:day', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  const month = parseInt(req.params.month, 10);
+  const day = parseInt(req.params.day, 10);
+  const { shipped, completed } = req.body || {};
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  if (!month || isNaN(month) || month < 1 || month > 12) {
+    return res.status(400).json({ error: 'Invalid month (must be 1-12)' });
+  }
+
+  if (!day || isNaN(day) || day < 1 || day > 31) {
+    return res.status(400).json({ error: 'Invalid day (must be 1-31)' });
+  }
+
+  if (!shipped || typeof shipped !== 'string') {
+    return res.status(400).json({ error: 'shipped string is required' });
+  }
+
+  // RLS requires user_id to match authenticated user
+  const { error } = await req.supabase
+    .from('daily_shipping')
+    .upsert({
+      user_id: req.user.id,
+      year,
+      month,
+      day,
+      shipped,
+      completed: completed || false,
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'user_id,year,month,day'
+    });
+
+  if (error) {
+    console.error('Error saving daily shipping:', error);
+    return res.status(500).json({ error: 'Failed to save daily shipping' });
+  }
+
+  res.json({ ok: true });
+});
+
+app.delete('/api/shipping/:year/:month/:day', async (req, res) => {
+  const year = parseInt(req.params.year, 10);
+  const month = parseInt(req.params.month, 10);
+  const day = parseInt(req.params.day, 10);
+
+  if (!year || isNaN(year)) {
+    return res.status(400).json({ error: 'Invalid year parameter' });
+  }
+
+  if (!month || isNaN(month)) {
+    return res.status(400).json({ error: 'Invalid month' });
+  }
+
+  if (!day || isNaN(day)) {
+    return res.status(400).json({ error: 'Invalid day' });
+  }
+
+  // RLS automatically filters by authenticated user
+  const { error } = await req.supabase
+    .from('daily_shipping')
+    .delete()
+    .eq('year', year)
+    .eq('month', month)
+    .eq('day', day);
+
+  if (error) {
+    console.error('Error deleting daily shipping:', error);
+    return res.status(500).json({ error: 'Failed to delete daily shipping' });
+  }
+
+  res.json({ ok: true });
+});
+
 export default app;

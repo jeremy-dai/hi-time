@@ -4,6 +4,8 @@ import HandsontableCalendar from './components/calendar/HandsontableCalendar'
 import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
 import Memories from './components/Memories'
+import WeeklyReview from './components/WeeklyReview'
+import DailyShipping from './components/DailyShipping'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
 import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
@@ -23,11 +25,11 @@ function App() {
   const [pendingStartingHour, setPendingStartingHour] = useState<number | null>(null)
 
   // Initialize activeTab from localStorage, default to 'timesheet' if not found
-  const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'settings'>(() => {
+  const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'>(() => {
     try {
       const saved = localStorage.getItem('active-tab')
-      if (saved && ['timesheet', 'trends', 'annual', 'memories', 'settings'].includes(saved)) {
-        return saved as 'timesheet' | 'trends' | 'annual' | 'memories' | 'settings'
+      if (saved && ['timesheet', 'trends', 'annual', 'memories', 'review', 'today', 'settings'].includes(saved)) {
+        return saved as 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'
       }
     } catch (err) {
       console.error('Failed to load active tab from localStorage:', err)
@@ -600,6 +602,16 @@ function App() {
       {activeTab === 'memories' && (
         <div className="animate-in fade-in duration-200">
           <Memories />
+        </div>
+      )}
+      {activeTab === 'review' && (
+        <div className="animate-in fade-in duration-200">
+          <WeeklyReview />
+        </div>
+      )}
+      {activeTab === 'today' && (
+        <div className="animate-in fade-in duration-200">
+          <DailyShipping />
         </div>
       )}
       {activeTab === 'settings' && (
