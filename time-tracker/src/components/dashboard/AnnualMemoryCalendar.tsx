@@ -109,8 +109,8 @@ export default function AnnualMemoryCalendar({
       </div>
 
       {/* Year Calendar - Compact Table View with Inline Editing */}
-      <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 rounded-lg">
-        <table className="w-full border-collapse text-xs min-w-[640px] shadow-sm rounded-lg overflow-hidden">
+      <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 rounded-xl">
+        <table className="w-full border-collapse text-xs min-w-[640px] shadow-sm rounded-xl overflow-hidden">
           <thead>
             <tr className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100">
               <th className="border-r border-b border-gray-300 bg-gradient-to-br from-gray-100 to-gray-50 px-1 sm:px-2 py-1.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-700 w-8 sm:w-12 sticky left-0 z-20 shadow-sm">
@@ -172,9 +172,9 @@ export default function AnnualMemoryCalendar({
                         className={cn(
                           'border-b border-gray-200 px-0 py-0 cursor-text transition-all duration-200 relative h-6 sm:h-7 max-h-6 sm:max-h-7',
                           idx < calendarData.length - 1 && "border-r border-gray-200",
-                          isEditing && 'ring-2 ring-blue-400 ring-inset bg-blue-50 shadow-inner z-10',
+                          isEditing && 'ring-2 ring-emerald-400 ring-inset bg-emerald-50 shadow-inner z-10',
                           !isEditing && hasMemory && 'bg-[#b5d3e8] hover:bg-[#9ec3e0] hover:shadow-sm',
-                          !isEditing && !hasMemory && 'bg-white/50 hover:bg-blue-50/40'
+                          !isEditing && !hasMemory && 'bg-white/50 hover:bg-emerald-50/40'
                         )}
                         onClick={() => !isEditing && handleCellClick(dayData.dateStr)}
                       >

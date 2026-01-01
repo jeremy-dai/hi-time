@@ -1,4 +1,5 @@
-import type { SyncStatus } from '../hooks/useLocalStorageSync';
+// Support both SyncStatus definitions (with and without 'idle')
+type SyncStatus = 'idle' | 'synced' | 'pending' | 'syncing' | 'error';
 
 interface SyncStatusIndicatorProps {
   status: SyncStatus;
@@ -20,6 +21,12 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
 
   return (
     <div className="flex items-center gap-2 text-sm">
+      {status === 'idle' && (
+        <span className="text-gray-500 flex items-center gap-1">
+          Idle
+        </span>
+      )}
+
       {status === 'synced' && !hasUnsavedChanges && lastSynced && (
         <span
           className="text-gray-500 flex items-center gap-1"
@@ -27,6 +34,13 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
         >
           <span className="text-green-600">✓</span>
           {compact ? 'Synced' : `Synced at ${formatTime(lastSynced)}`}
+        </span>
+      )}
+
+      {status === 'synced' && !hasUnsavedChanges && !lastSynced && (
+        <span className="text-gray-500 flex items-center gap-1">
+          <span className="text-green-600">✓</span>
+          Synced
         </span>
       )}
 
@@ -49,9 +63,15 @@ export function SyncStatusIndicator({ status, lastSynced, hasUnsavedChanges, onS
         </div>
       )}
 
+      {status === 'pending' && !hasUnsavedChanges && (
+        <span className="text-amber-600 flex items-center gap-1">
+          <span>●</span> Pending...
+        </span>
+      )}
+
       {status === 'syncing' && (
         <span className="text-emerald-600 flex items-center gap-1">
-          <span className="animate-pulse">⋯</span> Syncing to database...
+          <span className="animate-pulse">⋯</span> {compact ? 'Syncing...' : 'Syncing to database...'}
         </span>
       )}
 

@@ -360,7 +360,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                 </div>
                 <button
                   onClick={() => setShowClearConfirm(true)}
-                  className="px-3 py-1.5 bg-red-50 text-red-600 font-medium text-xs rounded-lg hover:bg-red-100 transition-colors"
+                  className="px-3 py-1.5 bg-red-50 text-red-600 font-medium text-xs rounded-xl hover:bg-red-100 transition-colors"
                 >
                   Clear All
                 </button>
@@ -375,7 +375,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     <div key={cat} className="pb-4 border-b border-gray-100 last:border-0">
                       <div className="flex items-center gap-2 mb-3">
                         <span
-                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shadow-sm"
+                          className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shadow-sm"
                           style={{
                             backgroundColor: CATEGORY_COLORS_HEX[cat].bg,
                             color: CATEGORY_COLORS_HEX[cat].text
@@ -437,7 +437,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                   <select
                     value={settings.timezone || 'Asia/Shanghai'}
                     onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                    className="ml-4 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300"
+                    className="ml-4 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300"
                   >
                     {TIMEZONE_OPTIONS.map(tz => (
                       <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -459,7 +459,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                       <p className="text-xs text-gray-400 italic">None</p>
                     )}
                     {(settings?.timeDividers || []).map((time, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-gray-50 rounded-lg px-2 py-1.5 hover:border hover:border-gray-200 transition-colors">
+                      <div key={index} className="flex items-center gap-2 bg-gray-50 rounded-xl px-2 py-1.5 hover:border hover:border-gray-200 transition-colors">
                         <span className="text-gray-400 text-xs cursor-move" title="Drag to reorder (coming soon)">⋮⋮</span>
                         <input
                           type="time"
@@ -482,7 +482,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     ))}
                     <button
                       onClick={addTimeDivider}
-                      className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-lg hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
+                      className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
                     >
                       <span>+</span>
                       <span>Add</span>
@@ -519,7 +519,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                         type="week"
                         value={exportStartWeek}
                         onChange={(e) => setExportStartWeek(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
                       />
                     </div>
                     <div className="w-full sm:flex-1">
@@ -528,13 +528,13 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                         type="week"
                         value={exportEndWeek}
                         onChange={(e) => setExportEndWeek(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
                       />
                     </div>
                     <button
                       onClick={handleBulkExport}
                       disabled={exporting}
-                      className="w-full sm:w-auto px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-lg hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
+                      className="w-full sm:w-auto px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
                     >
                       {exporting && (
                         <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">

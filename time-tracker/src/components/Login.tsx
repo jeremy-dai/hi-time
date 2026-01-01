@@ -121,7 +121,7 @@ export function Login() {
                 setIsSignUp(!isSignUp)
                 setError(null)
               }}
-              className="text-sm text-emerald-600 hover:text-blue-500"
+              className="text-sm text-emerald-600 hover:text-emerald-500"
             >
               {isSignUp
                 ? 'Already have an account? Sign in'

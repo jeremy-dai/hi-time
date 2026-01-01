@@ -2,11 +2,14 @@ import { useMemo } from 'react'
 import type { TimeBlock } from '../../types/time'
 import { aggregateYTDData } from '../../utils/analytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
+import { useWeekReviews } from '../../hooks/useWeekReviews'
+import { useDailyShipping } from '../../hooks/useDailyShipping'
 import AnnualCategoryBreakdown from './AnnualCategoryBreakdown'
 import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
 import AnnualProductivityStreak from './AnnualProductivityStreak'
-import { RefreshCw, Download, ChevronDown, CalendarRange } from 'lucide-react'
+import YearNavigator from '../shared/YearNavigator'
+import { RefreshCw, Download, CalendarRange } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { generateAnnualReport, downloadAnnualMarkdownReport } from '../../utils/annualMarkdownGenerator'
 import { startOfISOWeek, endOfISOWeek } from '../../utils/date'
@@ -31,17 +34,8 @@ export default function AnnualDashboard({
   onYearChange
 }: AnnualDashboardProps) {
   const { memories } = useYearMemories(year)
-
-  // Generate year options (selected year and past 10 years)
-  // This ensures the dropdown includes the current year being viewed, even if it's in the future
-  // (e.g., when today is Dec 29, 2025 but we're viewing Week 1 of ISO year 2026)
-  const yearOptions = useMemo(() => {
-    const years = []
-    for (let i = 0; i < 10; i++) {
-      years.push(year - i)
-    }
-    return years
-  }, [year])
+  const { reviews: weekReviews } = useWeekReviews(year)
+  const { entries: dailyShippingEntries } = useDailyShipping(year)
 
   // Extract themes from metadata store
   const weekThemes = useMemo(() => {
@@ -131,11 +125,41 @@ export default function AnnualDashboard({
   }
 
   const handleExport = () => {
+    // Convert entries to DailyShipping format
+    const dailyShipping: Record<string, any> = {}
+    Object.entries(dailyShippingEntries).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        const [y, m, d] = key.split('-').map(Number)
+        dailyShipping[key] = {
+          year: y,
+          month: m,
+          day: d,
+          shipped: value,
+          completed: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+      } else {
+        const [y, m, d] = key.split('-').map(Number)
+        dailyShipping[key] = {
+          year: y,
+          month: m,
+          day: d,
+          shipped: value.shipped,
+          completed: value.completed,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+      }
+    })
+
     const content = generateAnnualReport({
       ytdStats,
       weekThemes,
       memories,
       weeksStore,
+      weekReviews,
+      dailyShipping,
       year
     })
     downloadAnnualMarkdownReport(content, year)
@@ -161,27 +185,12 @@ export default function AnnualDashboard({
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Year Selector */}
-          <div className="relative">
-            <select
-              value={year}
-              onChange={(e) => onYearChange(Number(e.target.value))}
-              className={cn(
-                'appearance-none pl-4 pr-10 py-2 rounded-xl font-semibold',
-                'bg-white border-2 border-gray-200',
-                'text-gray-900 text-base',
-                'hover:border-emerald-300 focus:border-emerald-500 focus:outline-none',
-                'transition-colors cursor-pointer'
-              )}
-            >
-              {yearOptions.map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
-          </div>
+          {/* Year Navigator */}
+          <YearNavigator
+            year={year}
+            onYearChange={onYearChange}
+            variant="emerald"
+          />
 
           <button
             onClick={handleExport}

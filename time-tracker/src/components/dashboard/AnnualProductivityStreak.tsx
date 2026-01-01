@@ -74,20 +74,20 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
         {/* Productive Days */}
         <div className={cn(
           'rounded-xl p-3 text-center',
-          'bg-gradient-to-br from-blue-50 to-blue-100',
+          'bg-gradient-to-br from-emerald-50 to-emerald-100',
           'border border-emerald-200',
           'relative overflow-hidden'
         )}>
           {/* Background progress indicator */}
           <div
-            className="absolute inset-0 bg-gradient-to-r from-blue-200/40 to-blue-300/40 transition-all duration-500"
+            className="absolute inset-0 bg-gradient-to-r from-emerald-200/40 to-emerald-300/40 transition-all duration-500"
             style={{ width: `${productivePercentage}%` }}
           />
 
           {/* Content */}
           <div className="relative">
             <div className="flex justify-center mb-1">
-              <Calendar className="w-6 h-6 text-blue-500" />
+              <Calendar className="w-6 h-6 text-emerald-500" />
             </div>
 
             {/* Percentage as main metric */}
@@ -100,7 +100,7 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
             </div>
 
             {/* Compact day count */}
-            <div className="text-[10px] text-blue-700 font-medium">
+            <div className="text-[10px] text-emerald-700 font-medium">
               {productiveDays} of {totalDays} days
             </div>
           </div>

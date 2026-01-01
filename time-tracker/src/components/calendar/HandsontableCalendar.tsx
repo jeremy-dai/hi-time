@@ -935,7 +935,7 @@ export function HandsontableCalendar({
 
       {/* Summary Table */}
       <div
-        className="mt-1 pt-2 pb-2 pr-4 rounded-lg border border-gray-200 bg-white shadow-sm"
+        className="mt-1 pt-2 pb-2 pr-4 rounded-xl border border-gray-200 bg-white shadow-sm"
         onMouseLeave={() => setTooltipState(null)}
       >
         <div className="overflow-x-auto">
@@ -1110,7 +1110,7 @@ export function HandsontableCalendar({
       </div>
 
       {/* Instructions */}
-      <div className="mt-3 text-xs text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-200">
+      <div className="mt-3 text-xs text-gray-600 bg-gray-50 p-2 rounded-xl border border-gray-200">
         <span className="font-semibold text-gray-900 mr-2">How to use:</span>
         <span className="inline-block mr-3">↔️ Drag to select</span>
         <span className="inline-block mr-3">📋 Cmd+C/V to copy/paste</span>
