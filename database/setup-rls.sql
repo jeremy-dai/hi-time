@@ -15,24 +15,24 @@ ALTER TABLE year_memories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can only access their own weeks"
 ON weeks
 FOR ALL
-USING (auth.uid()::text = user_id)
-WITH CHECK (auth.uid()::text = user_id);
+USING ((select auth.uid())::text = user_id)
+WITH CHECK ((select auth.uid())::text = user_id);
 
 -- Policy for user_settings table
 -- Users can only access settings where user_id matches their authenticated user ID
 CREATE POLICY "Users can only access their own settings"
 ON user_settings
 FOR ALL
-USING (auth.uid()::text = user_id)
-WITH CHECK (auth.uid()::text = user_id);
+USING ((select auth.uid())::text = user_id)
+WITH CHECK ((select auth.uid())::text = user_id);
 
 -- Policy for year_memories table
 -- Users can only access memories where user_id matches their authenticated user ID
 CREATE POLICY "Users can only access their own memories"
 ON year_memories
 FOR ALL
-USING (auth.uid()::text = user_id)
-WITH CHECK (auth.uid()::text = user_id);
+USING ((select auth.uid())::text = user_id)
+WITH CHECK ((select auth.uid())::text = user_id);
 
 -- Note: auth.uid() is a Supabase function that extracts the user ID
 -- from the JWT token in the Authorization header.

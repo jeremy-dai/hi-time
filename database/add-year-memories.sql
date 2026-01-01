@@ -32,5 +32,5 @@ ALTER TABLE year_memories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can only access their own memories"
 ON year_memories
 FOR ALL
-USING (auth.uid()::text = user_id)
-WITH CHECK (auth.uid()::text = user_id);
+USING ((select auth.uid())::text = user_id)
+WITH CHECK ((select auth.uid())::text = user_id);
