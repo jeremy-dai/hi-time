@@ -1,4 +1,4 @@
-# Hi-Time Monorepo
+# Hi-Time
 
 A modern time logging and analysis application designed to help you track, categorize, and optimize your weekly productivity.
 
@@ -123,29 +123,16 @@ This project uses Supabase (PostgreSQL) for data storage.
    - Sign up at [supabase.com](https://supabase.com)
    - Create a new project
 
-2. **Run Schema SQL**
-   - Go to the SQL Editor in Supabase.
-   - Run the following SQL to create the table:
-
-   ```sql
-   create table weeks (
-     id uuid default gen_random_uuid() primary key,
-     user_id text not null,
-     year integer not null,
-     week_number integer not null,
-     week_data jsonb not null default '[]'::jsonb,
-     updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-     unique (user_id, year, week_number)
-   );
-   
-   create index idx_weeks_user_year_week on weeks(user_id, year, week_number);
-   ```
+2. **Run Database Schema**
+   - Go to the SQL Editor in Supabase
+   - Copy and run the complete schema from [database/schema.sql](database/schema.sql)
+   - This will create all necessary tables, indexes, and security policies
 
 3. **Get Credentials**
-   - Go to Project Settings -> API.
-   - Copy the **Project URL** (`SUPABASE_URL`).
-   - Copy the **Publishable Key** (`SUPABASE_PUBLISHABLE_KEY`) for client-side use.
-   - Copy the **Secret Key** (`SUPABASE_SECRET_KEY`) for server-side use.
+   - Go to Project Settings → API
+   - Copy the **Project URL** (`SUPABASE_URL`)
+   - Copy the **Publishable Key** (`SUPABASE_PUBLISHABLE_KEY`) for client-side use
+   - Copy the **Secret Key** (`SUPABASE_SECRET_KEY`) for server-side use
 
 4. **Update Environment Variables**
    - **Local `.env`**:
@@ -154,7 +141,7 @@ This project uses Supabase (PostgreSQL) for data storage.
      SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
      SUPABASE_SECRET_KEY=sb_secret_...
      ```
-   - **Production (Vercel)**: Add these environment variables in the Vercel dashboard.
+   - **Production (Vercel)**: Add these environment variables in the Vercel dashboard
 
 ### Deploy to Vercel
 

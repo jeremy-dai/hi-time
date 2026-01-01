@@ -1,5 +1,7 @@
 # Database Schema
 
+> **Quick Setup:** The complete database schema is available in [database/schema.sql](../database/schema.sql). Run this file in your Supabase SQL Editor to create all tables, indexes, and security policies.
+
 ## Tables
 
 ### `weeks`
@@ -81,6 +83,61 @@ The `memories` column stores a JSON object mapping dates to memory objects:
 - `createdAt` (number, required): Unix timestamp in milliseconds
 - `updatedAt` (number, required): Unix timestamp in milliseconds
 
+### `week_reviews`
+Stores weekly reflection entries organized by year and ISO week number.
+
+```sql
+create table week_reviews (
+  id uuid default gen_random_uuid() primary key,
+  user_id text not null,
+  year integer not null,
+  week_number integer not null,
+  review text not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (user_id, year, week_number),
+  check (week_number >= 0 and week_number <= 53),
+  check (year >= 2000 and year <= 2100)
+);
+
+create index idx_week_reviews_user_id on week_reviews(user_id);
+create index idx_week_reviews_user_year on week_reviews(user_id, year);
+create index idx_week_reviews_user_year_week on week_reviews(user_id, year, week_number);
+```
+
+**Special Convention:**
+- `week_number = 0` is reserved for **annual reviews** (yearly retrospectives)
+- `week_number 1-53` are standard ISO week numbers for weekly reviews
+
+### `daily_shipping`
+Stores daily "what did you ship today" entries with completion tracking.
+
+```sql
+create table daily_shipping (
+  id uuid default gen_random_uuid() primary key,
+  user_id text not null,
+  year integer not null,
+  month integer not null,
+  day integer not null,
+  shipped text not null,
+  completed boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (user_id, year, month, day),
+  check (month >= 1 and month <= 12),
+  check (day >= 1 and day <= 31),
+  check (year >= 2000 and year <= 2100)
+);
+
+create index idx_daily_shipping_user_id on daily_shipping(user_id);
+create index idx_daily_shipping_user_year on daily_shipping(user_id, year);
+create index idx_daily_shipping_user_date on daily_shipping(user_id, year, month, day);
+```
+
+**Fields:**
+- `shipped` (text): What the user shipped/accomplished that day
+- `completed` (boolean): Whether the item has been marked as done
+
 ## Security (Row Level Security)
 
 Enable RLS to ensure users can only access their own data.
@@ -92,6 +149,8 @@ For detailed RLS setup instructions, see the [Authentication Setup Guide](AUTHEN
 alter table weeks enable row level security;
 alter table user_settings enable row level security;
 alter table year_memories enable row level security;
+alter table week_reviews enable row level security;
+alter table daily_shipping enable row level security;
 
 -- Policies
 create policy "Users can only access their own weeks"
@@ -108,8 +167,18 @@ create policy "Users can only access their own memories"
 on year_memories for all
 using (auth.uid()::text = user_id)
 with check (auth.uid()::text = user_id);
+
+create policy "Users can only access their own week reviews"
+on week_reviews for all
+using ((select auth.uid())::text = user_id)
+with check ((select auth.uid())::text = user_id);
+
+create policy "Users can only access their own daily shipping"
+on daily_shipping for all
+using ((select auth.uid())::text = user_id)
+with check ((select auth.uid())::text = user_id);
 ```
 
-## Migration Plan
+## Setup Instructions
 
-1.  **Run SQL**: Run the SQL above in Supabase SQL Editor.
+Run the complete schema from [database/schema.sql](../database/schema.sql) in your Supabase SQL Editor. This creates all tables, indexes, and RLS policies in one step.

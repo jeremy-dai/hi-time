@@ -92,6 +92,56 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 
 ---
 
+## ✅ Weekly Reviews Pattern (Local-First, Debounced Saving)
+
+### Workflow
+1. **User edits weekly review** → Immediate `localStorage` save (instant UX)
+2. **After 5 seconds of inactivity** → Debounced sync to database
+3. **Database sync** → Update sync status indicator
+4. **Fallback on mount** → Load from database, cache in localStorage
+
+### Key Benefits
+- **Instant feedback**: `localStorage` provides immediate persistence
+- **Debounced writes**: Changes are batched with 5-second debounce to minimize database writes
+- **Individual row storage**: Each week review is a separate database row for efficient querying
+- **Sync status**: Visual indicator shows sync state (syncing/synced/pending/error)
+- **Year-based fetching**: Fetches all reviews for a year in one query
+
+### Implementation Details
+- **Hooks**: `useWeekReviews`, `useAnnualReview` (custom hooks)
+- **Storage Key**: `week-reviews-{year}`, `annual-review-{year}` (per-year localStorage)
+- **Database Table**: `week_reviews` (one row per week, `week_number=0` for annual review)
+- **Sync Strategy**: Debounced (5s) + on unmount
+- **API**: `GET /api/reviews/{year}` fetches all reviews for a year with single query
+- **Indexes**: Composite indexes on `(user_id, year)` and `(user_id, year, week_number)` for fast lookups
+
+---
+
+## ✅ Daily Shipping Pattern (Local-First, Debounced Saving)
+
+### Workflow
+1. **User edits daily shipping entry** → Immediate `localStorage` save (instant UX)
+2. **After 5 seconds of inactivity** → Debounced sync to database
+3. **Database sync** → Update sync status indicator
+4. **Fallback on mount** → Load from database, cache in localStorage
+
+### Key Benefits
+- **Instant feedback**: `localStorage` provides immediate persistence
+- **Debounced writes**: Changes are batched with 5-second debounce to minimize database writes
+- **Individual row storage**: Each day is a separate database row for efficient querying
+- **Completion tracking**: Boolean flag for marking items as done
+- **Year-based fetching**: Fetches all entries for a year in one query
+
+### Implementation Details
+- **Hook**: `useDailyShipping` (custom hook)
+- **Storage Key**: `daily-shipping-{year}` (per-year localStorage)
+- **Database Table**: `daily_shipping` (one row per day with `shipped` text and `completed` boolean)
+- **Sync Strategy**: Debounced (5s) + immediate sync on delete
+- **API**: `GET /api/shipping/{year}` fetches all entries for a year with single query
+- **Indexes**: Composite indexes on `(user_id, year)` and `(user_id, year, month, day)` for fast lookups
+
+---
+
 ## 📊 Caching Strategy Overview
 
 ### Data Types and Storage
@@ -102,6 +152,9 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 | **Week Metadata** | `week-metadata-{weekKey}` | `CachedData<{startingHour, theme}>` | 1 hour | Coupled with weeksheet sync |
 | **User Settings** | `user-settings` | `CachedData<UserSettings>` | 1 hour | `useLocalStorageSync` (30s) |
 | **Year Memories** | `memories-{year}` | `YearMemories` | None (always fresh) | Debounced (5s) |
+| **Week Reviews** | `week-reviews-{year}` | `YearWeekReviews` | None (always fresh) | Debounced (5s) |
+| **Annual Review** | `annual-review-{year}` | `AnnualReview` | None (always fresh) | Debounced (5s) |
+| **Daily Shipping** | `daily-shipping-{year}` | `YearDailyShipping` | None (always fresh) | Debounced (5s) |
 
 **CachedData Format**:
 ```typescript
@@ -120,14 +173,17 @@ All cached data includes a timestamp and is validated before use:
 
 ## 📊 Efficiency Comparison
 
-| Aspect | Timesheet | Week Metadata | User Settings | Memories | Dashboard |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | Debounced 5s ✅ | None (read-only) ✅ |
-| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
-| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | localStorage only | In-memory only |
-| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ❌ No (always fresh) | N/A |
-| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (5s debounce) ✅ | Yes (parallel fetch) ✅ |
-| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Sync status indicator ✅ | Loading states ✅ |
+| Aspect | Timesheet | Week Metadata | User Settings | Memories | Week Reviews | Daily Shipping | Dashboard |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | Debounced 5s ✅ | Debounced 5s ✅ | Debounced 5s ✅ | None (read-only) ✅ |
+| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
+| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | localStorage only | localStorage only | localStorage only | In-memory only |
+| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ❌ No (always fresh) | ❌ No (always fresh) | ❌ No (always fresh) | N/A |
+| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (5s debounce) ✅ | Yes (5s debounce) ✅ | Yes (5s debounce) ✅ | Yes (parallel fetch) ✅ |
+| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Sync status indicator ✅ | Sync status indicator ✅ | Sync status indicator ✅ | Loading states ✅ |
+| **UI Component** | `SyncStatusIndicator` | Visual updates | `SyncStatusIndicator` | Custom (migrate) | Custom (migrate) | Custom (migrate) | Loading spinner |
+| **DB Structure** | JSONB (whole week) | Coupled with weeks | JSONB (all settings) | JSONB (year's memories) | Individual rows per week | Individual rows per day | Read-only |
+| **Query Pattern** | Single row per week | Part of week row | Single row per user | Single row per year | Year-based batch fetch | Year-based batch fetch | On-demand fetch |
 
 ---
 
@@ -156,6 +212,39 @@ All cached data includes a timestamp and is validated before use:
 - **Solution**: All three paths now check timestamps and use `CachedData` format
 - **Benefit**: Predictable behavior regardless of loading path
 - **Locations**: `App.tsx:197-220`, `App.tsx:249-323`, `App.tsx:28-62`
+
+## 🎨 UI Feedback & User Experience
+
+All features that save data provide real-time visual feedback to users about sync status. This is documented in detail in the [Design System - Sync Status Indicators](../time-tracker/DESIGN_SYSTEM.md#11-sync-status-indicator-standard-component) section.
+
+### Sync Status Indicator Component
+
+**Standard Component**: `time-tracker/src/components/SyncStatusIndicator.tsx`
+
+All features should use this consistent component for displaying sync status:
+
+| Feature | Current Implementation | Status |
+|---------|----------------------|--------|
+| Timesheet | ✅ Using `SyncStatusIndicator` | Standard |
+| Settings | ✅ Using `SyncStatusIndicator` | Standard |
+| Memories | ⚠️ Custom implementation | Should migrate |
+| Week Reviews | ⚠️ Custom implementation | Should migrate |
+| Daily Shipping | ⚠️ Custom implementation | Should migrate |
+
+### Visual Feedback States
+
+| State | Color | Icon | User Understanding |
+|-------|-------|------|-------------------|
+| **Synced** | 🟢 Green | ✓ | "My data is safely saved" |
+| **Pending** | 🟡 Amber | ● | "Will save automatically soon" |
+| **Syncing** | 🔵 Emerald | ⋯ | "Saving right now" |
+| **Error** | 🔴 Red | ⚠ | "Something went wrong, may need retry" |
+
+**User Timeline**: Edit → Instant localStorage (0ms) → Pending (5s wait) → Syncing (~1s) → Synced ✓
+
+For detailed UI patterns, component props, and implementation examples, see the [Design System documentation](../time-tracker/DESIGN_SYSTEM.md).
+
+---
 
 ## 🎯 Future Optimization Opportunities
 

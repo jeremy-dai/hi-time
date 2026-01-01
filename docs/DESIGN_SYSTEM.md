@@ -246,7 +246,197 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...
 
 ---
 
-### 1.1. Toast Notification System (NEW)
+### 1.1. Sync Status Indicator (STANDARD COMPONENT)
+
+**Location**: `components/SyncStatusIndicator.tsx`
+
+**Purpose**: Provides consistent visual feedback for data sync states across all features.
+
+#### Design Principles
+
+1. **Always Visible**: Sync status should be visible without scrolling or hovering
+2. **Color Coded**: Use consistent colors across all features for quick recognition
+3. **Non-Intrusive**: Don't block user workflow with modals or alerts
+4. **Real-time Updates**: Status should update immediately as state changes
+5. **Actionable**: Provide retry/save buttons when appropriate
+
+#### Sync Status States
+
+All features use the same 5-state system:
+
+| State | Color | Icon | Text | Meaning |
+|-------|-------|------|------|---------|
+| **Synced** | 🟢 Green (`text-green-600`) | ✓ | "Synced" | Data successfully saved to database |
+| **Pending** | 🟡 Amber (`text-amber-600`) | ● | "Pending..." | Waiting for debounce timer (will auto-save) |
+| **Syncing** | 🔵 Emerald (`text-emerald-600`) | ⋯ (animated) | "Syncing..." | Currently sending data to server |
+| **Error** | 🔴 Red (`text-red-600`) | ⚠ | "Sync failed" | Failed to save - may need retry |
+| **Idle** | ⚪ Gray (`text-gray-500`) | - | "Idle" | No changes yet (initial state) |
+
+#### Color Palette
+
+```typescript
+const SYNC_STATUS_COLORS = {
+  synced: 'text-green-600',
+  pending: 'text-amber-600',
+  syncing: 'text-emerald-600',
+  error: 'text-red-600',
+  idle: 'text-gray-500'
+} as const;
+```
+
+#### Component Usage
+
+```tsx
+import { SyncStatusIndicator } from '../components/SyncStatusIndicator';
+
+<SyncStatusIndicator
+  status={syncStatus}
+  lastSynced={lastSynced}
+  hasUnsavedChanges={hasUnsavedChanges}
+  onSyncNow={handleSyncNow}
+  compact={false}
+/>
+```
+
+**Props:**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `status` | `SyncStatus` | ✅ | Current sync state ('synced' \| 'pending' \| 'syncing' \| 'error' \| 'idle') |
+| `lastSynced` | `Date \| null` | ❌ | Timestamp of last successful sync |
+| `hasUnsavedChanges` | `boolean` | ✅ | Whether there are unsaved changes |
+| `onSyncNow` | `() => void` | ❌ | Callback for manual sync trigger |
+| `compact` | `boolean` | ❌ | Use compact display (default: false) |
+
+#### Feature Implementation Status
+
+**✅ All Features Using Standard Component:**
+- **Timesheet**: Header (global) - Compact with "Save Now" button
+- **Settings**: Header - Compact
+- **Memories**: Top banner - Compact (✅ Migrated Dec 2025)
+- **Weekly Reviews**: Stats bar - Compact (✅ Migrated Dec 2025)
+- **Daily Shipping**: Header - Compact (✅ Migrated Dec 2025)
+
+#### Layout Patterns
+
+**Pattern 1: Header Placement** (Timesheet, Settings, Daily Shipping)
+```tsx
+<div className="flex items-center justify-between">
+  <h1>Page Title</h1>
+  <SyncStatusIndicator
+    status={syncStatus}
+    hasUnsavedChanges={hasUnsavedChanges}
+    compact={true}
+  />
+</div>
+```
+
+**Pattern 2: Banner Placement** (Memories)
+```tsx
+<div className="rounded-xl p-4 bg-emerald-50 text-emerald-900">
+  <div className="flex items-center space-x-3">
+    <Icon className="w-5 h-5" />
+    <div>
+      <h3 className="font-semibold text-sm">Title</h3>
+      <div className="mt-0.5">
+        <SyncStatusIndicator
+          status={syncStatus}
+          lastSynced={lastSynced}
+          hasUnsavedChanges={false}
+          compact={true}
+        />
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+**Pattern 3: Stats Bar** (Weekly Reviews)
+```tsx
+<div className="flex items-center justify-between px-4 py-2 bg-white/60 rounded-xl">
+  <div className="flex items-center gap-2 text-sm">
+    <Calendar className="w-4 h-4 text-gray-400" />
+    <span className="text-gray-600">Context Info</span>
+  </div>
+  <SyncStatusIndicator
+    status={syncStatus}
+    hasUnsavedChanges={false}
+    compact={true}
+  />
+</div>
+```
+
+#### User Feedback Timeline
+
+Visual feedback follows this timeline:
+
+```
+1. User makes change:
+   └─> localStorage: instant (0ms)
+   └─> UI: No status change (already saved locally)
+
+2. Debounce period (5 seconds):
+   └─> Status: "Pending..." (amber)
+
+3. Database sync starts:
+   └─> Status: "Syncing..." (emerald, animated)
+
+4. Sync completes:
+   └─> Status: "Synced" (green)
+   └─> lastSynced: Updated timestamp
+```
+
+**Total time from edit to "Synced"**: ~5-6 seconds
+
+#### Standardized Text Labels
+
+For consistency, always use these exact labels:
+
+```typescript
+function getSyncStatusText(status: SyncStatus): string {
+  switch (status) {
+    case 'synced':
+      return 'Synced'              // Not "Saved" or "✓ Synced"
+    case 'syncing':
+      return 'Syncing...'          // Not "Saving..."
+    case 'pending':
+      return 'Pending...'          // Not "Pending sync" or "Unsaved"
+    case 'error':
+      return 'Sync failed'         // Not "Error" or "✕ Error"
+    case 'idle':
+      return 'Idle'
+    default:
+      return 'Unknown'
+  }
+}
+```
+
+#### Animation
+
+- **Syncing State**: Use `animate-pulse` on the ellipsis icon
+- **Transitions**: Smooth color transitions with `transition-colors duration-200`
+
+#### Accessibility
+
+```tsx
+<div
+  role="status"
+  aria-live="polite"
+  aria-label={`Sync status: ${getSyncStatusText(syncStatus)}`}
+>
+  <SyncStatusIndicator {...props} />
+</div>
+```
+
+#### Related Documentation
+
+- [Database Efficiency](../docs/DATABASE_EFFICIENCY.md) - Backend sync patterns and strategies
+- [Database Schema](../docs/DATABASE_SCHEMA.md) - Data structure and storage
+- TypeScript types: `hooks/useLocalStorageSync.ts`
+
+---
+
+### 1.2. Toast Notification System
 
 **Location**: `components/shared/Toast.tsx`, `components/shared/ToastContext.tsx`
 
@@ -284,7 +474,7 @@ function MyComponent() {
 
 ---
 
-### 1.2. IconButton Component (NEW)
+### 1.3. IconButton Component
 
 **Location**: `components/shared/IconButton.tsx`
 
@@ -309,7 +499,7 @@ import { IconButton } from './components/shared/IconButton'
 
 ---
 
-### 1.3. ClearableInput Component (NEW)
+### 1.4. ClearableInput Component
 
 **Location**: `components/shared/ClearableInput.tsx`
 
@@ -335,7 +525,7 @@ import { ClearableInput } from './components/shared/ClearableInput'
 
 ---
 
-### 1.4. SkeletonLoader Component (NEW)
+### 1.5. SkeletonLoader Component
 
 **Location**: `components/shared/SkeletonLoader.tsx`
 
@@ -360,7 +550,7 @@ import { SkeletonLoader } from './components/shared/SkeletonLoader'
 
 ---
 
-### 1.5. Modal Component (NEW)
+### 1.6. Modal Component
 
 **Location**: `components/shared/Modal.tsx`
 
@@ -760,6 +950,17 @@ import { BUTTON, COLORS, RADIUS, SPACING } from '@/constants/designTokens'
 - Includes code examples, usage guidelines, and best practices
 - Living document that evolves with the application
 
+#### 6. Standardized Sync Status Component (Dec 2025)
+- **Migrated all features** to use the standard `SyncStatusIndicator` component
+- **Removed 87 lines** of duplicate sync status code across 3 components:
+  - Memories: Removed `formatLastSynced()`, `getSyncStatusColor()`, `getSyncStatusText()` (45 lines)
+  - Weekly Reviews: Removed `getSyncStatusColor()`, `getSyncStatusText()` (28 lines)
+  - Daily Shipping: Removed `getSyncIndicator()` (14 lines)
+- **Enhanced component** to support both `'idle'` and non-idle sync states
+- **100% consistency** across all 5 features (Timesheet, Settings, Memories, Weekly Reviews, Daily Shipping)
+- **Single source of truth** for sync status display and behavior
+- **Improved maintainability**: Changes to sync UI now update all features automatically
+
 ### Impact Summary
 
 **Code Changes**:
@@ -767,6 +968,8 @@ import { BUTTON, COLORS, RADIUS, SPACING } from '@/constants/designTokens'
 - **14+ component files** modified with new colors and border radius
 - **95 border radius instances** standardized to 3 values
 - **100+ color classes** updated to emerald theme
+- **87 lines of duplicate code removed** via SyncStatusIndicator migration
+- **1 enhanced component** (SyncStatusIndicator) now supports all sync state patterns
 
 **User Experience**:
 - ✅ Unified visual language across all pages
