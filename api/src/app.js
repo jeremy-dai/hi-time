@@ -525,28 +525,49 @@ app.put('/api/reviews/:year/:weekNumber', async (req, res) => {
   const weekNumber = parseInt(req.params.weekNumber, 10);
   const { review } = req.body || {};
 
+  console.log(`PUT /api/reviews/${req.params.year}/${req.params.weekNumber} - Parsed: year=${year}, weekNumber=${weekNumber}`);
+
   if (!year || isNaN(year)) {
     return res.status(400).json({ error: 'Invalid year parameter' });
   }
 
-  if (!weekNumber || isNaN(weekNumber) || weekNumber < 1 || weekNumber > 53) {
-    return res.status(400).json({ error: 'Invalid week number (must be 1-53)' });
+  // Allow week_number = 0 for annual reviews, 1-53 for weekly reviews
+  if (isNaN(weekNumber) || weekNumber < 0 || weekNumber > 53) {
+    console.log(`Invalid week number: weekNumber=${weekNumber}, isNaN=${isNaN(weekNumber)}, < 0=${weekNumber < 0}, > 53=${weekNumber > 53}`);
+    return res.status(400).json({ error: 'Invalid week number (must be 0-53, where 0 is annual review)' });
   }
 
   if (!review || typeof review !== 'string') {
     return res.status(400).json({ error: 'review string is required' });
   }
 
+  // First, check if this review already exists to preserve created_at
+  const { data: existing } = await req.supabase
+    .from('week_reviews')
+    .select('created_at')
+    .eq('year', year)
+    .eq('week_number', weekNumber)
+    .single();
+
   // RLS requires user_id to match authenticated user
+  const upsertData = {
+    user_id: req.user.id,
+    year,
+    week_number: weekNumber,
+    review,
+    updated_at: new Date().toISOString(),
+  };
+
+  // Only set created_at if this is a new record
+  if (!existing) {
+    upsertData.created_at = new Date().toISOString();
+  }
+
+  console.log('Upsert data:', JSON.stringify(upsertData, null, 2));
+
   const { error } = await req.supabase
     .from('week_reviews')
-    .upsert({
-      user_id: req.user.id,
-      year,
-      week_number: weekNumber,
-      review,
-      updated_at: new Date().toISOString(),
-    }, {
+    .upsert(upsertData, {
       onConflict: 'user_id,year,week_number'
     });
 
@@ -566,8 +587,9 @@ app.delete('/api/reviews/:year/:weekNumber', async (req, res) => {
     return res.status(400).json({ error: 'Invalid year parameter' });
   }
 
-  if (!weekNumber || isNaN(weekNumber)) {
-    return res.status(400).json({ error: 'Invalid week number' });
+  // Allow week_number = 0 for annual reviews, 1-53 for weekly reviews
+  if (isNaN(weekNumber) || weekNumber < 0 || weekNumber > 53) {
+    return res.status(400).json({ error: 'Invalid week number (must be 0-53, where 0 is annual review)' });
   }
 
   // RLS automatically filters by authenticated user

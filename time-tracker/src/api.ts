@@ -381,11 +381,14 @@ export async function getAnnualReview(year: number): Promise<AnnualReview | null
 }
 
 export async function saveAnnualReview(year: number, review: string): Promise<boolean> {
+  // First, try to get the existing annual review to preserve createdAt
+  const existing = await getAnnualReview(year)
+
   const annualReview: WeekReview = {
     year,
     weekNumber: 0,
     review,
-    createdAt: Date.now(),
+    createdAt: existing?.createdAt || Date.now(),
     updatedAt: Date.now(),
   }
   return saveWeekReview(annualReview)

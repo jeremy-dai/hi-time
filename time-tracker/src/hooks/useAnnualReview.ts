@@ -23,33 +23,49 @@ export function useAnnualReview(year: number) {
       const localKey = `annual-review-${year}`
 
       // Try loading from database first
+      let dbSuccess = false
       try {
         const dbData = await getAnnualReview(year)
-        if (!cancelled && dbData) {
-          setReview(dbData)
-          // Update localStorage cache
-          localStorage.setItem(localKey, JSON.stringify(dbData))
-          setSyncStatus('synced')
-          setLastSynced(new Date())
+        dbSuccess = true // Database query succeeded (even if it returned null)
+
+        if (!cancelled) {
+          if (dbData) {
+            // Database has data - use it and cache in localStorage
+            setReview(dbData)
+            localStorage.setItem(localKey, JSON.stringify(dbData))
+            setSyncStatus('synced')
+            setLastSynced(new Date())
+          } else {
+            // Database successfully returned null - no review exists for this year
+            // Clear any stale localStorage data
+            setReview(null)
+            localStorage.removeItem(localKey)
+            setSyncStatus('idle')
+          }
           setIsLoading(false)
           return
         }
       } catch (err) {
         console.error('Failed to load annual review from database:', err)
+        dbSuccess = false
       }
 
-      // Fallback to localStorage if database fails or returns null
-      if (!cancelled) {
+      // Only use localStorage if database fetch FAILED (network error, etc)
+      // Don't use localStorage if database successfully returned null
+      if (!cancelled && !dbSuccess) {
         const stored = localStorage.getItem(localKey)
         if (stored) {
           try {
             const parsed: AnnualReview = JSON.parse(stored)
             setReview(parsed)
-            // Mark as pending sync since we loaded from localStorage
+            // Mark as pending sync since we loaded from localStorage during DB failure
             setSyncStatus('pending')
           } catch (err) {
             console.error('Failed to parse annual review from localStorage:', err)
+            setReview(null)
           }
+        } else {
+          setReview(null)
         }
         setIsLoading(false)
       }
@@ -60,8 +76,17 @@ export function useAnnualReview(year: number) {
     return () => {
       cancelled = true
       isMountedRef.current = false
+
+      // Sync on unmount: If there's pending data, sync it immediately before cleanup
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current)
+        syncTimeoutRef.current = null
+      }
+
+      if (pendingReviewRef.current) {
+        // Sync immediately on unmount (don't wait for debounce)
+        saveAnnualReview(year, pendingReviewRef.current)
+        pendingReviewRef.current = null
       }
     }
   }, [year])
@@ -130,7 +155,7 @@ export function useAnnualReview(year: number) {
     const localKey = `annual-review-${year}`
     localStorage.setItem(localKey, JSON.stringify(updatedReview))
 
-    // Debounce database sync (5 seconds)
+    // Debounce database sync (5 seconds) - follows documented pattern
     setSyncStatus('pending')
     pendingReviewRef.current = reviewText
 

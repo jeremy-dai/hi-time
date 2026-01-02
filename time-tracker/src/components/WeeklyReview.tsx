@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useWeekReviews } from '../hooks/useWeekReviews'
 import { useAnnualReview } from '../hooks/useAnnualReview'
 import YearNavigator from './shared/YearNavigator'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
+import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Calendar, Circle, Leaf, Sun, CloudRain, Snowflake, Sparkles } from 'lucide-react'
 import { cn } from '../utils/classNames'
 
@@ -416,12 +417,29 @@ function AnnualReviewSection({ year, review, onUpdate, onDelete, isCurrentYear }
 export default function WeeklyReview() {
   const currentYear = new Date().getFullYear()
   const currentWeekNumber = getISOWeek(new Date())
-  const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const stored = localStorage.getItem('weekly-review-selected-year')
+    return stored ? parseInt(stored, 10) : currentYear
+  })
   const [activeSeason, setActiveSeason] = useState<'Spring' | 'Summer' | 'Fall' | 'Winter' | 'Annual'>(() => {
+    const stored = localStorage.getItem('weekly-review-active-season')
+    if (stored && ['Spring', 'Summer', 'Fall', 'Winter', 'Annual'].includes(stored)) {
+      return stored as 'Spring' | 'Summer' | 'Fall' | 'Winter' | 'Annual'
+    }
     return getSeason(currentWeekNumber)
   })
-  const { reviews, updateReview, removeReview, syncStatus } = useWeekReviews(selectedYear)
-  const { review: annualReview, updateReview: updateAnnualReview, removeReview: removeAnnualReview } = useAnnualReview(selectedYear)
+  const { reviews, updateReview, removeReview, syncStatus, isLoading: isLoadingReviews } = useWeekReviews(selectedYear)
+  const { review: annualReview, updateReview: updateAnnualReview, removeReview: removeAnnualReview, isLoading: isLoadingAnnual } = useAnnualReview(selectedYear)
+
+  // Persist selectedYear to localStorage
+  useEffect(() => {
+    localStorage.setItem('weekly-review-selected-year', selectedYear.toString())
+  }, [selectedYear])
+
+  // Persist activeSeason to localStorage
+  useEffect(() => {
+    localStorage.setItem('weekly-review-active-season', activeSeason)
+  }, [activeSeason])
 
   // Determine if we should show the Annual Review
   const isCurrentYear = selectedYear === currentYear
@@ -488,6 +506,8 @@ export default function WeeklyReview() {
 
     return { totalWeeks, reviewedWeeks, completionRate }
   }, [seasonData, reviews])
+
+  const isLoading = isLoadingReviews || isLoadingAnnual
 
   return (
     <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
@@ -612,42 +632,53 @@ export default function WeeklyReview() {
             </div>
           </div>
 
-          {/* Annual Review - Only show during the last week of the year */}
-          {showAnnualReview && (
-            <div id="annual-review">
-              <AnnualReviewSection
-                year={selectedYear}
-                review={annualReview?.review}
-                onUpdate={updateAnnualReview}
-                onDelete={removeAnnualReview}
-                isCurrentYear={selectedYear === currentYear}
-              />
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="space-y-6">
+              <SkeletonLoader variant="card" height="200px" />
+              <SkeletonLoader variant="card" height="400px" />
+              <SkeletonLoader variant="card" height="400px" />
             </div>
-          )}
+          ) : (
+            <>
+              {/* Annual Review - Only show during the last week of the year */}
+              {showAnnualReview && (
+                <div id="annual-review">
+                  <AnnualReviewSection
+                    year={selectedYear}
+                    review={annualReview?.review}
+                    onUpdate={updateAnnualReview}
+                    onDelete={removeAnnualReview}
+                    isCurrentYear={selectedYear === currentYear}
+                  />
+                </div>
+              )}
 
-          {/* Seasons */}
-          <div className="space-y-0">
-            {activeSeasons.map((season) => (
-              <SeasonSection
-                key={season}
-                year={selectedYear}
-                season={season}
-                weeks={seasonData[season]}
-                reviews={reviews}
-                onUpdate={updateReview}
-                onDelete={removeReview}
-                currentWeekNumber={selectedYear === currentYear ? currentWeekNumber : -1}
-              />
-            ))}
+              {/* Seasons */}
+              <div className="space-y-0">
+                {activeSeasons.map((season) => (
+                  <SeasonSection
+                    key={season}
+                    year={selectedYear}
+                    season={season}
+                    weeks={seasonData[season]}
+                    reviews={reviews}
+                    onUpdate={updateReview}
+                    onDelete={removeReview}
+                    currentWeekNumber={selectedYear === currentYear ? currentWeekNumber : -1}
+                  />
+                ))}
 
-            {activeSeasons.length === 0 && (
-              <div className="text-center py-16">
-                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">No weeks to review yet</p>
-                <p className="text-gray-400 text-sm mt-1">Start your journey in {selectedYear}</p>
+                {activeSeasons.length === 0 && (
+                  <div className="text-center py-16">
+                    <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">No weeks to review yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Start your journey in {selectedYear}</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
     </div>

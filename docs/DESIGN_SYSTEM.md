@@ -1,6 +1,6 @@
 # Hi-Time Design System Documentation
 
-Last Updated: December 28, 2025
+Last Updated: January 2, 2026
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -547,6 +547,207 @@ import { SkeletonLoader } from './components/shared/SkeletonLoader'
 // Loading text lines
 <SkeletonLoader variant="text" count={3} />
 ```
+
+---
+
+### 1.5.1. Loading State Pattern (STANDARD PATTERN)
+
+**Purpose**: Provide consistent loading feedback across all data-fetching components to prevent jarring "zero data suddenly fills in" transitions.
+
+#### Design Principles
+
+1. **Predictable Layout**: Loading skeletons should match the layout of actual content
+2. **Smooth Transitions**: Never show empty states before data loads
+3. **Single Source**: Use `isLoading` state from hooks (useYearMemories, useWeekReviews, etc.)
+4. **Appropriate Sizing**: Skeleton heights should approximate actual content height
+5. **Minimal Code**: Leverage existing SkeletonLoader component, no custom implementations
+
+#### Implementation Pattern
+
+**Standard Pattern** (used across all data-fetching components):
+
+```tsx
+import { SkeletonLoader } from './components/shared/SkeletonLoader'
+
+function MyComponent() {
+  // 1. Extract isLoading from hooks
+  const { data, isLoading: isLoadingData } = useDataHook()
+  const { otherData, isLoading: isLoadingOther } = useOtherHook()
+
+  // 2. Combine multiple loading states
+  const isLoading = isLoadingData || isLoadingOther
+
+  return (
+    <div>
+      {/* 3. Conditional render with ternary */}
+      {isLoading ? (
+        <SkeletonLoader variant="card" height="400px" />
+      ) : (
+        <ActualContent data={data} />
+      )}
+    </div>
+  )
+}
+```
+
+#### Feature Implementation Status
+
+**✅ All Major Components Using Standard Pattern:**
+
+| Component | Hooks Used | Skeleton Layout | File |
+|-----------|-----------|-----------------|------|
+| **Memories** | `useYearMemories` | 1 card (600px) | `components/Memories.tsx:60-69` |
+| **WeeklyReview** | `useWeekReviews`<br/>`useAnnualReview` | 3 cards (200px, 400px, 400px) | `components/WeeklyReview.tsx:616-661` |
+| **AnnualDashboard** | `useYearMemories`<br/>`useWeekReviews`<br/>`useDailyShipping` | 2×300px cards + 400px card + 500px card | `components/dashboard/AnnualDashboard.tsx:223-283` |
+| **Settings** | `useLocalStorageSync` | 3 cards (120px, 400px, 200px) | `components/Settings.tsx:252-260` |
+
+#### Layout Patterns
+
+**Pattern 1: Single Content Area** (Memories)
+```tsx
+{isLoading ? (
+  <SkeletonLoader variant="card" height="600px" />
+) : (
+  <AnnualMemoryCalendar {...props} />
+)}
+```
+
+**Pattern 2: Multiple Sections** (WeeklyReview)
+```tsx
+{isLoading ? (
+  <div className="space-y-6">
+    <SkeletonLoader variant="card" height="200px" />
+    <SkeletonLoader variant="card" height="400px" />
+    <SkeletonLoader variant="card" height="400px" />
+  </div>
+) : (
+  <>
+    <AnnualReviewSection {...props} />
+    <SeasonSections {...props} />
+  </>
+)}
+```
+
+**Pattern 3: Preserving Structure** (AnnualDashboard)
+```tsx
+{isLoading ? (
+  <div className="space-y-6">
+    <div>
+      <h2>📊 Overview</h2>
+      <div className="grid grid-cols-2 gap-6">
+        <SkeletonLoader variant="card" height="300px" />
+        <SkeletonLoader variant="card" height="300px" />
+      </div>
+    </div>
+    <div>
+      <h2>📈 Trends</h2>
+      <SkeletonLoader variant="card" height="500px" />
+    </div>
+  </div>
+) : (
+  <>{/* Actual dashboard content */}</>
+)}
+```
+
+#### Combining Multiple Loading States
+
+When a component depends on multiple data sources:
+
+```tsx
+// ✅ CORRECT: Combine with OR operator
+const { memories, isLoading: isLoadingMemories } = useYearMemories(year)
+const { reviews, isLoading: isLoadingReviews } = useWeekReviews(year)
+const { entries, isLoading: isLoadingShipping } = useDailyShipping(year)
+
+const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping
+
+// Show loading until ALL data is ready
+return isLoading ? <SkeletonLoader /> : <Content />
+```
+
+```tsx
+// ❌ INCORRECT: Checking individual states separately
+{isLoadingMemories && <SkeletonLoader />}
+{isLoadingReviews && <SkeletonLoader />}
+// This causes multiple skeletons to appear sequentially
+```
+
+#### Skeleton Sizing Guidelines
+
+Match skeleton heights to approximate content:
+
+| Content Type | Recommended Height | Example |
+|-------------|-------------------|---------|
+| Stats Bar | 60-80px | Settings header |
+| Small Card | 120-200px | KPI cards, mini charts |
+| Medium Card | 300-400px | Category breakdown, week reviews |
+| Large Card | 500-600px | Full calendar, heatmap |
+
+#### User Experience Timeline
+
+```
+1. User navigates to page:
+   └─> Skeleton loader appears instantly (0ms)
+
+2. Hooks fetch data from database:
+   └─> Duration: ~100-500ms (varies by data size)
+
+3. Data loaded, setState called:
+   └─> Skeleton disappears, content fades in
+
+Total perceived load time: <1 second
+```
+
+#### Anti-Patterns to Avoid
+
+**❌ Don't: Flash empty content before showing data**
+```tsx
+// BAD: Shows empty state briefly, then fills with data
+return <Content data={data || []} />
+```
+
+**❌ Don't: Create custom loading components**
+```tsx
+// BAD: Unnecessary duplication
+function MyCustomLoader() {
+  return <div className="animate-pulse bg-gray-200 h-96" />
+}
+```
+
+**❌ Don't: Show loading text instead of skeleton**
+```tsx
+// BAD: Poor UX, doesn't preserve layout
+{isLoading && <p>Loading...</p>}
+```
+
+**✅ Do: Use SkeletonLoader with appropriate sizing**
+```tsx
+// GOOD: Preserves layout, smooth transition
+{isLoading ? <SkeletonLoader variant="card" height="400px" /> : <Content />}
+```
+
+#### Related Patterns
+
+- **Sync Status Indicator** (Section 1.1): Shows save/sync state after data loads
+- **Error Boundaries**: Handle loading errors gracefully
+- **Optimistic Updates**: Update UI before API responds
+
+#### Benefits
+
+**User Experience:**
+- ✅ No jarring empty-to-full transitions
+- ✅ Predictable layout (no content shift)
+- ✅ Professional, polished feel
+
+**Developer Experience:**
+- ✅ Consistent pattern across all components
+- ✅ Minimal code (just ternary + existing component)
+- ✅ Easy to maintain and update
+
+**Performance:**
+- ✅ GPU-accelerated animations
+- ✅ No additional JavaScript overhead
+- ✅ Instant rendering (no loading delay)
 
 ---
 
@@ -1109,6 +1310,7 @@ src/
 ### Version History
 
 - **v1.0** (Dec 2025): Initial design system with unified border radius
+- **v1.1** (Jan 2026): Added comprehensive Loading State Pattern documentation
 
 ---
 

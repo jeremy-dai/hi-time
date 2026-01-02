@@ -3,13 +3,14 @@ import { useYearMemories } from '../hooks/useYearMemories'
 import AnnualMemoryCalendar from './dashboard/AnnualMemoryCalendar'
 import YearNavigator from './shared/YearNavigator'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
+import { SkeletonLoader } from './shared/SkeletonLoader'
 import { CalendarRange } from 'lucide-react'
 import { cn } from '../utils/classNames'
 
 export default function Memories() {
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState(currentYear)
-  const { memories, updateMemory, deleteMemory, syncStatus, lastSynced } = useYearMemories(selectedYear)
+  const { memories, updateMemory, deleteMemory, syncStatus, lastSynced, isLoading } = useYearMemories(selectedYear)
 
   // Calculate date range for the selected year
   const dateRangeLabel = useMemo(() => {
@@ -57,12 +58,16 @@ export default function Memories() {
       </div>
 
       {/* Memory Calendar */}
-      <AnnualMemoryCalendar
-        year={selectedYear}
-        memories={memories}
-        onUpdateMemory={updateMemory}
-        onDeleteMemory={deleteMemory}
-      />
+      {isLoading ? (
+        <SkeletonLoader variant="card" height="600px" />
+      ) : (
+        <AnnualMemoryCalendar
+          year={selectedYear}
+          memories={memories}
+          onUpdateMemory={updateMemory}
+          onDeleteMemory={deleteMemory}
+        />
+      )}
     </div>
   )
 }

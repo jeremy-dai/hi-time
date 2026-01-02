@@ -9,6 +9,7 @@ import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
 import AnnualProductivityStreak from './AnnualProductivityStreak'
 import YearNavigator from '../shared/YearNavigator'
+import { SkeletonLoader } from '../shared/SkeletonLoader'
 import { RefreshCw, Download, CalendarRange } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { generateAnnualReport, downloadAnnualMarkdownReport } from '../../utils/annualMarkdownGenerator'
@@ -33,9 +34,9 @@ export default function AnnualDashboard({
   onUpdateWeekTheme,
   onYearChange
 }: AnnualDashboardProps) {
-  const { memories } = useYearMemories(year)
-  const { reviews: weekReviews } = useWeekReviews(year)
-  const { entries: dailyShippingEntries } = useDailyShipping(year)
+  const { memories, isLoading: isLoadingMemories } = useYearMemories(year)
+  const { reviews: weekReviews, isLoading: isLoadingReviews } = useWeekReviews(year)
+  const { entries: dailyShippingEntries, isLoading: isLoadingShipping } = useDailyShipping(year)
 
   // Extract themes from metadata store
   const weekThemes = useMemo(() => {
@@ -165,6 +166,8 @@ export default function AnnualDashboard({
     downloadAnnualMarkdownReport(content, year)
   }
 
+  const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping
+
   return (
     <div className="space-y-6">
       {/* Analysis Period Banner with Year Selector and Buttons */}
@@ -219,39 +222,65 @@ export default function AnnualDashboard({
         </div>
       </div>
 
-      {/* OVERVIEW SECTION */}
-      <div>
-        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-          📊 Overview
-        </h2>
-
+      {/* Loading State */}
+      {isLoading ? (
         <div className="space-y-6">
-          {/* Category Breakdown and Productivity Streak - Side by Side */}
-          <div className="grid grid-cols-2 gap-6">
-            <AnnualCategoryBreakdown ytdStats={ytdStats} />
-            <AnnualProductivityStreak streakMetrics={ytdStats.streakMetrics} />
+          <div>
+            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
+              📊 Overview
+            </h2>
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-6">
+                <SkeletonLoader variant="card" height="300px" />
+                <SkeletonLoader variant="card" height="300px" />
+              </div>
+              <SkeletonLoader variant="card" height="400px" />
+            </div>
+          </div>
+          <div>
+            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
+              📈 Trends & Detailed Analysis
+            </h2>
+            <SkeletonLoader variant="card" height="500px" />
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* OVERVIEW SECTION */}
+          <div>
+            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
+              📊 Overview
+            </h2>
+
+            <div className="space-y-6">
+              {/* Category Breakdown and Productivity Streak - Side by Side */}
+              <div className="grid grid-cols-2 gap-6">
+                <AnnualCategoryBreakdown ytdStats={ytdStats} />
+                <AnnualProductivityStreak streakMetrics={ytdStats.streakMetrics} />
+              </div>
+
+              {/* Weekly Heatmap */}
+              <WeeklyHeatmap ytdStats={ytdStats} />
+            </div>
           </div>
 
-          {/* Weekly Heatmap */}
-          <WeeklyHeatmap ytdStats={ytdStats} />
-        </div>
-      </div>
+          {/* TRENDS & DETAILED ANALYSIS SECTION */}
+          <div>
+            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
+              📈 Trends & Detailed Analysis
+            </h2>
 
-      {/* TRENDS & DETAILED ANALYSIS SECTION */}
-      <div>
-        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-          📈 Trends & Detailed Analysis
-        </h2>
-
-        <div className="space-y-6">
-          {/* Weekly Breakdown Chart */}
-          <AnnualWeeklyBreakdown
-            ytdStats={ytdStats}
-            weekThemes={weekThemes}
-            onUpdateTheme={onUpdateWeekTheme}
-          />
-        </div>
-      </div>
+            <div className="space-y-6">
+              {/* Weekly Breakdown Chart */}
+              <AnnualWeeklyBreakdown
+                ytdStats={ytdStats}
+                weekThemes={weekThemes}
+                onUpdateTheme={onUpdateWeekTheme}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
