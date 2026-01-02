@@ -442,8 +442,10 @@ export default function WeeklyReview() {
 
     // Get all weeks in the year up to maxWeek
     for (let week = 1; week <= maxWeek; week++) {
-      const { start } = getWeekDateRange(selectedYear, week)
-      if (start.getFullYear() === selectedYear) {
+      const { start, end } = getWeekDateRange(selectedYear, week)
+      // Include week if either start or end date is in the selected year
+      // This handles week 1 which may start in the previous year
+      if (start.getFullYear() === selectedYear || end.getFullYear() === selectedYear) {
         const season = getSeason(week)
         seasons[season].push(week)
       }
