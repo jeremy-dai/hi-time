@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Target, ChevronDown, ChevronRight, Plus, CheckCircle2, Circle, X, Edit2, Trash2, Info, ChevronLeft } from 'lucide-react'
+import { Target, ChevronDown, ChevronRight, Plus, CheckCircle2, Circle, Trash2, Info, ChevronLeft } from 'lucide-react'
 import { cn } from '../utils/classNames'
 import type { QuarterlyGoal } from '../types/time'
 import Tooltip from './shared/Tooltip'
@@ -47,8 +47,6 @@ export default function QuarterlyGoalsBanner({
 }: QuarterlyGoalsBannerProps) {
   const [isExpanded, setIsExpanded] = useState(true)
   const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set())
-  const [editingGoal, setEditingGoal] = useState<string | null>(null)
-  const [editingMilestone, setEditingMilestone] = useState<string | null>(null)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [newGoalDesc, setNewGoalDesc] = useState('')
   const [newMilestoneTitle, setNewMilestoneTitle] = useState('')
@@ -98,7 +96,6 @@ export default function QuarterlyGoalsBanner({
   const currentYear = currentDate.getFullYear()
   const currentQuarter = Math.ceil((currentDate.getMonth() + 1) / 3)
 
-  const isCurrentQuarter = year === currentYear && quarter === currentQuarter
   const isFutureQuarter = year > currentYear || (year === currentYear && quarter > currentQuarter)
 
   const handlePrevQuarter = () => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import type { QuarterGoals, QuarterlyGoal, GoalMilestone } from '../types/time'
+import type { QuarterGoals, QuarterlyGoal } from '../types/time'
 import {
   getQuarterGoals,
   createQuarterlyGoal,
