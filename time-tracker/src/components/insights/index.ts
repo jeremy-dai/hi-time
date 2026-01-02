@@ -1,6 +1,7 @@
 export { default as TimeSlotAnalysis } from './TimeSlotAnalysis'
 export { default as TopActivitiesBreakdown } from './TopActivitiesBreakdown'
 export { default as ExportButton } from './ExportButton'
+export { default as ExportInfo } from './ExportInfo'
 export { default as WeeklyWorkGoal } from './WeeklyWorkGoal'
 export { default as StreakTracker } from './StreakTracker'
 export { default as WeeklyRhythmHeatmap } from './WeeklyRhythmHeatmap'

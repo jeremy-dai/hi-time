@@ -1,5 +1,5 @@
 import type { EnhancedAnalysis } from '../types/insights'
-import type { TimeBlock, WeekReview, DailyShipping } from '../types/time'
+import type { TimeBlock, WeekReview, DailyShipping, DailyMemory } from '../types/time'
 import { CATEGORY_KEYS } from '../types/time'
 import { CATEGORY_LABELS } from '../constants/colors'
 
@@ -9,11 +9,13 @@ import { CATEGORY_LABELS } from '../constants/colors'
  * - 4-week trends for context and patterns
  * - Optional weekly reviews for reflections
  * - Optional daily shipping for accountability
+ * - Optional memories for reflections
  */
 export function generateTrendsReport(
   analysis: EnhancedAnalysis,
   weekReviews?: Record<number, WeekReview>,
-  dailyShipping?: Record<string, DailyShipping>
+  dailyShipping?: Record<string, DailyShipping>,
+  memories?: Record<string, DailyMemory>
 ): string {
   const sections: string[] = []
 
@@ -106,6 +108,14 @@ export function generateTrendsReport(
     sections.push('---')
     sections.push('')
     sections.push(formatDailyShippingForWeek(analysis, dailyShipping))
+    sections.push('')
+  }
+
+  // ========== MEMORIES ==========
+  if (memories && Object.keys(memories).length > 0) {
+    sections.push('---')
+    sections.push('')
+    sections.push(formatMemoriesForPeriod(analysis, memories))
     sections.push('')
   }
 
@@ -687,6 +697,75 @@ function formatDailyShippingForWeek(analysis: EnhancedAnalysis, dailyShipping: R
     const escapedShipped = entry.shipped.replace(/\|/g, '\\|')
     const status = entry.completed ? '✅' : '⬜'
     lines.push(`| ${dateKey} | ${escapedShipped} | ${status} |`)
+  }
+
+  lines.push('')
+
+  return lines.join('\n')
+}
+
+// ========== MEMORIES FORMATTER ==========
+
+function formatMemoriesForPeriod(analysis: EnhancedAnalysis, memories: Record<string, DailyMemory>): string {
+  const lines: string[] = []
+
+  lines.push('# 💭 Daily Memories')
+  lines.push('')
+
+  // Get the date range for the 4-week period
+  const weekKeys = analysis.trends.weekKeys
+
+  // Helper to get dates from week key
+  const getDateFromWeek = (year: number, week: number, dayOfWeek: number): Date => {
+    const jan4 = new Date(year, 0, 4)
+    const dayOfWeekJan4 = jan4.getDay() || 7
+    const firstMonday = new Date(jan4.getTime() - (dayOfWeekJan4 - 1) * 86400000)
+    const targetDate = new Date(firstMonday.getTime() + (week - 1) * 7 * 86400000 + (dayOfWeek - 1) * 86400000)
+    return targetDate
+  }
+
+  const parseWeekKey = (weekKey: string): { year: number; week: number } => {
+    const match = weekKey.match(/(\d{4})-W(\d+)/)
+    if (!match) return { year: 0, week: 0 }
+    return { year: parseInt(match[1]), week: parseInt(match[2]) }
+  }
+
+  // Collect all dates in the 4-week period
+  const allDatesInPeriod: string[] = []
+  for (const weekKey of weekKeys) {
+    const { year, week } = parseWeekKey(weekKey)
+    if (year > 0 && week > 0) {
+      for (let day = 1; day <= 7; day++) {
+        const date = getDateFromWeek(year, week, day)
+        const dateStr = date.toISOString().split('T')[0]
+        allDatesInPeriod.push(dateStr)
+      }
+    }
+  }
+
+  // Filter memories for this period
+  const periodMemories = Object.entries(memories).filter(([dateKey]) =>
+    allDatesInPeriod.includes(dateKey)
+  )
+
+  if (periodMemories.length === 0) {
+    lines.push('*No memories recorded for this 4-week period.*')
+    lines.push('')
+    return lines.join('\n')
+  }
+
+  lines.push(`**Total Memories:** ${periodMemories.length} out of ${allDatesInPeriod.length} days`)
+  lines.push('')
+
+  // Display as a table, sorted by date (latest first)
+  lines.push('| Date | Memory |')
+  lines.push('|------|--------|')
+
+  const sortedMemories = periodMemories.sort(([a], [b]) => b.localeCompare(a))
+
+  for (const [dateKey, memory] of sortedMemories) {
+    const escapedMemory = memory.memory.replace(/\|/g, '\\|')
+    lines.push(`| ${dateKey} | ${escapedMemory} |`)
   }
 
   lines.push('')

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { EnhancedAnalysis } from '../../types/insights'
+import type { WeekReview, DailyShipping, DailyMemory } from '../../types/time'
 import { cn } from '../../utils/classNames'
 import { generateTrendsReport, downloadMarkdownReport } from '../../utils/markdownGenerator'
 import { Download, Check } from 'lucide-react'
@@ -7,9 +8,12 @@ import { Download, Check } from 'lucide-react'
 interface ExportButtonProps {
   analysis: EnhancedAnalysis
   weekRange: string
+  weekReviews?: Record<number, WeekReview>
+  dailyShipping?: Record<string, DailyShipping>
+  memories?: Record<string, DailyMemory>
 }
 
-export default function ExportButton({ analysis, weekRange }: ExportButtonProps) {
+export default function ExportButton({ analysis, weekRange, weekReviews, dailyShipping, memories }: ExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false)
   const [exportSuccess, setExportSuccess] = useState(false)
 
@@ -17,8 +21,8 @@ export default function ExportButton({ analysis, weekRange }: ExportButtonProps)
     setIsExporting(true)
 
     try {
-      // Generate markdown report
-      const markdownContent = generateTrendsReport(analysis)
+      // Generate markdown report with all optional data
+      const markdownContent = generateTrendsReport(analysis, weekReviews, dailyShipping, memories)
 
       // Download file
       downloadMarkdownReport(markdownContent, weekRange)

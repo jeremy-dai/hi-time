@@ -728,4 +728,330 @@ app.delete('/api/shipping/:year/:month/:day', async (req, res) => {
   res.json({ ok: true });
 });
 
+// ============================================================================
+// Quarterly Goals API
+// ============================================================================
+
+// GET /api/goals/:year/:quarter - Get all goals with milestones for a quarter
+app.get('/api/goals/:year/:quarter', async (req, res) => {
+  const { year, quarter } = req.params;
+
+  const yearNum = parseInt(year, 10);
+  const quarterNum = parseInt(quarter, 10);
+
+  if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+    return res.status(400).json({ error: 'Invalid year' });
+  }
+
+  if (isNaN(quarterNum) || quarterNum < 1 || quarterNum > 4) {
+    return res.status(400).json({ error: 'Invalid quarter (must be 1-4)' });
+  }
+
+  try {
+    // RLS automatically filters by authenticated user
+    const { data: goals, error: goalsError } = await req.supabase
+      .from('quarterly_goals')
+      .select('*')
+      .eq('year', yearNum)
+      .eq('quarter', quarterNum)
+      .order('display_order', { ascending: true });
+
+    if (goalsError) {
+      console.error('Error fetching quarterly goals:', goalsError);
+      return res.status(500).json({ error: 'Failed to fetch goals' });
+    }
+
+    // Get all milestones for these goals
+    const goalIds = goals.map(g => g.id);
+    let milestones = [];
+
+    if (goalIds.length > 0) {
+      const { data: milestonesData, error: milestonesError } = await req.supabase
+        .from('quarterly_goal_milestones')
+        .select('*')
+        .in('goal_id', goalIds)
+        .order('display_order', { ascending: true });
+
+      if (milestonesError) {
+        console.error('Error fetching milestones:', milestonesError);
+        return res.status(500).json({ error: 'Failed to fetch milestones' });
+      }
+
+      milestones = milestonesData || [];
+    }
+
+    // Group milestones by goal_id
+    const milestonesByGoal = {};
+    milestones.forEach(m => {
+      if (!milestonesByGoal[m.goal_id]) {
+        milestonesByGoal[m.goal_id] = [];
+      }
+      milestonesByGoal[m.goal_id].push({
+        id: m.id,
+        goalId: m.goal_id,
+        title: m.title,
+        completed: m.completed,
+        displayOrder: m.display_order,
+        createdAt: new Date(m.created_at).getTime(),
+        updatedAt: new Date(m.updated_at).getTime(),
+      });
+    });
+
+    // Format goals with their milestones
+    const formattedGoals = goals.map(g => ({
+      id: g.id,
+      year: g.year,
+      quarter: g.quarter,
+      title: g.title,
+      description: g.description || undefined,
+      completed: g.completed,
+      displayOrder: g.display_order,
+      milestones: milestonesByGoal[g.id] || [],
+      createdAt: new Date(g.created_at).getTime(),
+      updatedAt: new Date(g.updated_at).getTime(),
+    }));
+
+    res.json({
+      goals: {
+        year: yearNum,
+        quarter: quarterNum,
+        goals: formattedGoals,
+      },
+    });
+  } catch (error) {
+    console.error('Error in GET /api/goals:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/goals/:year/:quarter - Create a new goal
+app.post('/api/goals/:year/:quarter', async (req, res) => {
+  const { year, quarter } = req.params;
+  const { title, description } = req.body;
+
+  const yearNum = parseInt(year, 10);
+  const quarterNum = parseInt(quarter, 10);
+
+  if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  if (isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+    return res.status(400).json({ error: 'Invalid year' });
+  }
+
+  if (isNaN(quarterNum) || quarterNum < 1 || quarterNum > 4) {
+    return res.status(400).json({ error: 'Invalid quarter (must be 1-4)' });
+  }
+
+  try {
+    // RLS automatically filters by authenticated user
+    const { data: maxOrderData } = await req.supabase
+      .from('quarterly_goals')
+      .select('display_order')
+      .eq('year', yearNum)
+      .eq('quarter', quarterNum)
+      .order('display_order', { ascending: false })
+      .limit(1);
+
+    const nextOrder = maxOrderData && maxOrderData.length > 0 ? maxOrderData[0].display_order + 1 : 0;
+
+    const { data: goal, error } = await req.supabase
+      .from('quarterly_goals')
+      .insert({
+        user_id: req.user.id,
+        year: yearNum,
+        quarter: quarterNum,
+        title: title.trim(),
+        description: description ? description.trim() : null,
+        completed: false,
+        display_order: nextOrder,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating quarterly goal:', error);
+      return res.status(500).json({ error: 'Failed to create goal' });
+    }
+
+    res.json({
+      goal: {
+        id: goal.id,
+        year: goal.year,
+        quarter: goal.quarter,
+        title: goal.title,
+        description: goal.description || undefined,
+        completed: goal.completed,
+        displayOrder: goal.display_order,
+        milestones: [],
+        createdAt: new Date(goal.created_at).getTime(),
+        updatedAt: new Date(goal.updated_at).getTime(),
+      },
+    });
+  } catch (error) {
+    console.error('Error in POST /api/goals:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/goals/:goalId - Update a goal
+app.put('/api/goals/:goalId', async (req, res) => {
+  const { goalId } = req.params;
+  const { title, description, completed, displayOrder } = req.body;
+
+  try {
+    const updates = { updated_at: new Date().toISOString() };
+    if (title !== undefined) updates.title = title.trim();
+    if (description !== undefined) updates.description = description ? description.trim() : null;
+    if (completed !== undefined) updates.completed = completed;
+    if (displayOrder !== undefined) updates.display_order = displayOrder;
+
+    // RLS automatically ensures user can only update their own goals
+    const { error } = await req.supabase
+      .from('quarterly_goals')
+      .update(updates)
+      .eq('id', goalId);
+
+    if (error) {
+      console.error('Error updating quarterly goal:', error);
+      return res.status(500).json({ error: 'Failed to update goal' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in PUT /api/goals:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/goals/:goalId - Delete a goal (cascades to milestones)
+app.delete('/api/goals/:goalId', async (req, res) => {
+  const { goalId } = req.params;
+
+  try {
+    // RLS automatically ensures user can only delete their own goals
+    const { error } = await req.supabase
+      .from('quarterly_goals')
+      .delete()
+      .eq('id', goalId);
+
+    if (error) {
+      console.error('Error deleting quarterly goal:', error);
+      return res.status(500).json({ error: 'Failed to delete goal' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in DELETE /api/goals:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/goals/:goalId/milestones - Create a milestone
+app.post('/api/goals/:goalId/milestones', async (req, res) => {
+  const { goalId } = req.params;
+  const { title } = req.body;
+
+  if (!title || typeof title !== 'string' || title.trim().length === 0) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  try {
+    // Get max display_order for this goal (RLS ensures user can only access their own goals)
+    const { data: maxOrderData } = await req.supabase
+      .from('quarterly_goal_milestones')
+      .select('display_order')
+      .eq('goal_id', goalId)
+      .order('display_order', { ascending: false })
+      .limit(1);
+
+    const nextOrder = maxOrderData && maxOrderData.length > 0 ? maxOrderData[0].display_order + 1 : 0;
+
+    // RLS will prevent creating milestones for goals not owned by the user
+    const { data: milestone, error } = await req.supabase
+      .from('quarterly_goal_milestones')
+      .insert({
+        goal_id: goalId,
+        title: title.trim(),
+        completed: false,
+        display_order: nextOrder,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating milestone:', error);
+      return res.status(500).json({ error: 'Failed to create milestone' });
+    }
+
+    res.json({
+      milestone: {
+        id: milestone.id,
+        goalId: milestone.goal_id,
+        title: milestone.title,
+        completed: milestone.completed,
+        displayOrder: milestone.display_order,
+        createdAt: new Date(milestone.created_at).getTime(),
+        updatedAt: new Date(milestone.updated_at).getTime(),
+      },
+    });
+  } catch (error) {
+    console.error('Error in POST /api/goals/:goalId/milestones:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/milestones/:milestoneId - Update a milestone
+app.put('/api/milestones/:milestoneId', async (req, res) => {
+  const { milestoneId } = req.params;
+  const { title, completed, displayOrder } = req.body;
+
+  try {
+    const updates = { updated_at: new Date().toISOString() };
+    if (title !== undefined) updates.title = title.trim();
+    if (completed !== undefined) updates.completed = completed;
+    if (displayOrder !== undefined) updates.display_order = displayOrder;
+
+    // RLS automatically ensures user can only update milestones of their own goals
+    const { error } = await req.supabase
+      .from('quarterly_goal_milestones')
+      .update(updates)
+      .eq('id', milestoneId);
+
+    if (error) {
+      console.error('Error updating milestone:', error);
+      return res.status(500).json({ error: 'Failed to update milestone' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in PUT /api/milestones:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/milestones/:milestoneId - Delete a milestone
+app.delete('/api/milestones/:milestoneId', async (req, res) => {
+  const { milestoneId } = req.params;
+
+  try {
+    // RLS automatically ensures user can only delete milestones of their own goals
+    const { error } = await req.supabase
+      .from('quarterly_goal_milestones')
+      .delete()
+      .eq('id', milestoneId);
+
+    if (error) {
+      console.error('Error deleting milestone:', error);
+      return res.status(500).json({ error: 'Failed to delete milestone' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in DELETE /api/milestones:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default app;

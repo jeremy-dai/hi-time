@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useDailyShipping } from '../hooks/useDailyShipping'
+import { useQuarterlyGoals, getQuarterFromMonth } from '../hooks/useQuarterlyGoals'
 import YearNavigator from './shared/YearNavigator'
-import { SyncStatusIndicator } from './SyncStatusIndicator'
-import { Package, Calendar, CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react'
+import QuarterlyGoalsBanner from './QuarterlyGoalsBanner'
+import { Package, Calendar, CheckCircle2, Circle } from 'lucide-react'
 import { cn } from '../utils/classNames'
 
 // Helper to format date as YYYY-MM-DD
@@ -240,9 +241,24 @@ function MonthSection({ month, year, dates, entries, onUpdate }: MonthSectionPro
 export default function DailyShipping() {
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1
+  const currentQuarter = getQuarterFromMonth(currentMonth)
+
   const [selectedYear, setSelectedYear] = useState(currentYear)
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(currentMonth)
-  const { entries: entriesData, isLoading, syncStatus, updateEntry } = useDailyShipping(selectedYear)
+  const [goalsYear, setGoalsYear] = useState(currentYear)
+  const [goalsQuarter, setGoalsQuarter] = useState(currentQuarter)
+
+  const { entries: entriesData, isLoading, updateEntry } = useDailyShipping(selectedYear)
+
+  const {
+    goals,
+    isLoading: goalsLoading,
+    addGoal,
+    updateGoal,
+    removeGoal,
+    addMilestone,
+    updateMilestone,
+    removeMilestone,
+  } = useQuarterlyGoals(goalsYear, goalsQuarter)
 
   // Convert simple string entries to full objects
   const entries = useMemo(() => {
@@ -284,27 +300,6 @@ export default function DailyShipping() {
     return Array.from(months).sort((a, b) => b - a)
   }, [allDates])
 
-
-  const handleMonthNav = (direction: 'prev' | 'next') => {
-    if (selectedMonth === null) return
-
-    if (direction === 'prev') {
-      const currentIndex = monthsPresent.indexOf(selectedMonth)
-      if (currentIndex < monthsPresent.length - 1) {
-        setSelectedMonth(monthsPresent[currentIndex + 1])
-      }
-    } else {
-      const currentIndex = monthsPresent.indexOf(selectedMonth)
-      if (currentIndex > 0) {
-        setSelectedMonth(monthsPresent[currentIndex - 1])
-      }
-    }
-  }
-
-  const handleViewAll = () => {
-    setSelectedMonth(null)
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -313,103 +308,70 @@ export default function DailyShipping() {
     )
   }
 
-  const displayMonths = selectedMonth !== null ? [selectedMonth] : monthsPresent
-
   return (
     <div className="flex flex-col h-full bg-gray-50">
+      {/* Quarterly Goals Banner */}
+      <QuarterlyGoalsBanner
+        year={goalsYear}
+        quarter={goalsQuarter}
+        goals={goals}
+        isLoading={goalsLoading}
+        onYearChange={setGoalsYear}
+        onQuarterChange={setGoalsQuarter}
+        onAddGoal={addGoal}
+        onUpdateGoal={updateGoal}
+        onRemoveGoal={removeGoal}
+        onAddMilestone={addMilestone}
+        onUpdateMilestone={updateMilestone}
+        onRemoveMilestone={removeMilestone}
+      />
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-6">
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Daily Shipping Log</h1>
               <p className="text-gray-600">
                 📦 What did you ship today? Check it off when done.
               </p>
             </div>
-            <SyncStatusIndicator
-              status={syncStatus}
-              hasUnsavedChanges={false}
-              compact={true}
-            />
-          </div>
 
-          {/* Year Navigator */}
-          <div className="mb-4">
+            {/* Year Navigator */}
             <YearNavigator
               year={selectedYear}
-              onYearChange={(year) => {
-                setSelectedYear(year)
-                setSelectedMonth(year === currentYear ? currentMonth : null)
-              }}
+              onYearChange={setSelectedYear}
               maxYear={currentYear}
             />
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-4 mb-4">
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <div className="text-2xl font-bold text-gray-900">{totalDays}</div>
-              <div className="text-sm text-gray-600">Total Days</div>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+              <div className="text-xl font-bold text-gray-900">{totalDays}</div>
+              <div className="text-xs text-gray-600">Total Days</div>
             </div>
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
-              <div className="text-2xl font-bold text-emerald-900">{filledDays}</div>
-              <div className="text-sm text-emerald-700">Logged</div>
+            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+              <div className="text-xl font-bold text-emerald-900">{filledDays}</div>
+              <div className="text-xs text-emerald-700">Logged</div>
             </div>
-            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-              <div className="text-2xl font-bold text-green-900">{completedDays}</div>
-              <div className="text-sm text-green-700">Completed</div>
+            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+              <div className="text-xl font-bold text-green-900">{completedDays}</div>
+              <div className="text-xs text-green-700">Completed</div>
             </div>
-            <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-              <div className="text-2xl font-bold text-red-900">{emptyDays}</div>
-              <div className="text-sm text-red-700">Empty (haunting you)</div>
+            <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+              <div className="text-xl font-bold text-red-900">{emptyDays}</div>
+              <div className="text-xs text-red-700">Empty</div>
             </div>
           </div>
 
-          {/* Month Navigation */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {selectedMonth !== null && (
-                <>
-                  <button
-                    onClick={() => handleMonthNav('prev')}
-                    disabled={monthsPresent.indexOf(selectedMonth) === monthsPresent.length - 1}
-                    className="p-2 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <span className="text-sm font-medium min-w-[120px] text-center">
-                    {getMonthName(selectedMonth)} {selectedYear}
-                  </span>
-                  <button
-                    onClick={() => handleMonthNav('next')}
-                    disabled={monthsPresent.indexOf(selectedMonth) === 0}
-                    className="p-2 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </>
-              )}
-            </div>
-            <button
-              onClick={handleViewAll}
-              className={cn(
-                'px-4 py-2 text-sm rounded transition-colors',
-                selectedMonth === null
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              )}
-            >
-              View All Months
-            </button>
-          </div>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto px-8 py-6">
         <div className="max-w-5xl mx-auto">
-          {displayMonths.map((month) => (
+          {monthsPresent.map((month) => (
             <MonthSection
               key={month}
               month={month}

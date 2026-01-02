@@ -2,6 +2,9 @@ import { useMemo } from 'react'
 import type { TimeBlock } from '../../types/time'
 import { aggregateWeekData, aggregateMultiWeekData } from '../../utils/analytics'
 import { generateEnhancedAnalysis } from '../../utils/enhancedAnalytics'
+import { useYearMemories } from '../../hooks/useYearMemories'
+import { useWeekReviews } from '../../hooks/useWeekReviews'
+import { useDailyShipping } from '../../hooks/useDailyShipping'
 import KPICards from './KPICards'
 import WeeklyBreakdownChart from './WeeklyBreakdownChart'
 import MultiWeekTrendChart from './MultiWeekTrendChart'
@@ -9,6 +12,7 @@ import {
   TimeSlotAnalysis,
   TopActivitiesBreakdown,
   ExportButton,
+  ExportInfo,
   WeeklyWorkGoal,
   WeeklyRhythmHeatmap
 } from '../insights'
@@ -29,6 +33,18 @@ export default function CurrentWeekDashboard({
   // Most recent completed week (the first one in the list)
   const displayWeekKey = weekKeys[0]
   const displayWeekData = useMemo(() => weeksStore[displayWeekKey] || [], [weeksStore, displayWeekKey])
+
+  // Extract year from the display week key for data fetching
+  const year = useMemo(() => {
+    if (!displayWeekKey) return new Date().getFullYear()
+    const match = displayWeekKey.match(/^(\d{4})-/)
+    return match ? parseInt(match[1]) : new Date().getFullYear()
+  }, [displayWeekKey])
+
+  // Fetch supplementary data for export
+  const { memories } = useYearMemories(year)
+  const { reviews: weekReviews } = useWeekReviews(year)
+  const { entries: dailyShippingEntries } = useDailyShipping(year)
 
   // Current/display week stats
   const currentStats = useMemo(() => aggregateWeekData(displayWeekData), [displayWeekData])
@@ -63,6 +79,37 @@ export default function CurrentWeekDashboard({
     ? `${weekKeys[0]}-to-${weekKeys[weekKeys.length - 1]}`
     : weekKeys[0] || 'unknown'
 
+  // Convert daily shipping entries to DailyShipping format
+  const dailyShipping = useMemo(() => {
+    const shipping: Record<string, any> = {}
+    Object.entries(dailyShippingEntries).forEach(([key, value]) => {
+      if (typeof value === 'string') {
+        const [y, m, d] = key.split('-').map(Number)
+        shipping[key] = {
+          year: y,
+          month: m,
+          day: d,
+          shipped: value,
+          completed: false,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+      } else {
+        const [y, m, d] = key.split('-').map(Number)
+        shipping[key] = {
+          year: y,
+          month: m,
+          day: d,
+          shipped: value.shipped,
+          completed: value.completed,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+      }
+    })
+    return shipping
+  }, [dailyShippingEntries])
+
   return (
     <div className="space-y-6">
       {/* Analysis Period Banner with Export Button */}
@@ -81,7 +128,16 @@ export default function CurrentWeekDashboard({
             </p>
           </div>
         </div>
-        <ExportButton analysis={enhancedAnalysis} weekRange={weekRange} />
+        <div className="flex items-center gap-2">
+          <ExportInfo reportType="trends" />
+          <ExportButton
+            analysis={enhancedAnalysis}
+            weekRange={weekRange}
+            weekReviews={weekReviews}
+            dailyShipping={dailyShipping}
+            memories={memories}
+          />
+        </div>
       </div>
 
       {/* LATEST WEEK SECTION */}

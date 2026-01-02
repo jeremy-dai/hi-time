@@ -102,6 +102,49 @@ CREATE INDEX IF NOT EXISTS idx_daily_shipping_user_date ON daily_shipping(user_i
 
 COMMENT ON TABLE daily_shipping IS 'Stores daily shipping entries with completion tracking';
 
+-- Quarterly Goals Table
+-- Stores high-level goals for each quarter (Q1-Q4) of a year
+CREATE TABLE IF NOT EXISTS quarterly_goals (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id text NOT NULL,
+  year integer NOT NULL,
+  quarter integer NOT NULL,
+  title text NOT NULL,
+  description text,
+  completed boolean DEFAULT false,
+  display_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+  CHECK (quarter >= 1 AND quarter <= 4),
+  CHECK (year >= 2000 AND year <= 2100)
+);
+
+CREATE INDEX IF NOT EXISTS idx_quarterly_goals_user_id ON quarterly_goals(user_id);
+CREATE INDEX IF NOT EXISTS idx_quarterly_goals_user_year_quarter ON quarterly_goals(user_id, year, quarter);
+CREATE INDEX IF NOT EXISTS idx_quarterly_goals_display_order ON quarterly_goals(user_id, year, quarter, display_order);
+
+COMMENT ON TABLE quarterly_goals IS 'Stores quarterly goals with optional milestones';
+COMMENT ON COLUMN quarterly_goals.quarter IS 'Quarter number: 1 (Jan-Mar), 2 (Apr-Jun), 3 (Jul-Sep), 4 (Oct-Dec)';
+COMMENT ON COLUMN quarterly_goals.display_order IS 'Order in which goals should be displayed (lower numbers first)';
+
+-- Quarterly Goal Milestones Table
+-- Stores sub-tasks/milestones for each quarterly goal
+CREATE TABLE IF NOT EXISTS quarterly_goal_milestones (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  goal_id uuid NOT NULL REFERENCES quarterly_goals(id) ON DELETE CASCADE,
+  title text NOT NULL,
+  completed boolean DEFAULT false,
+  display_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_goal_milestones_goal_id ON quarterly_goal_milestones(goal_id);
+CREATE INDEX IF NOT EXISTS idx_goal_milestones_display_order ON quarterly_goal_milestones(goal_id, display_order);
+
+COMMENT ON TABLE quarterly_goal_milestones IS 'Stores milestones/sub-tasks for quarterly goals';
+COMMENT ON COLUMN quarterly_goal_milestones.display_order IS 'Order in which milestones should be displayed (lower numbers first)';
+
 -- ============================================================================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================================================
@@ -112,6 +155,8 @@ ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE year_memories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE week_reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_shipping ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quarterly_goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quarterly_goal_milestones ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies: Users can only access their own data
 
@@ -144,6 +189,30 @@ ON daily_shipping
 FOR ALL
 USING ((select auth.uid())::text = user_id)
 WITH CHECK ((select auth.uid())::text = user_id);
+
+CREATE POLICY "Users can only access their own quarterly goals"
+ON quarterly_goals
+FOR ALL
+USING ((select auth.uid())::text = user_id)
+WITH CHECK ((select auth.uid())::text = user_id);
+
+CREATE POLICY "Users can only access milestones of their own goals"
+ON quarterly_goal_milestones
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM quarterly_goals
+    WHERE quarterly_goals.id = quarterly_goal_milestones.goal_id
+    AND (select auth.uid())::text = quarterly_goals.user_id
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM quarterly_goals
+    WHERE quarterly_goals.id = quarterly_goal_milestones.goal_id
+    AND (select auth.uid())::text = quarterly_goals.user_id
+  )
+);
 
 -- Note: auth.uid() is a Supabase function that extracts the user ID
 -- from the JWT token in the Authorization header.

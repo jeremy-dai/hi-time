@@ -143,7 +143,6 @@ export default function Dashboard({
           weekMetadataStore={weekMetadataStore}
           year={selectedYear}
           weekKeys={annualWeekKeys}
-          onRefresh={() => loadWeeksForRange(annualWeekKeys)}
           onUpdateWeekTheme={onUpdateWeekTheme}
           onYearChange={setSelectedYear}
         />

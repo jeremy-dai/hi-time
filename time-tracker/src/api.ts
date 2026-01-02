@@ -1,4 +1,4 @@
-import type { TimeBlock, AnnualReview } from './types/time'
+import type { TimeBlock, AnnualReview, QuarterlyGoal, GoalMilestone, QuarterGoals } from './types/time'
 import { TIME_SLOTS } from './constants/timesheet'
 import { ApiError } from './utils/errorHandler'
 import { getAuthToken } from './lib/supabase'
@@ -455,6 +455,135 @@ export async function deleteDailyShipping(year: number, month: number, day: numb
     return true
   } catch (error) {
     console.error(`Failed to delete daily shipping for ${year}-${month}-${day}:`, error)
+    return false
+  }
+}
+
+// Quarterly Goals API
+export async function getQuarterGoals(year: number, quarter: number): Promise<QuarterGoals | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/goals/${year}/${quarter}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<QuarterGoals>>(res, `/goals/${year}/${quarter}`)
+    return data.goals || null
+  } catch (error) {
+    console.error(`Failed to get quarterly goals for ${year} Q${quarter}:`, error)
+    return null
+  }
+}
+
+export async function createQuarterlyGoal(
+  year: number,
+  quarter: number,
+  title: string,
+  description?: string
+): Promise<QuarterlyGoal | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/goals/${year}/${quarter}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ title, description }),
+    })
+    const data = await handleResponse<ApiResponse<QuarterlyGoal>>(res, `/goals/${year}/${quarter}`)
+    return data.goal || null
+  } catch (error) {
+    console.error(`Failed to create quarterly goal for ${year} Q${quarter}:`, error)
+    return null
+  }
+}
+
+export async function updateQuarterlyGoal(
+  goalId: string,
+  updates: {
+    title?: string
+    description?: string
+    completed?: boolean
+    displayOrder?: number
+  }
+): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/goals/${goalId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(updates),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/goals/${goalId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to update quarterly goal ${goalId}:`, error)
+    return false
+  }
+}
+
+export async function deleteQuarterlyGoal(goalId: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/goals/${goalId}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/goals/${goalId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete quarterly goal ${goalId}:`, error)
+    return false
+  }
+}
+
+export async function createGoalMilestone(goalId: string, title: string): Promise<GoalMilestone | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/goals/${goalId}/milestones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ title }),
+    })
+    const data = await handleResponse<ApiResponse<GoalMilestone>>(res, `/goals/${goalId}/milestones`)
+    return data.milestone || null
+  } catch (error) {
+    console.error(`Failed to create milestone for goal ${goalId}:`, error)
+    return null
+  }
+}
+
+export async function updateGoalMilestone(
+  milestoneId: string,
+  updates: {
+    title?: string
+    completed?: boolean
+    displayOrder?: number
+  }
+): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/milestones/${milestoneId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(updates),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/milestones/${milestoneId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to update milestone ${milestoneId}:`, error)
+    return false
+  }
+}
+
+export async function deleteGoalMilestone(milestoneId: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/milestones/${milestoneId}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/milestones/${milestoneId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete milestone ${milestoneId}:`, error)
     return false
   }
 }

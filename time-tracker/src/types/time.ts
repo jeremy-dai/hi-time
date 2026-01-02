@@ -70,3 +70,32 @@ export interface AnnualReview {
   createdAt: number
   updatedAt: number
 }
+
+export interface GoalMilestone {
+  id: string
+  goalId: string
+  title: string
+  completed: boolean
+  displayOrder: number
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuarterlyGoal {
+  id: string
+  year: number
+  quarter: number // 1-4
+  title: string
+  description?: string
+  completed: boolean
+  displayOrder: number
+  milestones: GoalMilestone[]
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuarterGoals {
+  year: number
+  quarter: number
+  goals: QuarterlyGoal[]
+}

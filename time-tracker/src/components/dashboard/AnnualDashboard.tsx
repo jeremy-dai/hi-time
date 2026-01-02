@@ -4,13 +4,15 @@ import { aggregateYTDData } from '../../utils/analytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
 import { useWeekReviews } from '../../hooks/useWeekReviews'
 import { useDailyShipping } from '../../hooks/useDailyShipping'
+import { useYearQuarterlyGoals } from '../../hooks/useYearQuarterlyGoals'
 import AnnualCategoryBreakdown from './AnnualCategoryBreakdown'
 import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
 import AnnualProductivityStreak from './AnnualProductivityStreak'
 import YearNavigator from '../shared/YearNavigator'
 import { SkeletonLoader } from '../shared/SkeletonLoader'
-import { RefreshCw, Download, CalendarRange } from 'lucide-react'
+import { ExportInfo } from '../insights'
+import { Download, CalendarRange } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { generateAnnualReport, downloadAnnualMarkdownReport } from '../../utils/annualMarkdownGenerator'
 import { startOfISOWeek, endOfISOWeek } from '../../utils/date'
@@ -20,7 +22,6 @@ interface AnnualDashboardProps {
   weekMetadataStore: Record<string, { startingHour: number; theme: string | null }>
   year: number
   weekKeys: string[]
-  onRefresh: () => void
   onUpdateWeekTheme: (weekKey: string, theme: string) => Promise<void>
   onYearChange: (year: number) => void
 }
@@ -30,13 +31,13 @@ export default function AnnualDashboard({
   weekMetadataStore,
   year,
   weekKeys,
-  onRefresh,
   onUpdateWeekTheme,
   onYearChange
 }: AnnualDashboardProps) {
   const { memories, isLoading: isLoadingMemories } = useYearMemories(year)
   const { reviews: weekReviews, isLoading: isLoadingReviews } = useWeekReviews(year)
   const { entries: dailyShippingEntries, isLoading: isLoadingShipping } = useDailyShipping(year)
+  const { goals: quarterlyGoals, isLoading: isLoadingGoals } = useYearQuarterlyGoals(year)
 
   // Extract themes from metadata store
   const weekThemes = useMemo(() => {
@@ -121,10 +122,6 @@ export default function AnnualDashboard({
     return `${startStr} - ${endStr}`
   }, [weekKeys])
 
-  const handleRefresh = () => {
-    onRefresh()
-  }
-
   const handleExport = () => {
     // Convert entries to DailyShipping format
     const dailyShipping: Record<string, any> = {}
@@ -161,12 +158,13 @@ export default function AnnualDashboard({
       weeksStore,
       weekReviews,
       dailyShipping,
+      quarterlyGoals,
       year
     })
     downloadAnnualMarkdownReport(content, year)
   }
 
-  const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping
+  const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping || isLoadingGoals
 
   return (
     <div className="space-y-6">
@@ -195,6 +193,7 @@ export default function AnnualDashboard({
             variant="emerald"
           />
 
+          <ExportInfo reportType="annual" />
           <button
             onClick={handleExport}
             className={cn(
@@ -206,18 +205,6 @@ export default function AnnualDashboard({
           >
             <Download className="w-4 h-4" />
             <span>Export</span>
-          </button>
-          <button
-            onClick={handleRefresh}
-            className={cn(
-              'flex items-center space-x-1.5 px-4 py-2 rounded-xl font-medium text-sm',
-              'bg-emerald-500 hover:bg-emerald-600 text-white',
-              'shadow-sm hover:shadow-md transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2'
-            )}
-          >
-            <RefreshCw className="w-4 h-4" />
-            <span>Refresh</span>
           </button>
         </div>
       </div>
