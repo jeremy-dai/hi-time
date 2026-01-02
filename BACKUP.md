@@ -204,6 +204,8 @@ The `.github/workflows/backup.yml` workflow is stored in your **MAIN repo** (`hi
 - `year_memories` - Current year only
 - `week_reviews` - Last 14 days of updates
 - `daily_shipping` - Current month only
+- `quarterly_goals` - All goals (always included, typically small)
+- `quarterly_goal_milestones` - All milestones (always included, typically small)
 
 **Why incremental?** You typically only edit the current week and occasionally fix last week's data. This captures your active work while being 90% smaller than full backups.
 
@@ -365,7 +367,9 @@ SUPABASE_SECRET_KEY=eyJhbG...
     "user_settings": [...],
     "year_memories": [...],
     "week_reviews": [...],
-    "daily_shipping": [...]
+    "daily_shipping": [...],
+    "quarterly_goals": [...],
+    "quarterly_goal_milestones": [...]
   },
   "metadata": {
     "totalRecords": 1234,

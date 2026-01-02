@@ -131,6 +131,8 @@ function getConflictKey(tableName) {
     year_memories: 'user_id,year',
     week_reviews: 'user_id,year,week_number',
     daily_shipping: 'user_id,year,month,day',
+    quarterly_goals: 'id',
+    quarterly_goal_milestones: 'id',
   };
   return conflictKeys[tableName] || 'id';
 }
@@ -193,6 +195,8 @@ function mergeIncrementalBackups(fullBackup, incrementalBackups) {
     year_memories: new Map(fullBackup.tables.year_memories.map(r => [getRecordKey('year_memories', r), r])),
     week_reviews: new Map(fullBackup.tables.week_reviews.map(r => [getRecordKey('week_reviews', r), r])),
     daily_shipping: new Map(fullBackup.tables.daily_shipping.map(r => [getRecordKey('daily_shipping', r), r])),
+    quarterly_goals: new Map((fullBackup.tables.quarterly_goals || []).map(r => [getRecordKey('quarterly_goals', r), r])),
+    quarterly_goal_milestones: new Map((fullBackup.tables.quarterly_goal_milestones || []).map(r => [getRecordKey('quarterly_goal_milestones', r), r])),
   };
 
   // Apply each incremental backup in order
@@ -218,6 +222,8 @@ function mergeIncrementalBackups(fullBackup, incrementalBackups) {
       year_memories: Array.from(mergedTables.year_memories.values()),
       week_reviews: Array.from(mergedTables.week_reviews.values()),
       daily_shipping: Array.from(mergedTables.daily_shipping.values()),
+      quarterly_goals: Array.from(mergedTables.quarterly_goals.values()),
+      quarterly_goal_milestones: Array.from(mergedTables.quarterly_goal_milestones.values()),
     },
     metadata: {
       ...fullBackup.metadata,
@@ -236,6 +242,8 @@ function getRecordKey(tableName, record) {
     year_memories: `${record.user_id}_${record.year}`,
     week_reviews: `${record.user_id}_${record.year}_${record.week_number}`,
     daily_shipping: `${record.user_id}_${record.year}_${record.month}_${record.day}`,
+    quarterly_goals: record.id,
+    quarterly_goal_milestones: record.id,
   };
   return keyMap[tableName] || record.id;
 }
@@ -341,6 +349,12 @@ async function performRestore(backupFile, mode = 'upsert') {
   await restoreTable('week_reviews', backupData.tables.week_reviews, mode);
   if (backupData.tables.daily_shipping) {
     await restoreTable('daily_shipping', backupData.tables.daily_shipping, mode);
+  }
+  if (backupData.tables.quarterly_goals) {
+    await restoreTable('quarterly_goals', backupData.tables.quarterly_goals, mode);
+  }
+  if (backupData.tables.quarterly_goal_milestones) {
+    await restoreTable('quarterly_goal_milestones', backupData.tables.quarterly_goal_milestones, mode);
   }
 
   console.log(`\n✅ Restore completed successfully!\n`);

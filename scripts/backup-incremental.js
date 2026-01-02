@@ -140,12 +140,14 @@ async function performFullBackup() {
 
   try {
     // Fetch all data from all tables
-    const [weeks, userSettings, yearMemories, weekReviews, dailyShipping] = await Promise.all([
+    const [weeks, userSettings, yearMemories, weekReviews, dailyShipping, quarterlyGoals, quarterlyGoalMilestones] = await Promise.all([
       fetchAllFromTable('weeks'),
       fetchAllFromTable('user_settings'),
       fetchAllFromTable('year_memories'),
       fetchAllFromTable('week_reviews'),
       fetchAllFromTable('daily_shipping'),
+      fetchAllFromTable('quarterly_goals'),
+      fetchAllFromTable('quarterly_goal_milestones'),
     ]);
 
     const backupData = {
@@ -158,9 +160,11 @@ async function performFullBackup() {
         year_memories: yearMemories,
         week_reviews: weekReviews,
         daily_shipping: dailyShipping,
+        quarterly_goals: quarterlyGoals,
+        quarterly_goal_milestones: quarterlyGoalMilestones,
       },
       metadata: {
-        totalRecords: weeks.length + userSettings.length + yearMemories.length + weekReviews.length + dailyShipping.length,
+        totalRecords: weeks.length + userSettings.length + yearMemories.length + weekReviews.length + dailyShipping.length + quarterlyGoals.length + quarterlyGoalMilestones.length,
         encrypted: !!BACKUP_ENCRYPTION_KEY,
       }
     };
@@ -171,6 +175,8 @@ async function performFullBackup() {
     console.log(`  • year_memories: ${yearMemories.length} records`);
     console.log(`  • week_reviews: ${weekReviews.length} records`);
     console.log(`  • daily_shipping: ${dailyShipping.length} records`);
+    console.log(`  • quarterly_goals: ${quarterlyGoals.length} records`);
+    console.log(`  • quarterly_goal_milestones: ${quarterlyGoalMilestones.length} records`);
     console.log(`  • Total: ${backupData.metadata.totalRecords} records`);
 
     return backupData;
@@ -189,12 +195,14 @@ async function performIncrementalBackup() {
 
   try {
     // Fetch recent data (last 14 days for weeks/week_reviews)
-    const [weeks, userSettings, yearMemories, weekReviews, dailyShipping] = await Promise.all([
+    const [weeks, userSettings, yearMemories, weekReviews, dailyShipping, quarterlyGoals, quarterlyGoalMilestones] = await Promise.all([
       fetchRecentFromTable('weeks', 14),
       fetchAllFromTable('user_settings'), // Always include settings (tiny)
       fetchCurrentYearMemories(), // Current year only
       fetchRecentFromTable('week_reviews', 14),
       fetchCurrentMonthShipping(), // Current month only
+      fetchAllFromTable('quarterly_goals'), // Always include all goals (typically small)
+      fetchAllFromTable('quarterly_goal_milestones'), // Always include all milestones (typically small)
     ]);
 
     const backupData = {
@@ -206,7 +214,9 @@ async function performIncrementalBackup() {
         week_reviews: '14 days',
         year_memories: 'current year',
         daily_shipping: 'current month',
-        user_settings: 'all'
+        user_settings: 'all',
+        quarterly_goals: 'all',
+        quarterly_goal_milestones: 'all'
       },
       tables: {
         weeks,
@@ -214,9 +224,11 @@ async function performIncrementalBackup() {
         year_memories: yearMemories,
         week_reviews: weekReviews,
         daily_shipping: dailyShipping,
+        quarterly_goals: quarterlyGoals,
+        quarterly_goal_milestones: quarterlyGoalMilestones,
       },
       metadata: {
-        totalRecords: weeks.length + userSettings.length + yearMemories.length + weekReviews.length + dailyShipping.length,
+        totalRecords: weeks.length + userSettings.length + yearMemories.length + weekReviews.length + dailyShipping.length + quarterlyGoals.length + quarterlyGoalMilestones.length,
         encrypted: !!BACKUP_ENCRYPTION_KEY,
       }
     };
@@ -227,6 +239,8 @@ async function performIncrementalBackup() {
     console.log(`  • year_memories (current year): ${yearMemories.length} records`);
     console.log(`  • week_reviews (last 14 days): ${weekReviews.length} records`);
     console.log(`  • daily_shipping (current month): ${dailyShipping.length} records`);
+    console.log(`  • quarterly_goals (all): ${quarterlyGoals.length} records`);
+    console.log(`  • quarterly_goal_milestones (all): ${quarterlyGoalMilestones.length} records`);
     console.log(`  • Total: ${backupData.metadata.totalRecords} records`);
 
     return backupData;

@@ -131,6 +131,8 @@ function getConflictKey(tableName) {
     year_memories: 'user_id,year',
     week_reviews: 'user_id,year,week_number',
     daily_shipping: 'user_id,year,month,day',
+    quarterly_goals: 'id',
+    quarterly_goal_milestones: 'id',
   };
   return conflictKeys[tableName] || 'id';
 }
@@ -179,6 +181,12 @@ async function performRestore(backupFile, mode = 'upsert') {
     await restoreTable('week_reviews', backupData.tables.week_reviews, mode);
     if (backupData.tables.daily_shipping) {
       await restoreTable('daily_shipping', backupData.tables.daily_shipping, mode);
+    }
+    if (backupData.tables.quarterly_goals) {
+      await restoreTable('quarterly_goals', backupData.tables.quarterly_goals, mode);
+    }
+    if (backupData.tables.quarterly_goal_milestones) {
+      await restoreTable('quarterly_goal_milestones', backupData.tables.quarterly_goal_milestones, mode);
     }
 
     console.log(`\n✅ Restore completed successfully!\n`);
