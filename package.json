@@ -1,6 +1,7 @@
 {
   "name": "hi-time-monorepo",
   "private": true,
+  "type": "module",
   "workspaces": [
     "api",
     "time-tracker"
