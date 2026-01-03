@@ -71,6 +71,7 @@ export function HandsontableCalendar({
     y: number
     row: number
     col: number
+    submenuOnLeft?: boolean
   } | null>(null)
   const savedSelectionRef = useRef<number[][] | null>(null)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
@@ -82,6 +83,38 @@ export function HandsontableCalendar({
     y: number
   } | null>(null)
   const previousTimeCellRef = useRef<HTMLElement | null>(null)
+  const rowPositionsCache = useRef<{ positions: number[], heights: number[] } | null>(null)
+
+  // Cache row positions when table renders/updates
+  useEffect(() => {
+    const cacheRowPositions = () => {
+      const tbody = document.querySelector('.ht_master .htCore tbody')
+      const rows = tbody?.querySelectorAll('tr')
+
+      if (!rows || rows.length === 0) {
+        rowPositionsCache.current = null
+        return
+      }
+
+      const positions: number[] = []
+      const heights: number[] = []
+      let totalHeight = 0
+
+      for (let i = 0; i < rows.length; i++) {
+        positions.push(totalHeight)
+        const rowHeight = (rows[i] as HTMLElement).offsetHeight
+        heights.push(rowHeight)
+        totalHeight += rowHeight
+      }
+
+      rowPositionsCache.current = { positions, heights }
+    }
+
+    // Cache immediately and when table data changes
+    const timer = setTimeout(cacheRowPositions, 100) // Small delay to ensure table is rendered
+
+    return () => clearTimeout(timer)
+  }, [weekData])
 
   // Calculate current time indicator position
   useEffect(() => {
@@ -159,7 +192,7 @@ export function HandsontableCalendar({
         // Normalize slot times - handle midnight crossing
         let slotStart = slotStartMinutes
         let slotEnd = nextSlotMinutes
-        
+
         // If next slot is earlier, we crossed midnight (e.g., 23:30 -> 00:00)
         if (nextSlotMinutes < slotStartMinutes) {
           slotEnd = nextSlotMinutes + 24 * 60
@@ -167,7 +200,7 @@ export function HandsontableCalendar({
 
         // Normalize current time for comparison
         let currentTime = currentTimeInMinutes
-        
+
         // If slot crosses midnight, check if current time is in the morning part
         if (nextSlotMinutes < slotStartMinutes) {
           // Slot crosses midnight: it goes from evening (e.g., 23:30) to next day (e.g., 00:00)
@@ -188,30 +221,20 @@ export function HandsontableCalendar({
 
         // Check if current time falls within this slot
         if (currentTime >= slotStart && currentTime < slotEnd) {
-          // Debug: log to verify row index
-          console.log(`Current time ${hours}:${minutes} is in slot ${slotTime} to ${nextSlotTime}, row index: ${i}`)
+          // Calculate precise position within the row based on current time
+          const slotDurationMinutes = slotEnd - slotStart
+          const minutesIntoSlot = currentTime - slotStart
+          const progressThroughSlot = minutesIntoSlot / slotDurationMinutes
 
-          // Get the row directly from the DOM by index
-          const tbody = document.querySelector('.ht_master .htCore tbody')
-          const rows = tbody?.querySelectorAll('tr')
-
-          if (rows && rows[i]) {
-            // Calculate position by summing heights of all previous rows
-            let totalHeight = 0
-            for (let r = 0; r < i; r++) {
-              totalHeight += (rows[r] as HTMLElement).offsetHeight
-            }
-
-            // Position in the middle of the current row for better visual clarity
-            const currentRowHeight = (rows[i] as HTMLElement).offsetHeight
-            totalHeight += currentRowHeight / 2
-
-            setCurrentTimePosition(totalHeight)
-            return
+          // Use cached positions if available, otherwise fall back to constant
+          if (rowPositionsCache.current && i < rowPositionsCache.current.positions.length) {
+            const basePosition = rowPositionsCache.current.positions[i]
+            const rowHeight = rowPositionsCache.current.heights[i]
+            setCurrentTimePosition(basePosition + rowHeight * progressThroughSlot)
+          } else {
+            // Fallback: use constant ROW_HEIGHT
+            setCurrentTimePosition(i * ROW_HEIGHT + ROW_HEIGHT * progressThroughSlot)
           }
-
-          // Fallback: use simple calculation
-          setCurrentTimePosition(i * ROW_HEIGHT)
           return
         }
       }
@@ -221,8 +244,8 @@ export function HandsontableCalendar({
     }
 
     calculatePosition()
-    // Update every 5 minutes
-    const interval = setInterval(calculatePosition, 5 * 60 * 1000)
+    // Update every 2 minutes - balances precision with performance
+    const interval = setInterval(calculatePosition, 2 * 60 * 1000)
 
     return () => clearInterval(interval)
   }, [weekData, timezone, currentDate])
@@ -470,18 +493,15 @@ export function HandsontableCalendar({
       const day = parseInt(prop.replace('day', ''))
       const timeIndex = row
 
-      // If newValue is a string (from paste), parse it as category
       let category = ''
       let subcategory: SubcategoryRef | null = null
       let notes = ''
 
       if (typeof newValue === 'string') {
-        // Simple paste: treat as category
+        // Simple string paste: treat as category
         category = newValue
       } else if (newValue && typeof newValue === 'object') {
-        // Extract only the actual data, not ghost/rendering metadata
-        // If isGhost is true, we're copying from a ghost cell - use the ghost data
-        // Otherwise use the regular data
+        // Extract data from object (handles both regular and ghost cells)
         if (newValue.isGhost) {
           category = newValue.ghostCategory || ''
           subcategory = newValue.ghostSubcategory || null
@@ -556,6 +576,7 @@ export function HandsontableCalendar({
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
     const menuWidth = 220 // Approximate menu width
+    const submenuWidth = 250 // Approximate subcategory submenu width
     const menuHeight = 300 // Approximate menu height
 
     let x = event.clientX
@@ -571,11 +592,16 @@ export function HandsontableCalendar({
       y = viewportHeight - menuHeight - 10
     }
 
+    // Determine if submenu should appear on the left
+    // If there's not enough space on the right for the submenu, position it on the left
+    const shouldSubmenuBeOnLeft = x + menuWidth + submenuWidth > viewportWidth
+
     setContextMenu({
       x,
       y,
       row: coords.row,
-      col: coords.col - 1 // Adjust for time column
+      col: coords.col - 1, // Adjust for time column
+      submenuOnLeft: shouldSubmenuBeOnLeft
     })
   }
 
@@ -652,6 +678,85 @@ export function HandsontableCalendar({
     // Clear saved selection and close menu
     savedSelectionRef.current = null
     setContextMenu(null)
+  }
+
+  // Custom copy handler to serialize cell data including subcategories
+  const handleBeforeCopy = (data: any[][]) => {
+    // Serialize complex objects to JSON strings for clipboard compatibility
+    for (let i = 0; i < data.length; i++) {
+      for (let j = 0; j < data[i].length; j++) {
+        const cell = data[i][j]
+        if (cell && typeof cell === 'object') {
+          data[i][j] = JSON.stringify({
+            category: cell.category || '',
+            subcategory: cell.subcategory || null,
+            notes: cell.notes || ''
+          })
+        }
+      }
+    }
+  }
+
+  // Custom paste handler to deserialize and apply cell data
+  const handleBeforePaste = (data: any[][], coords: any[]) => {
+    // Deserialize JSON strings back to objects
+    for (let i = 0; i < data.length; i++) {
+      for (let j = 0; j < data[i].length; j++) {
+        const cell = data[i][j]
+        if (typeof cell === 'string' && cell.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(cell)
+            if (parsed.category !== undefined) {
+              data[i][j] = parsed
+            }
+          } catch {
+            // Keep original string if parsing fails
+          }
+        }
+      }
+    }
+
+    // Apply the pasted data directly to avoid Handsontable's object comparison issues
+    const hot = hotRef.current?.hotInstance
+    if (hot && coords?.length > 0) {
+      const { startRow, startCol } = coords[0]
+      const updates: { day: number; timeIndex: number; block: TimeBlock }[] = []
+
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          const col = startCol + j
+          if (col === 0) continue // Skip time column
+
+          const cellData = data[i][j]
+          if (cellData && typeof cellData === 'object') {
+            const day = col - 1
+            const timeIndex = startRow + i
+
+            updates.push({
+              day,
+              timeIndex,
+              block: {
+                id: `${day}-${timeIndex}`,
+                time: TIME_SLOTS[timeIndex],
+                day,
+                category: cellData.category as CategoryKey,
+                subcategory: cellData.subcategory || null,
+                notes: cellData.notes || ''
+              }
+            })
+          }
+        }
+      }
+
+      if (updates.length > 0) {
+        if (onUpdateBlocks) {
+          onUpdateBlocks(updates)
+        } else {
+          updates.forEach(u => onUpdateBlock(u.day, u.timeIndex, u.block))
+        }
+        return false // Prevent default paste since we handled it
+      }
+    }
   }
 
   // Track selected row for time indicator
@@ -857,6 +962,8 @@ export function HandsontableCalendar({
           afterGetColHeader={afterGetColHeader}
           afterSelection={handleAfterSelection}
           afterDeselect={handleAfterDeselect}
+          beforeCopy={handleBeforeCopy}
+          beforePaste={handleBeforePaste}
           afterOnCellMouseOver={(event, coords, td) => {
             // Skip tooltip updates during drag operations (drag and fill)
             // Check if any mouse button is pressed, which indicates dragging
@@ -1160,12 +1267,14 @@ export function HandsontableCalendar({
                         style={{ backgroundColor: colors.bg }}
                       />
                       <span className="flex-1">{label}</span>
-                      {normalizedSubs.length > 0 && <span className="text-gray-400">›</span>}
+                      {normalizedSubs.length > 0 && <span className="text-gray-400">{contextMenu.submenuOnLeft ? '‹' : '›'}</span>}
                     </button>
 
                     {/* Subcategory submenu */}
                     {normalizedSubs.length > 0 && (
-                      <div className="absolute left-full top-0 bg-white border rounded-xl shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50 -ml-px">
+                      <div
+                        className={`absolute ${contextMenu.submenuOnLeft ? 'right-full -mr-px' : 'left-full -ml-px'} top-0 bg-white border rounded-xl shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50`}
+                      >
                         <div className="px-2 py-1 font-medium text-gray-900 text-xs">
                           Subcategory
                         </div>
