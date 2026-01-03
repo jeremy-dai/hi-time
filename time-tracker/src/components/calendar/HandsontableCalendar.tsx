@@ -759,6 +759,67 @@ export function HandsontableCalendar({
     }
   }
 
+  // Custom autofill handler for drag-to-fill with subcategories
+  const handleBeforeAutofill = (fillData: any[][], sourceRange: any, targetRange: any, direction: string) => {
+    const hot = hotRef.current?.hotInstance
+    if (!hot) return
+
+    // Get source range coordinates (CellRange object has from/to properties)
+    const sourceStartRow = sourceRange.from.row
+    const sourceStartCol = sourceRange.from.col
+    const sourceEndRow = sourceRange.to.row
+    const sourceEndCol = sourceRange.to.col
+
+    const targetStartRow = targetRange.from.row
+    const targetStartCol = targetRange.from.col
+    const targetEndRow = targetRange.to.row
+    const targetEndCol = targetRange.to.col
+
+    const updates: { day: number; timeIndex: number; block: TimeBlock }[] = []
+
+    // Apply autofill manually to preserve subcategories
+    for (let row = targetStartRow; row <= targetEndRow; row++) {
+      for (let col = targetStartCol; col <= targetEndCol; col++) {
+        if (col === 0) continue // Skip time column
+
+        // Get corresponding source cell (repeating pattern)
+        const sourceRow = sourceStartRow + ((row - targetStartRow) % (sourceEndRow - sourceStartRow + 1))
+        const sourceCol = sourceStartCol + ((col - targetStartCol) % (sourceEndCol - sourceStartCol + 1))
+        const sourceCellData = hot.getDataAtCell(sourceRow, sourceCol)
+
+        if (sourceCellData && typeof sourceCellData === 'object') {
+          const day = col - 1
+          const timeIndex = row
+
+          updates.push({
+            day,
+            timeIndex,
+            block: {
+              id: `${day}-${timeIndex}`,
+              time: TIME_SLOTS[timeIndex],
+              day,
+              category: sourceCellData.category as CategoryKey,
+              subcategory: sourceCellData.subcategory || null,
+              notes: sourceCellData.notes || ''
+            }
+          })
+        }
+      }
+    }
+
+    if (updates.length > 0) {
+      // Apply updates directly
+      if (onUpdateBlocks) {
+        onUpdateBlocks(updates)
+      } else {
+        updates.forEach(u => onUpdateBlock(u.day, u.timeIndex, u.block))
+      }
+
+      // Return false to prevent Handsontable's default autofill
+      return false
+    }
+  }
+
   // Track selected row for time indicator
   const handleAfterSelection = (row: number) => {
     const hot = hotRef.current?.hotInstance
@@ -964,6 +1025,7 @@ export function HandsontableCalendar({
           afterDeselect={handleAfterDeselect}
           beforeCopy={handleBeforeCopy}
           beforePaste={handleBeforePaste}
+          beforeAutofill={handleBeforeAutofill}
           afterOnCellMouseOver={(event, coords, td) => {
             // Skip tooltip updates during drag operations (drag and fill)
             // Check if any mouse button is pressed, which indicates dragging
