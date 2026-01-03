@@ -32,7 +32,12 @@ jobs:
           echo "BACKUP_ENCRYPTION_KEY=${{ secrets.BACKUP_ENCRYPTION_KEY }}" >> .env
 
       - name: Run smart backup script
-        run: node scripts/backup-incremental.js
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: node scripts/backup-incremental.js
 
       - name: Checkout backup repository
         uses: actions/checkout@v4
@@ -54,15 +59,20 @@ jobs:
           git config user.email "backup-bot@users.noreply.github.com"
 
       - name: Commit and push to backup repository
-        run: |
-          cd backup-repo
-          git add backups/
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: automated backup $(date -u +'%Y-%m-%d %H:%M UTC')"
-            git push
-          fi
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            cd backup-repo
+            git add backups/
+            if git diff --staged --quiet; then
+              echo "No changes to commit"
+            else
+              git commit -m "chore: automated backup $(date -u +'%Y-%m-%d %H:%M UTC')"
+              git push
+            fi
 
       - name: Clean up old backups
         run: |
@@ -75,12 +85,17 @@ jobs:
           find . -name "backup-2*.json" ! -name "backup-inc-*" ! -name "backup-full-*" -type f -mtime +30 -delete
 
       - name: Commit cleanup if needed
-        run: |
-          cd backup-repo
-          git add backups/
-          if git diff --staged --quiet; then
-            echo "No cleanup needed"
-          else
-            git commit -m "chore: cleanup old backups"
-            git push
-          fi
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            cd backup-repo
+            git add backups/
+            if git diff --staged --quiet; then
+              echo "No cleanup needed"
+            else
+              git commit -m "chore: cleanup old backups"
+              git push
+            fi

@@ -170,6 +170,7 @@ node scripts/restore-smart.js auto --replace
 - **Backup repo (private)** - Stores encrypted daily backups
 - **Workflow runs daily**, creates backup, pushes to private repo
 - **Local backups folder** is gitignored, won't appear in public repo
+- **Retry logic** - Automatic retries with exponential backoff for network resilience
 
 ### GitHub Actions (Recommended)
 
@@ -322,6 +323,38 @@ Modify `scripts/backup-incremental.js` to also upload to:
    - Full backups on Sundays
 2. **Local backups** - Weekly manual full backups to external drive
 3. **Cloud storage** - Monthly full backups to Google Drive/Dropbox
+
+## Network Resilience
+
+### Retry Logic
+
+Both backup scripts (`backup.js` and `backup-incremental.js`) include automatic retry logic to handle transient network issues:
+
+**Script-level retries**:
+- **3 automatic retry attempts** for each table fetch
+- **Exponential backoff** (1s, 2s, 4s delays)
+- Recovers from temporary network glitches
+
+**GitHub Actions retries**:
+- **3 attempts** for the entire backup process
+- **30-second wait** between attempts
+- **10-minute timeout** per attempt
+
+This dual-layer approach ensures backups succeed even during:
+- Brief network outages
+- Supabase API rate limiting
+- Temporary connection issues
+- GitHub Actions network hiccups
+
+### Example Output
+
+When a retry occurs, you'll see:
+```
+Fetching data from quarterly_goals...
+  ⚠️  Attempt 1 failed, retrying in 1000ms...
+  ⚠️  Attempt 2 failed, retrying in 2000ms...
+  ✓ Fetched 2 records from quarterly_goals
+```
 
 ## Troubleshooting
 

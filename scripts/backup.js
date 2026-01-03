@@ -50,21 +50,43 @@ function encrypt(data) {
 }
 
 /**
+ * Retry a function with exponential backoff
+ */
+async function withRetry(fn, maxRetries = 3, initialDelay = 1000) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        const delay = initialDelay * Math.pow(2, attempt - 1);
+        console.log(`  ⚠️  Attempt ${attempt} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+}
+
+/**
  * Fetch all data from a table
  */
 async function fetchAllFromTable(tableName) {
   console.log(`Fetching data from ${tableName}...`);
 
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*');
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*');
 
-  if (error) {
-    throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-  }
+    if (error) {
+      throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
+    }
 
-  console.log(`  ✓ Fetched ${data.length} records from ${tableName}`);
-  return data;
+    console.log(`  ✓ Fetched ${data.length} records from ${tableName}`);
+    return data;
+  });
 }
 
 /**

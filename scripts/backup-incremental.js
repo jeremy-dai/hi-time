@@ -50,21 +50,43 @@ function encrypt(data) {
 }
 
 /**
+ * Retry a function with exponential backoff
+ */
+async function withRetry(fn, maxRetries = 3, initialDelay = 1000) {
+  let lastError;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        const delay = initialDelay * Math.pow(2, attempt - 1);
+        console.log(`  ⚠️  Attempt ${attempt} failed, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+}
+
+/**
  * Fetch all data from a table (for full backup)
  */
 async function fetchAllFromTable(tableName) {
   console.log(`Fetching all data from ${tableName}...`);
 
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*');
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*');
 
-  if (error) {
-    throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-  }
+    if (error) {
+      throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
+    }
 
-  console.log(`  ✓ Fetched ${data.length} records from ${tableName}`);
-  return data;
+    console.log(`  ✓ Fetched ${data.length} records from ${tableName}`);
+    return data;
+  });
 }
 
 /**
@@ -74,17 +96,19 @@ async function fetchRecentFromTable(tableName, daysBack) {
   const cutoffDate = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000);
   console.log(`Fetching recent data from ${tableName} (since ${cutoffDate.toISOString().split('T')[0]})...`);
 
-  const { data, error } = await supabase
-    .from(tableName)
-    .select('*')
-    .gte('updated_at', cutoffDate.toISOString());
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .gte('updated_at', cutoffDate.toISOString());
 
-  if (error) {
-    throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-  }
+    if (error) {
+      throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
+    }
 
-  console.log(`  ✓ Fetched ${data.length} recent records from ${tableName}`);
-  return data;
+    console.log(`  ✓ Fetched ${data.length} recent records from ${tableName}`);
+    return data;
+  });
 }
 
 /**
@@ -94,17 +118,19 @@ async function fetchCurrentYearMemories() {
   const currentYear = new Date().getFullYear();
   console.log(`Fetching year_memories for ${currentYear}...`);
 
-  const { data, error } = await supabase
-    .from('year_memories')
-    .select('*')
-    .eq('year', currentYear);
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('year_memories')
+      .select('*')
+      .eq('year', currentYear);
 
-  if (error) {
-    throw new Error(`Failed to fetch year_memories: ${error.message}`);
-  }
+    if (error) {
+      throw new Error(`Failed to fetch year_memories: ${error.message}`);
+    }
 
-  console.log(`  ✓ Fetched ${data.length} records for year ${currentYear}`);
-  return data;
+    console.log(`  ✓ Fetched ${data.length} records for year ${currentYear}`);
+    return data;
+  });
 }
 
 /**
@@ -117,18 +143,20 @@ async function fetchCurrentMonthShipping() {
 
   console.log(`Fetching daily_shipping for ${currentYear}-${String(currentMonth).padStart(2, '0')}...`);
 
-  const { data, error } = await supabase
-    .from('daily_shipping')
-    .select('*')
-    .eq('year', currentYear)
-    .eq('month', currentMonth);
+  return withRetry(async () => {
+    const { data, error } = await supabase
+      .from('daily_shipping')
+      .select('*')
+      .eq('year', currentYear)
+      .eq('month', currentMonth);
 
-  if (error) {
-    throw new Error(`Failed to fetch daily_shipping: ${error.message}`);
-  }
+    if (error) {
+      throw new Error(`Failed to fetch daily_shipping: ${error.message}`);
+    }
 
-  console.log(`  ✓ Fetched ${data.length} records for current month`);
-  return data;
+    console.log(`  ✓ Fetched ${data.length} records for current month`);
+    return data;
+  });
 }
 
 /**
