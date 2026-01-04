@@ -84,6 +84,7 @@ export function HandsontableCalendar({
   } | null>(null)
   const previousTimeCellRef = useRef<HTMLElement | null>(null)
   const rowPositionsCache = useRef<{ positions: number[], heights: number[] } | null>(null)
+  const scrollPositionRef = useRef<{ row: number; col: number } | null>(null)
 
   // Cache row positions when table renders/updates
   useEffect(() => {
@@ -481,9 +482,40 @@ export function HandsontableCalendar({
     return cols
   }, [dayHeaders])
 
+  // Preserve scroll position before data updates using Handsontable's official API
+  const preserveScrollPosition = () => {
+    const hot = hotRef.current?.hotInstance
+    if (!hot) return
+
+    // Use Handsontable's official methods to get current scroll position
+    const firstVisibleRow = hot.getFirstVisibleRow?.() ?? 0
+    const firstVisibleCol = hot.getFirstVisibleColumn?.() ?? 0
+
+    scrollPositionRef.current = {
+      row: firstVisibleRow,
+      col: firstVisibleCol
+    }
+  }
+
+  // Restore scroll position after render using Handsontable's official API
+  useEffect(() => {
+    const hot = hotRef.current?.hotInstance
+    if (!hot || !scrollPositionRef.current) return
+
+    // Restore scroll position on next frame to ensure DOM is ready
+    requestAnimationFrame(() => {
+      if (scrollPositionRef.current && hot.scrollViewportTo) {
+        hot.scrollViewportTo(scrollPositionRef.current.row, scrollPositionRef.current.col)
+      }
+    })
+  }, [weekData])
+
   // Handle cell changes (from paste or fill)
   const handleAfterChange = (changes: any, source: string) => {
     if (!changes || source === 'loadData') return
+
+    // Preserve scroll position before triggering state updates
+    preserveScrollPosition()
 
     const updates: { day: number; timeIndex: number; block: TimeBlock }[] = []
 
@@ -611,6 +643,9 @@ export function HandsontableCalendar({
 
     const hot = hotRef.current?.hotInstance
     if (!hot) return
+
+    // Preserve scroll position before triggering state updates
+    preserveScrollPosition()
 
     const { row, col } = contextMenu
     const day = col
