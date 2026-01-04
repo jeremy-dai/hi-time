@@ -795,7 +795,7 @@ export function HandsontableCalendar({
   }
 
   // Custom autofill handler for drag-to-fill with subcategories
-  const handleBeforeAutofill = (fillData: any[][], sourceRange: any, targetRange: any, direction: string) => {
+  const handleBeforeAutofill = (_fillData: any[][], sourceRange: any, targetRange: any, _direction: string) => {
     const hot = hotRef.current?.hotInstance
     if (!hot) return
 
