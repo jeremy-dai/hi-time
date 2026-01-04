@@ -10,7 +10,7 @@ import { cn } from '../utils/classNames'
 export default function Memories() {
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState(currentYear)
-  const { memories, updateMemory, deleteMemory, syncStatus, lastSynced, isLoading } = useYearMemories(selectedYear)
+  const { memories, updateMemory, deleteMemory, syncStatus, lastSynced, hasUnsavedChanges, syncNow, isLoading } = useYearMemories(selectedYear)
 
   // Calculate date range for the selected year
   const dateRangeLabel = useMemo(() => {
@@ -41,7 +41,8 @@ export default function Memories() {
                 <SyncStatusIndicator
                   status={syncStatus}
                   lastSynced={lastSynced}
-                  hasUnsavedChanges={false}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  onSyncNow={syncNow}
                   compact={true}
                 />
               </div>

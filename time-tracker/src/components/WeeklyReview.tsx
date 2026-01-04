@@ -428,8 +428,8 @@ export default function WeeklyReview() {
     }
     return getSeason(currentWeekNumber)
   })
-  const { reviews, updateReview, removeReview, syncStatus, isLoading: isLoadingReviews } = useWeekReviews(selectedYear)
-  const { review: annualReview, updateReview: updateAnnualReview, removeReview: removeAnnualReview, isLoading: isLoadingAnnual } = useAnnualReview(selectedYear)
+  const { reviews, updateReview, removeReview, syncStatus, hasUnsavedChanges, syncNow, isLoading: isLoadingReviews } = useWeekReviews(selectedYear)
+  const { review: annualReview, updateReview: updateAnnualReview, removeReview: removeAnnualReview, syncStatus: annualSyncStatus, hasUnsavedChanges: annualHasUnsavedChanges, syncNow: annualSyncNow, isLoading: isLoadingAnnual } = useAnnualReview(selectedYear)
 
   // Persist selectedYear to localStorage
   useEffect(() => {
@@ -626,7 +626,8 @@ export default function WeeklyReview() {
               </div>
               <SyncStatusIndicator
                 status={syncStatus}
-                hasUnsavedChanges={false}
+                hasUnsavedChanges={hasUnsavedChanges || annualHasUnsavedChanges}
+                onSyncNow={hasUnsavedChanges ? syncNow : annualHasUnsavedChanges ? annualSyncNow : undefined}
                 compact={true}
               />
             </div>

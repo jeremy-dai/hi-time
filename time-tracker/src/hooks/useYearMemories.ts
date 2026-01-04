@@ -120,12 +120,31 @@ export function useYearMemories(year: number) {
     saveMemories(rest)
   }, [memories, saveMemories])
 
+  // Manual sync function
+  const syncNow = useCallback(async () => {
+    if (syncStatus === 'syncing') return
+
+    // Clear any pending debounced sync
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current)
+      syncTimeoutRef.current = null
+    }
+
+    // Sync immediately
+    await syncToDatabase(memories)
+  }, [memories, syncToDatabase, syncStatus])
+
+  // Track if there are unsaved changes
+  const hasUnsavedChanges = syncStatus === 'pending'
+
   return {
     memories,
     isLoading,
     syncStatus,
     lastSynced,
+    hasUnsavedChanges,
     updateMemory,
-    deleteMemory
+    deleteMemory,
+    syncNow
   }
 }

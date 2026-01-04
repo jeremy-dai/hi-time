@@ -229,11 +229,32 @@ export function useDailyShipping(year: number) {
     }, 5000)
   }, [entries, syncEntryToDatabase, syncDeleteToDatabase])
 
+  // Manual sync function
+  const syncNow = useCallback(async () => {
+    if (syncStatus === 'syncing' || !pendingEntryRef.current) return
+
+    // Clear any pending debounced sync
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current)
+      syncTimeoutRef.current = null
+    }
+
+    // Sync immediately
+    const entryToSync = pendingEntryRef.current
+    pendingEntryRef.current = null
+    await syncEntryToDatabase(entryToSync)
+  }, [syncEntryToDatabase, syncStatus])
+
+  // Track if there are unsaved changes
+  const hasUnsavedChanges = syncStatus === 'pending'
+
   return {
     entries,
     isLoading,
     syncStatus,
     lastSynced,
-    updateEntry
+    hasUnsavedChanges,
+    updateEntry,
+    syncNow
   }
 }

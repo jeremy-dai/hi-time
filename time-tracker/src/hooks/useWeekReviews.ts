@@ -172,12 +172,33 @@ export function useWeekReviews(year: number) {
     syncDeleteToDatabase(weekNumber)
   }, [year, reviews, syncDeleteToDatabase])
 
+  // Manual sync function
+  const syncNow = useCallback(async () => {
+    if (syncStatus === 'syncing' || !pendingReviewRef.current) return
+
+    // Clear any pending debounced sync
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current)
+      syncTimeoutRef.current = null
+    }
+
+    // Sync immediately
+    const reviewToSync = pendingReviewRef.current
+    pendingReviewRef.current = null
+    await syncReviewToDatabase(reviewToSync)
+  }, [syncReviewToDatabase, syncStatus])
+
+  // Track if there are unsaved changes
+  const hasUnsavedChanges = syncStatus === 'pending'
+
   return {
     reviews,
     isLoading,
     syncStatus,
     lastSynced,
+    hasUnsavedChanges,
     updateReview,
-    removeReview
+    removeReview,
+    syncNow
   }
 }

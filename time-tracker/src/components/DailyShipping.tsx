@@ -3,6 +3,7 @@ import { useDailyShipping } from '../hooks/useDailyShipping'
 import { useQuarterlyGoals, getQuarterFromMonth } from '../hooks/useQuarterlyGoals'
 import YearNavigator from './shared/YearNavigator'
 import QuarterlyGoalsBanner from './QuarterlyGoalsBanner'
+import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { Package, Calendar, CheckCircle2, Circle } from 'lucide-react'
 import { cn } from '../utils/classNames'
 
@@ -247,7 +248,7 @@ export default function DailyShipping() {
   const [goalsYear, setGoalsYear] = useState(currentYear)
   const [goalsQuarter, setGoalsQuarter] = useState(currentQuarter)
 
-  const { entries: entriesData, isLoading, updateEntry } = useDailyShipping(selectedYear)
+  const { entries: entriesData, isLoading, syncStatus, lastSynced, hasUnsavedChanges, updateEntry, syncNow } = useDailyShipping(selectedYear)
 
   const {
     goals,
@@ -363,6 +364,17 @@ export default function DailyShipping() {
               <div className="text-xl font-bold text-red-900">{emptyDays}</div>
               <div className="text-xs text-red-700">Empty</div>
             </div>
+          </div>
+
+          {/* Sync Status */}
+          <div className="mt-4 flex items-center justify-end px-4 py-2 bg-white/60 rounded-xl">
+            <SyncStatusIndicator
+              status={syncStatus}
+              lastSynced={lastSynced}
+              hasUnsavedChanges={hasUnsavedChanges}
+              onSyncNow={syncNow}
+              compact={true}
+            />
           </div>
 
         </div>

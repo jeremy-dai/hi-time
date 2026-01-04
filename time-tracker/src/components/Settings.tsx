@@ -333,16 +333,6 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
             <span className="text-sm text-gray-500">All changes saved</span>
           )}
         </div>
-        <div className="flex items-center gap-3">
-          {settingsHasUnsavedChanges && (
-            <button
-              onClick={syncSettingsNow}
-              className="px-4 py-1.5 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors shadow-sm"
-            >
-              Save Now
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Tabs Navigation */}
