@@ -85,6 +85,7 @@ export function HandsontableCalendar({
   const previousTimeCellRef = useRef<HTMLElement | null>(null)
   const rowPositionsCache = useRef<{ positions: number[], heights: number[] } | null>(null)
   const scrollPositionRef = useRef<{ row: number; col: number } | null>(null)
+  const shouldRestoreScrollRef = useRef<boolean>(false)
 
   // Cache row positions when table renders/updates
   useEffect(() => {
@@ -495,18 +496,24 @@ export function HandsontableCalendar({
       row: firstVisibleRow,
       col: firstVisibleCol
     }
+
+    // Set flag to indicate we should restore scroll on next render
+    shouldRestoreScrollRef.current = true
   }
 
   // Restore scroll position after render using Handsontable's official API
   useEffect(() => {
     const hot = hotRef.current?.hotInstance
-    if (!hot || !scrollPositionRef.current) return
+    if (!hot || !scrollPositionRef.current || !shouldRestoreScrollRef.current) return
 
     // Restore scroll position on next frame to ensure DOM is ready
     requestAnimationFrame(() => {
       if (scrollPositionRef.current && hot.scrollViewportTo) {
         hot.scrollViewportTo(scrollPositionRef.current.row, scrollPositionRef.current.col)
       }
+      // Clear the flag and position after restoration so manual scrolling isn't overridden
+      shouldRestoreScrollRef.current = false
+      scrollPositionRef.current = null
     })
   }, [weekData])
 
