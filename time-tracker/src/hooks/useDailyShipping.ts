@@ -14,9 +14,7 @@ export function useDailyShipping(year: number) {
   const [isLoading, setIsLoading] = useState(true)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [lastSynced, setLastSynced] = useState<Date | null>(null)
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMountedRef = useRef(true)
-  const pendingEntryRef = useRef<DailyShipping | null>(null)
 
   // Load from database on mount, fallback to localStorage
   useEffect(() => {
@@ -80,125 +78,14 @@ export function useDailyShipping(year: number) {
     return () => {
       cancelled = true
       isMountedRef.current = false
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current)
-      }
     }
   }, [year])
 
-  // Sync single entry to database with debouncing
-  const syncEntryToDatabase = useCallback(async (entry: DailyShipping) => {
-    if (!isMountedRef.current) return
-
-    setSyncStatus('syncing')
-
-    try {
-      const success = await saveDailyShipping(entry)
-
-      if (!isMountedRef.current) return
-
-      if (success) {
-        setSyncStatus('synced')
-        setLastSynced(new Date())
-      } else {
-        setSyncStatus('error')
-      }
-    } catch (err) {
-      console.error('Failed to sync daily shipping to database:', err)
-      if (isMountedRef.current) {
-        setSyncStatus('error')
-      }
-    }
-  }, [])
-
-  // Delete entry from database
-  const syncDeleteToDatabase = useCallback(async (dateKey: string) => {
-    if (!isMountedRef.current) return
-
-    const [, monthStr, dayStr] = dateKey.split('-')
-    const month = parseInt(monthStr, 10)
-    const day = parseInt(dayStr, 10)
-
-    setSyncStatus('syncing')
-
-    try {
-      const success = await deleteDailyShipping(year, month, day)
-
-      if (!isMountedRef.current) return
-
-      if (success) {
-        setSyncStatus('synced')
-        setLastSynced(new Date())
-      } else {
-        setSyncStatus('error')
-      }
-    } catch (err) {
-      console.error('Failed to delete daily shipping from database:', err)
-      if (isMountedRef.current) {
-        setSyncStatus('error')
-      }
-    }
-  }, [year])
-
-  const updateEntry = useCallback((year: number, month: number, day: number, shipped: string, completed: boolean) => {
-    const dateKey = formatDateKey(year, month, day)
-
-    // If shipped is empty, remove the entry
-    if (!shipped.trim()) {
-      const { [dateKey]: _, ...rest } = entries
-      setEntries(rest)
-
-      // Save to localStorage immediately
-      const localKey = `daily-shipping-${year}`
-      const fullEntries: Record<string, DailyShipping> = {}
-      Object.entries(rest).forEach(([key, value]) => {
-        const [y, m, d] = key.split('-').map(Number)
-        fullEntries[key] = {
-          year: y,
-          month: m,
-          day: d,
-          shipped: value.shipped,
-          completed: value.completed,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        }
-      })
-      const data: YearDailyShipping = { year, entries: fullEntries }
-      localStorage.setItem(localKey, JSON.stringify(data))
-
-      // Clear any pending sync for this entry
-      if (pendingEntryRef.current && formatDateKey(pendingEntryRef.current.year, pendingEntryRef.current.month, pendingEntryRef.current.day) === dateKey) {
-        pendingEntryRef.current = null
-      }
-
-      // Cancel pending timeout and sync deletion immediately
-      if (syncTimeoutRef.current) {
-        clearTimeout(syncTimeoutRef.current)
-        syncTimeoutRef.current = null
-      }
-
-      syncDeleteToDatabase(dateKey)
-      return
-    }
-
-    // Create the entry object
-    const entry: DailyShipping = {
-      year,
-      month,
-      day,
-      shipped,
-      completed,
-      createdAt: Date.now(), // In a real implementation, we'd preserve the original createdAt
-      updatedAt: Date.now()
-    }
-
-    const updated = { ...entries, [dateKey]: { shipped, completed } }
-    setEntries(updated)
-
-    // Save to localStorage immediately (with full objects for compatibility)
+  // Helper to save entries to localStorage
+  const saveToLocalStorage = useCallback((updatedEntries: Record<string, { shipped: string; completed: boolean }>) => {
     const localKey = `daily-shipping-${year}`
     const fullEntries: Record<string, DailyShipping> = {}
-    Object.entries(updated).forEach(([key, value]) => {
+    Object.entries(updatedEntries).forEach(([key, value]) => {
       const [y, m, d] = key.split('-').map(Number)
       fullEntries[key] = {
         year: y,
@@ -212,41 +99,95 @@ export function useDailyShipping(year: number) {
     })
     const data: YearDailyShipping = { year, entries: fullEntries }
     localStorage.setItem(localKey, JSON.stringify(data))
+  }, [year])
 
-    // Debounce database sync (5 seconds)
-    setSyncStatus('pending')
-    pendingEntryRef.current = entry
+  const updateEntry = useCallback(async (year: number, month: number, day: number, shipped: string, completed: boolean) => {
+    const dateKey = formatDateKey(year, month, day)
+    setSyncStatus('syncing')
 
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current)
-    }
+    // If shipped is empty, remove the entry
+    if (!shipped.trim()) {
+      // Optimistically remove from UI
+      const optimisticEntries = { ...entries }
+      delete optimisticEntries[dateKey]
+      setEntries(optimisticEntries)
+      saveToLocalStorage(optimisticEntries)
 
-    syncTimeoutRef.current = setTimeout(() => {
-      if (pendingEntryRef.current) {
-        syncEntryToDatabase(pendingEntryRef.current)
-        pendingEntryRef.current = null
+      // Delete from database
+      const [, monthStr, dayStr] = dateKey.split('-')
+      const month = parseInt(monthStr, 10)
+      const day = parseInt(dayStr, 10)
+
+      try {
+        const success = await deleteDailyShipping(year, month, day)
+
+        if (!isMountedRef.current) return
+
+        if (success) {
+          setSyncStatus('synced')
+          setLastSynced(new Date())
+        } else {
+          // Revert on failure
+          setEntries(entries)
+          saveToLocalStorage(entries)
+          setSyncStatus('error')
+        }
+      } catch (err) {
+        console.error('Failed to delete daily shipping from database:', err)
+        if (isMountedRef.current) {
+          // Revert on failure
+          setEntries(entries)
+          saveToLocalStorage(entries)
+          setSyncStatus('error')
+        }
       }
-    }, 5000)
-  }, [entries, syncEntryToDatabase, syncDeleteToDatabase])
-
-  // Manual sync function
-  const syncNow = useCallback(async () => {
-    if (syncStatus === 'syncing' || !pendingEntryRef.current) return
-
-    // Clear any pending debounced sync
-    if (syncTimeoutRef.current) {
-      clearTimeout(syncTimeoutRef.current)
-      syncTimeoutRef.current = null
+      return
     }
 
-    // Sync immediately
-    const entryToSync = pendingEntryRef.current
-    pendingEntryRef.current = null
-    await syncEntryToDatabase(entryToSync)
-  }, [syncEntryToDatabase, syncStatus])
+    // Optimistically update UI
+    const optimisticEntries = { ...entries, [dateKey]: { shipped, completed } }
+    setEntries(optimisticEntries)
+    saveToLocalStorage(optimisticEntries)
+
+    // Create the entry object for database
+    const entry: DailyShipping = {
+      year,
+      month,
+      day,
+      shipped,
+      completed,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }
+
+    // Sync to database
+    try {
+      const success = await saveDailyShipping(entry)
+
+      if (!isMountedRef.current) return
+
+      if (success) {
+        setSyncStatus('synced')
+        setLastSynced(new Date())
+      } else {
+        // Revert on failure
+        setEntries(entries)
+        saveToLocalStorage(entries)
+        setSyncStatus('error')
+      }
+    } catch (err) {
+      console.error('Failed to sync daily shipping to database:', err)
+      if (isMountedRef.current) {
+        // Revert on failure
+        setEntries(entries)
+        saveToLocalStorage(entries)
+        setSyncStatus('error')
+      }
+    }
+  }, [entries, saveToLocalStorage, year])
 
   // Track if there are unsaved changes
-  const hasUnsavedChanges = syncStatus === 'pending'
+  const hasUnsavedChanges = syncStatus === 'syncing'
 
   return {
     entries,
@@ -254,7 +195,6 @@ export function useDailyShipping(year: number) {
     syncStatus,
     lastSynced,
     hasUnsavedChanges,
-    updateEntry,
-    syncNow
+    updateEntry
   }
 }

@@ -248,7 +248,7 @@ export default function DailyShipping() {
   const [goalsYear, setGoalsYear] = useState(currentYear)
   const [goalsQuarter, setGoalsQuarter] = useState(currentQuarter)
 
-  const { entries: entriesData, isLoading, syncStatus, lastSynced, hasUnsavedChanges, updateEntry, syncNow } = useDailyShipping(selectedYear)
+  const { entries: entriesData, isLoading, syncStatus, lastSynced, hasUnsavedChanges, updateEntry } = useDailyShipping(selectedYear)
 
   const {
     goals,
@@ -372,7 +372,6 @@ export default function DailyShipping() {
               status={syncStatus}
               lastSynced={lastSynced}
               hasUnsavedChanges={hasUnsavedChanges}
-              onSyncNow={syncNow}
               compact={true}
             />
           </div>

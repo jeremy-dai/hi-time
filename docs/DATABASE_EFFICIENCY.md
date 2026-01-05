@@ -117,17 +117,70 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 
 ---
 
-## ✅ Daily Shipping Pattern (Local-First, Debounced Saving)
+## ✅ Quarterly Goals Pattern (Optimistic Updates, Instant Saving)
 
 ### Workflow
-1. **User edits daily shipping entry** → Immediate `localStorage` save (instant UX)
-2. **After 5 seconds of inactivity** → Debounced sync to database
-3. **Database sync** → Update sync status indicator
-4. **Fallback on mount** → Load from database, cache in localStorage
+1. **User makes a change** (add/update/delete goal or milestone)
+2. **Optimistic update** → Instantly update UI and `localStorage` (instant UX)
+3. **Instant database sync** → API call happens immediately
+4. **On success** → Mark as synced ✓
+5. **On failure** → Revert UI and `localStorage` to previous state, show error
 
 ### Key Benefits
-- **Instant feedback**: `localStorage` provides immediate persistence
-- **Debounced writes**: Changes are batched with 5-second debounce to minimize database writes
+- **Instant feedback**: Optimistic updates provide immediate UI response
+- **Data consistency**: Rollback on failure ensures UI matches database state
+- **Error recovery**: Clear indication when save fails, with automatic revert
+- **Individual row storage**: Each goal/milestone is a separate database row
+- **Relational structure**: Goals have one-to-many relationship with milestones
+
+### Implementation Details
+- **Hook**: `useQuarterlyGoals` (custom hook)
+- **Storage Key**: `quarterly-goals-{year}-Q{quarter}` (per-quarter localStorage)
+- **Database Tables**: `quarterly_goals` and `goal_milestones` (relational)
+- **Sync Strategy**: Optimistic update + instant sync + rollback on error
+- **API**: Individual CRUD endpoints for goals and milestones
+- **Indexes**: Composite indexes on `(user_id, year, quarter)` for fast lookups
+
+### Code Pattern
+```typescript
+// Optimistically update UI
+const optimisticData = updateLocalState(...)
+setData(optimisticData)
+saveToLocalStorage(optimisticData)
+
+try {
+  const success = await apiCall(...)
+  if (success) {
+    setSyncStatus('synced')
+  } else {
+    // Revert on failure
+    setData(previousData)
+    saveToLocalStorage(previousData)
+    setSyncStatus('error')
+  }
+} catch (err) {
+  // Revert on failure
+  setData(previousData)
+  saveToLocalStorage(previousData)
+  setSyncStatus('error')
+}
+```
+
+---
+
+## ✅ Daily Shipping Pattern (Optimistic Updates, Instant Saving)
+
+### Workflow
+1. **User edits daily shipping entry** (save text or toggle completion)
+2. **Optimistic update** → Instantly update UI and `localStorage` (instant UX)
+3. **Instant database sync** → API call happens immediately
+4. **On success** → Mark as synced ✓
+5. **On failure** → Revert UI and `localStorage` to previous state, show error
+
+### Key Benefits
+- **Instant feedback**: Optimistic updates provide immediate UI response
+- **Data consistency**: Rollback on failure ensures UI matches database state
+- **Error recovery**: Clear indication when save fails, with automatic revert
 - **Individual row storage**: Each day is a separate database row for efficient querying
 - **Completion tracking**: Boolean flag for marking items as done
 - **Year-based fetching**: Fetches all entries for a year in one query
@@ -136,9 +189,16 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 - **Hook**: `useDailyShipping` (custom hook)
 - **Storage Key**: `daily-shipping-{year}` (per-year localStorage)
 - **Database Table**: `daily_shipping` (one row per day with `shipped` text and `completed` boolean)
-- **Sync Strategy**: Debounced (5s) + immediate sync on delete
+- **Sync Strategy**: Optimistic update + instant sync + rollback on error
 - **API**: `GET /api/shipping/{year}` fetches all entries for a year with single query
 - **Indexes**: Composite indexes on `(user_id, year)` and `(user_id, year, month, day)` for fast lookups
+
+### Rationale for Optimistic Updates
+Daily shipping and quarterly goals use optimistic updates because:
+- **Simple, discrete operations**: Saving a single log entry or toggling a checkbox
+- **Infrequent changes**: Not continuous typing like in a text editor
+- **User-initiated saves**: User explicitly clicks "Save" or checkbox
+- **Better UX**: Instant feedback with automatic error recovery is ideal for these use cases
 
 ---
 
@@ -154,7 +214,8 @@ The `useLocalStorageSync` hook implements multiple layers of protection to preve
 | **Year Memories** | `memories-{year}` | `YearMemories` | None (always fresh) | Debounced (5s) |
 | **Week Reviews** | `week-reviews-{year}` | `YearWeekReviews` | None (always fresh) | Debounced (5s) |
 | **Annual Review** | `annual-review-{year}` | `AnnualReview` | None (always fresh) | Debounced (5s) |
-| **Daily Shipping** | `daily-shipping-{year}` | `YearDailyShipping` | None (always fresh) | Debounced (5s) |
+| **Quarterly Goals** | `quarterly-goals-{year}-Q{quarter}` | `QuarterGoals` | None (always fresh) | Optimistic + instant |
+| **Daily Shipping** | `daily-shipping-{year}` | `YearDailyShipping` | None (always fresh) | Optimistic + instant |
 
 **CachedData Format**:
 ```typescript
@@ -173,41 +234,49 @@ All cached data includes a timestamp and is validated before use:
 
 ## 📊 Efficiency Comparison
 
-| Aspect | Timesheet | Week Metadata | User Settings | Memories | Week Reviews | Daily Shipping | Dashboard |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | Debounced 5s ✅ | Debounced 5s ✅ | Debounced 5s ✅ | None (read-only) ✅ |
-| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
-| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | localStorage only | localStorage only | localStorage only | In-memory only |
-| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ❌ No (always fresh) | ❌ No (always fresh) | ❌ No (always fresh) | N/A |
-| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (5s debounce) ✅ | Yes (5s debounce) ✅ | Yes (5s debounce) ✅ | Yes (parallel fetch) ✅ |
-| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Sync status indicator ✅ | Sync status indicator ✅ | Sync status indicator ✅ | Loading states ✅ |
-| **UI Component** | `SyncStatusIndicator` | Visual updates | `SyncStatusIndicator` | Custom (migrate) | Custom (migrate) | Custom (migrate) | Loading spinner |
-| **DB Structure** | JSONB (whole week) | Coupled with weeks | JSONB (all settings) | JSONB (year's memories) | Individual rows per week | Individual rows per day | Read-only |
-| **Query Pattern** | Single row per week | Part of week row | Single row per user | Single row per year | Year-based batch fetch | Year-based batch fetch | On-demand fetch |
+| Aspect | Timesheet | Week Metadata | User Settings | Memories | Week Reviews | Quarterly Goals | Daily Shipping | Dashboard |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Writes** | Batched every 30s | Coupled with weeksheet | Batched every 30s | Debounced 5s ✅ | Debounced 5s ✅ | Optimistic + instant ✅ | Optimistic + instant ✅ | None (read-only) ✅ |
+| **Reads** | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | Once on mount, cached | On-demand, cached ✅ |
+| **Cache Strategy** | localStorage + in-memory | localStorage + in-memory | localStorage + in-memory | localStorage only | localStorage only | localStorage only | localStorage only | In-memory only |
+| **Staleness Check** | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ✅ Yes (1 hour) | ❌ No (always fresh) | ❌ No (always fresh) | ❌ No (always fresh) | ❌ No (always fresh) | N/A |
+| **Batch Operations** | Yes (30s intervals) | Yes (with weeksheet) | Yes (30s intervals) | Yes (5s debounce) ✅ | Yes (5s debounce) ✅ | No (instant sync) ✅ | No (instant sync) ✅ | Yes (parallel fetch) ✅ |
+| **Error Recovery** | Prevents overwrites | N/A | Prevents overwrites | None | None | Rollback on failure ✅ | Rollback on failure ✅ | N/A |
+| **User Feedback** | Sync status indicator | Visual updates | Sync status indicator | Sync status indicator ✅ | Sync status indicator ✅ | Sync status indicator ✅ | Sync status indicator ✅ | Loading states ✅ |
+| **UI Component** | `SyncStatusIndicator` | Visual updates | `SyncStatusIndicator` | Custom (migrate) | Custom (migrate) | Custom (migrate) | Custom (migrate) | Loading spinner |
+| **DB Structure** | JSONB (whole week) | Coupled with weeks | JSONB (all settings) | JSONB (year's memories) | Individual rows per week | Relational (goals + milestones) | Individual rows per day | Read-only |
+| **Query Pattern** | Single row per week | Part of week row | Single row per user | Single row per year | Year-based batch fetch | Quarter-based batch fetch | Year-based batch fetch | On-demand fetch |
 
 ---
 
 ## ✅ Recent Improvements (2025)
 
-### 1. Unified Staleness Detection
+### 1. Optimistic Update Pattern for Discrete Operations
+- **Problem**: Daily Shipping initially used instant sync but lacked error recovery, creating potential data inconsistency
+- **Solution**: Implemented optimistic updates with rollback on failure for both Daily Shipping and Quarterly Goals
+- **Benefit**: Instant UX feedback with automatic error recovery ensures UI always matches database state
+- **Pattern**: Update UI + localStorage optimistically → Sync to database → Rollback on failure
+- **Location**: `useDailyShipping.ts`, `useQuarterlyGoals.ts`
+
+### 2. Unified Staleness Detection
 - **Problem**: Week metadata lacked timestamp-based staleness checks
 - **Solution**: All cached data now uses `CachedData<T>` wrapper with timestamps
 - **Benefit**: Consistent 1-hour staleness threshold across all data types
 - **Location**: `App.tsx:24-62`
 
-### 2. Consolidated Timezone Storage
+### 3. Consolidated Timezone Storage
 - **Problem**: Timezone stored redundantly in 3 locations (`userSettings`, `user-timezone`, `user-settings`)
 - **Solution**: Single source of truth via `user-settings` (managed by `useLocalStorageSync`)
 - **Benefit**: Eliminates desync risk, simpler initialization logic
 - **Location**: `App.tsx:67-77`
 
-### 3. Removed Unnecessary Settings Reload
+### 4. Removed Unnecessary Settings Reload
 - **Problem**: Settings reloaded every time user switched to "log" tab
 - **Solution**: Trust `useLocalStorageSync` to handle updates, load once on mount
 - **Benefit**: Fewer API calls, better performance
 - **Location**: `App.tsx:147-149`
 
-### 4. Standardized Metadata Loading
+### 5. Standardized Metadata Loading
 - **Problem**: Inconsistent staleness checks across batch fetch, current week load, initial load
 - **Solution**: All three paths now check timestamps and use `CachedData` format
 - **Benefit**: Predictable behavior regardless of loading path
@@ -240,7 +309,9 @@ All features should use this consistent component for displaying sync status:
 | **Syncing** | 🔵 Emerald | ⋯ | "Saving right now" |
 | **Error** | 🔴 Red | ⚠ | "Something went wrong, may need retry" |
 
-**User Timeline**: Edit → Instant localStorage (0ms) → Pending (5s wait) → Syncing (~1s) → Synced ✓
+**User Timeline** (Memories, Week Reviews): Edit → Instant localStorage (0ms) → Pending (5s wait) → Syncing (~1s) → Synced ✓
+
+**User Timeline** (Quarterly Goals, Daily Shipping): Edit → Optimistic update (0ms) → Syncing (~1s) → Synced ✓ (or rollback on error)
 
 For detailed UI patterns, component props, and implementation examples, see the [Design System documentation](../time-tracker/DESIGN_SYSTEM.md).
 
