@@ -45,9 +45,12 @@ Authorization: Bearer <SUPABASE_JWT_TOKEN>
         {
           "weekData": [...],
           "startingHour": 8,
-          "theme": "Deep Work"
+          "theme": "Deep Work",
+          "updatedAt": 1704067200000
         }
         ```
+    -   **New Fields** 🆕:
+        - `updatedAt` (number|null): Unix timestamp in milliseconds of last modification. Used for conflict detection.
 
 #### Save Week
 
@@ -75,11 +78,17 @@ Authorization: Bearer <SUPABASE_JWT_TOKEN>
         ```json
         {
           "weeks": {
-            "2025-W01": { ... },
+            "2025-W01": {
+              "weekData": [...],
+              "startingHour": 8,
+              "theme": "Deep Work",
+              "updatedAt": 1704067200000
+            },
             "2025-W02": null
           }
         }
         ```
+    -   Each week object includes the `updatedAt` timestamp (Unix milliseconds) 🆕
 
 ### Import/Export
 

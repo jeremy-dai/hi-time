@@ -147,9 +147,9 @@ app.get('/api/weeks/:week_key', async (req, res) => {
   }
 
   // RLS automatically filters by authenticated user
-  const { data, error } = await req.supabase
+  const { data, error} = await req.supabase
     .from('weeks')
-    .select('week_data, starting_hour, theme')
+    .select('week_data, starting_hour, theme, updated_at')
     .eq('year', parsed.year)
     .eq('week_number', parsed.week)
     .single();
@@ -162,7 +162,8 @@ app.get('/api/weeks/:week_key', async (req, res) => {
   res.json({
     weekData: data ? sanitizeWeekData(data.week_data) : null,
     startingHour: data?.starting_hour ?? 8,
-    theme: data?.theme || null
+    theme: data?.theme || null,
+    updatedAt: data?.updated_at ? new Date(data.updated_at).getTime() : null
   });
 });
 
@@ -200,7 +201,7 @@ app.post('/api/weeks/batch', async (req, res) => {
 
   const { data, error } = await req.supabase
     .from('weeks')
-    .select('year, week_number, week_data, starting_hour, theme')
+    .select('year, week_number, week_data, starting_hour, theme, updated_at')
     .or(orConditions);
 
   if (error) {
@@ -210,7 +211,7 @@ app.post('/api/weeks/batch', async (req, res) => {
 
   // Map back to response format
   const result = {};
-  
+
   // Initialize all requested keys as null first
   weekKeys.forEach(key => {
     result[key] = null;
@@ -222,7 +223,8 @@ app.post('/api/weeks/batch', async (req, res) => {
     result[key] = {
       weekData: sanitizeWeekData(d.week_data),
       startingHour: d.starting_hour ?? 8,
-      theme: d.theme || null
+      theme: d.theme || null,
+      updatedAt: d.updated_at ? new Date(d.updated_at).getTime() : null
     };
   });
 

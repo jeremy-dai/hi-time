@@ -15,6 +15,8 @@ import { parseTimeCSV } from './utils/csvParser'
 import { Login } from './components/Login'
 import { useAuth } from './hooks/useAuth'
 import { useLocalStorageSync } from './hooks/useLocalStorageSync'
+import { useLocalHistory } from './hooks/useLocalHistory'
+import { HistoryModal } from './components/shared/HistoryModal'
 import { ToastProvider } from './components/shared/ToastContext'
 import { ToastContainer } from './components/shared/Toast'
 import { Modal } from './components/shared/Modal'
@@ -23,6 +25,7 @@ function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
   const [showStartingHourWarning, setShowStartingHourWarning] = useState(false)
   const [pendingStartingHour, setPendingStartingHour] = useState<number | null>(null)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   // Initialize activeTab from localStorage, default to 'timesheet' if not found
   const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'>(() => {
@@ -122,13 +125,38 @@ function App() {
     lastSynced: weekLastSynced,
     hasUnsavedChanges: weekHasUnsavedChanges,
     syncNow: syncWeekNow,
-    error: weekSyncError
+    error: weekSyncError,
+    hasNewerVersion,
+    loadNewerVersion
   } = useLocalStorageSync({
     storageKey: `week-${currentWeekKey}`,
     syncInterval: 30000, // Sync every 30 seconds
     syncToDatabase,
     loadFromDatabase
   })
+
+  const { snapshots, saveSnapshot, deleteSnapshot, clearHistory } = useLocalHistory(currentWeekKey)
+
+  const handleRestoreSnapshot = useCallback((snapshot: any) => {
+    if (snapshot.data) {
+      setWeekData(snapshot.data)
+      const updatedWeeks = { ...weekStoreRef.current, [currentWeekKey]: snapshot.data }
+      weekStoreRef.current = updatedWeeks
+      setWeekStore(updatedWeeks)
+    }
+    if (snapshot.metadata) {
+      const updatedMetadata = { ...weekMetadataStoreRef.current, [currentWeekKey]: snapshot.metadata }
+      weekMetadataStoreRef.current = updatedMetadata
+      setWeekMetadataStore(updatedMetadata)
+      
+      const cachedMetadata = {
+        data: snapshot.metadata,
+        timestamp: Date.now()
+      }
+      localStorage.setItem(`week-metadata-${currentWeekKey}`, JSON.stringify(cachedMetadata))
+    }
+    setIsHistoryOpen(false)
+  }, [currentWeekKey, setWeekData])
 
   // Wrapper for setCurrentDate that syncs before changing weeks
   const setCurrentDate = useCallback(async (newDate: Date) => {
@@ -371,8 +399,10 @@ function App() {
   }
 
   const handleUpdateBlocks = (updates: { day: number, timeIndex: number, block: TimeBlock }[]) => {
+    // Try to auto-save (will be skipped if throttled)
+    saveSnapshot(currentWeekData, currentWeekMetadata, 'Auto Save')
+
     const current = currentWeekData
-    // Deep copy enough to be safe
     const newWeek = current.map(dayArr => [...dayArr])
 
     updates.forEach(({ day, timeIndex, block }) => {
@@ -387,6 +417,9 @@ function App() {
   }
 
   const handleImportCSV = (importedData: TimeBlock[][]) => {
+    // Auto-save snapshot before import
+    saveSnapshot(currentWeekData, currentWeekMetadata, 'Auto-save: Before CSV Import')
+
     // Save to localStorage immediately
     setWeekData(importedData)
     const updated = { ...weekStoreRef.current, [currentWeekKey]: importedData }
@@ -550,6 +583,9 @@ function App() {
           onChangeStartingHour={(hour) => handleMetadataChange({ startingHour: hour })}
           weekTheme={currentWeekMetadata.theme}
           onChangeWeekTheme={(theme) => handleMetadataChange({ theme })}
+          onOpenHistory={() => setIsHistoryOpen(true)}
+          hasNewerVersion={hasNewerVersion}
+          onLoadNewerVersion={loadNewerVersion}
         />
       ) : undefined}
     >
@@ -677,6 +713,17 @@ function App() {
           </>
         }
         closeOnBackdrop={false}
+      />
+      
+      {/* History Modal */}
+      <HistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        snapshots={snapshots}
+        onRestore={handleRestoreSnapshot}
+        onSaveSnapshot={(desc) => saveSnapshot(currentWeekData, currentWeekMetadata, desc)}
+        onDeleteSnapshot={deleteSnapshot}
+        onClearHistory={clearHistory}
       />
     </ToastProvider>
   )

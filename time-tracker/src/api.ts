@@ -74,12 +74,14 @@ export interface WeekMetadata {
   weekData: TimeBlock[][]
   startingHour: number
   theme: string | null
+  updatedAt?: number | null  // Timestamp in milliseconds
 }
 
 interface WeekResponse {
   weekData: TimeBlock[][] | null
   startingHour?: number
   theme?: string | null
+  updatedAt?: number | null
 }
 
 export async function getWeek(weekKey: string): Promise<WeekMetadata | null> {
@@ -95,7 +97,8 @@ export async function getWeek(weekKey: string): Promise<WeekMetadata | null> {
       return {
         weekData: transformWeekDataFromDb(response.weekData),
         startingHour: response.startingHour ?? 8,
-        theme: response.theme ?? null
+        theme: response.theme ?? null,
+        updatedAt: response.updatedAt ?? null
       }
     }
 

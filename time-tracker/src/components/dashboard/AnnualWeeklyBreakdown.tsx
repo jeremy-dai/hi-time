@@ -129,7 +129,7 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
       ) : (
         <div className="overflow-x-auto overflow-y-visible">
           <div style={{ minWidth: chartWidth, height: 400 }}>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis

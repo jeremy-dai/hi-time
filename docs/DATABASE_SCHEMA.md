@@ -138,6 +138,41 @@ create index idx_daily_shipping_user_date on daily_shipping(user_id, year, month
 - `shipped` (text): What the user shipped/accomplished that day
 - `completed` (boolean): Whether the item has been marked as done
 
+### `data_snapshots` 🆕
+Stores historical snapshots of data for version control and recovery. **Migration available** at [database/migrations/01_history_table.sql](../database/migrations/01_history_table.sql).
+
+```sql
+CREATE TABLE IF NOT EXISTS data_snapshots (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id text NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  entity_type text NOT NULL, -- 'week', 'settings', etc.
+  entity_key text NOT NULL, -- e.g., '2024-W01'
+  snapshot_type text CHECK (snapshot_type IN ('manual', 'auto', 'restore')),
+  description text,
+  data jsonb NOT NULL,
+  metadata jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_data_snapshots_user_entity ON data_snapshots(user_id, entity_type, entity_key);
+CREATE INDEX IF NOT EXISTS idx_data_snapshots_created_at ON data_snapshots(created_at);
+```
+
+**Use Cases:**
+- **Data Recovery**: Restore previous versions if data is lost or corrupted
+- **Version History**: Track changes over time for audit/debugging
+- **Conflict Resolution**: Compare versions when sync conflicts occur
+
+**Snapshot Types:**
+- `manual`: User-initiated backups via History Modal
+- `auto`: Automatic snapshots before risky operations (CSV imports, bulk edits)
+- `restore`: Created when restoring from a previous snapshot
+
+**Current Status:**
+- ✅ Database migration created
+- ✅ Frontend local snapshots implemented (browser localStorage)
+- ⏳ Backend API endpoints (pending) - would enable cloud backup across devices
+
 ## Security (Row Level Security)
 
 Enable RLS to ensure users can only access their own data.
@@ -151,6 +186,7 @@ alter table user_settings enable row level security;
 alter table year_memories enable row level security;
 alter table week_reviews enable row level security;
 alter table daily_shipping enable row level security;
+alter table data_snapshots enable row level security; -- 🆕
 
 -- Policies
 create policy "Users can only access their own weeks"
@@ -175,6 +211,12 @@ with check ((select auth.uid())::text = user_id);
 
 create policy "Users can only access their own daily shipping"
 on daily_shipping for all
+using ((select auth.uid())::text = user_id)
+with check ((select auth.uid())::text = user_id);
+
+-- 🆕 Snapshots policy
+create policy "Users can only access their own snapshots"
+on data_snapshots for all
 using ((select auth.uid())::text = user_id)
 with check ((select auth.uid())::text = user_id);
 ```

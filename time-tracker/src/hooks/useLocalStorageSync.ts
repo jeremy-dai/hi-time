@@ -26,6 +26,8 @@ interface UseLocalStorageSyncReturn<T> {
   hasUnsavedChanges: boolean;
   syncNow: () => Promise<void>;
   error: Error | null;
+  hasNewerVersion: boolean;  // True if database has newer data
+  loadNewerVersion: () => Promise<void>;  // Function to load the newer version
 }
 
 /**
@@ -44,6 +46,8 @@ export function useLocalStorageSync<T>(
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [hasNewerVersion, setHasNewerVersion] = useState(false);
+  const newerVersionDataRef = useRef<T | null>(null);
 
   const syncIntervalRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
@@ -57,52 +61,84 @@ export function useLocalStorageSync<T>(
     loadFromDatabaseRef.current = loadFromDatabase;
   });
 
-  // Load data on mount: Try localStorage first (if fresh), then database
+  // OPTIMIZED LOAD: Show local data immediately, then check database in background
   useEffect(() => {
     const loadData = async () => {
-      let useLocalStorage = false;
       let localDataParsed: T | null = null;
+      let localTimestamp: number | null = null;
 
-      // Try localStorage first
+      // STEP 1: Load from localStorage IMMEDIATELY for instant UI
       const localData = localStorage.getItem(storageKey);
       if (localData) {
         try {
           const cached: CachedData<T> = JSON.parse(localData);
           const age = Date.now() - cached.timestamp;
 
-          // Only use localStorage if it's fresh (within staleness threshold)
           if (age < STALENESS_THRESHOLD) {
             localDataParsed = cached.data;
-            useLocalStorage = true;
+            localTimestamp = cached.timestamp;
+
+            // Show local data immediately (instant load!)
+            setDataState(localDataParsed);
+            lastSyncedDataRef.current = JSON.stringify(localDataParsed);
+            console.log('[useLocalStorageSync] ⚡ Instant load from localStorage');
           }
         } catch (err) {
           console.error('Failed to parse localStorage data:', err);
         }
       }
 
-      // Use fresh localStorage data
-      if (useLocalStorage && localDataParsed) {
-        setDataState(localDataParsed);
-        lastSyncedDataRef.current = JSON.stringify(localDataParsed);
-        return;
-      }
-
-      // Fall back to database (if localStorage is empty or stale)
+      // STEP 2: Fetch database in BACKGROUND to check for newer version
       try {
         const dbData = await loadFromDatabaseRef.current();
+
         if (dbData) {
-          setDataState(dbData);
-          // Save to localStorage with timestamp
-          const cached: CachedData<T> = {
-            data: dbData,
-            timestamp: Date.now()
-          };
-          localStorage.setItem(storageKey, JSON.stringify(cached));
-          lastSyncedDataRef.current = JSON.stringify(dbData);
-          setLastSynced(new Date());
+          const dbDataStr = JSON.stringify(dbData);
+          const localDataStr = localDataParsed ? JSON.stringify(localDataParsed) : null;
+
+          // Compare database with local
+          if (dbDataStr !== localDataStr) {
+            // Data is different - check which is newer
+            const dbUpdatedAt = (dbData as any)?.updatedAt;
+
+            // If we have timestamps, compare them
+            if (dbUpdatedAt && localTimestamp) {
+              if (dbUpdatedAt > localTimestamp) {
+                // Database is NEWER - save it and notify user
+                console.warn('[useLocalStorageSync] 🔔 Database has newer version!');
+                console.warn(`  DB: ${new Date(dbUpdatedAt).toISOString()}`);
+                console.warn(`  Local: ${new Date(localTimestamp).toISOString()}`);
+
+                // Store newer version in ref for user to load
+                newerVersionDataRef.current = dbData;
+                setHasNewerVersion(true);
+              } else {
+                console.log('[useLocalStorageSync] ✓ Local version is up to date');
+              }
+            } else if (!localDataParsed) {
+              // No local data, use database
+              console.log('[useLocalStorageSync] 📥 Loading from database (no local data)');
+              setDataState(dbData);
+
+              const cached: CachedData<T> = {
+                data: dbData,
+                timestamp: Date.now()
+              };
+              localStorage.setItem(storageKey, JSON.stringify(cached));
+              lastSyncedDataRef.current = JSON.stringify(dbData);
+              setLastSynced(new Date());
+            }
+          } else {
+            console.log('[useLocalStorageSync] ✓ Local and database are in sync');
+            setLastSynced(new Date());
+          }
+        } else if (!localDataParsed) {
+          // No data anywhere
+          console.log('[useLocalStorageSync] No data in database or localStorage');
         }
       } catch (err) {
-        console.error('Failed to load from database:', err);
+        console.error('[useLocalStorageSync] Failed to fetch from database:', err);
+        // Local data already shown, continue with it
       }
     };
 
@@ -149,7 +185,7 @@ export function useLocalStorageSync<T>(
 
         // If database has different data, it might be fresher
         if (dbDataStr !== localDataStr) {
-          // Check if local data is "empty" (all categories are empty strings)
+          // ENHANCED SAFETY CHECK 1: Check if local data is "empty"
           const isLocalDataEmpty = Array.isArray(data) &&
             (data as any[]).every((day: any[]) =>
               Array.isArray(day) && day.every((block: any) =>
@@ -157,10 +193,25 @@ export function useLocalStorageSync<T>(
               )
             );
 
-          if (isLocalDataEmpty && dbDataStr !== localDataStr) {
+          if (isLocalDataEmpty) {
             // Local data is empty but database has data - DO NOT OVERWRITE
             console.error('[useLocalStorageSync] PREVENTED DATA LOSS: Local data is empty but database has data. Refusing to sync.');
             setError(new Error('Sync cancelled: Local data appears empty while database has data'));
+            setSyncStatus('error');
+            isSyncingRef.current = false;
+            return;
+          }
+
+          // ENHANCED SAFETY CHECK 2: Timestamp comparison (if available)
+          const dbUpdatedAt = (currentDbData as any)?.updatedAt;
+          const localUpdatedAt = (data as any)?.updatedAt;
+
+          if (dbUpdatedAt && localUpdatedAt && dbUpdatedAt > localUpdatedAt) {
+            // Database has newer data - DO NOT OVERWRITE
+            console.error('[useLocalStorageSync] PREVENTED DATA LOSS: Database has newer data (timestamp check).');
+            console.error(`  DB timestamp: ${new Date(dbUpdatedAt).toISOString()}`);
+            console.error(`  Local timestamp: ${new Date(localUpdatedAt).toISOString()}`);
+            setError(new Error('Sync cancelled: Database has newer changes. Please refresh to get latest data.'));
             setSyncStatus('error');
             isSyncingRef.current = false;
             return;
@@ -218,6 +269,25 @@ export function useLocalStorageSync<T>(
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // Function to load the newer version from database
+  const loadNewerVersion = useCallback(async () => {
+    if (newerVersionDataRef.current) {
+      setDataState(newerVersionDataRef.current);
+
+      const cached: CachedData<T> = {
+        data: newerVersionDataRef.current,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(storageKey, JSON.stringify(cached));
+      lastSyncedDataRef.current = JSON.stringify(newerVersionDataRef.current);
+      setLastSynced(new Date());
+      setHasNewerVersion(false);
+      newerVersionDataRef.current = null;
+
+      console.log('[useLocalStorageSync] ✅ Loaded newer version from database');
+    }
+  }, [storageKey]);
+
   return {
     data,
     setData,
@@ -225,6 +295,8 @@ export function useLocalStorageSync<T>(
     lastSynced,
     hasUnsavedChanges,
     syncNow,
-    error
+    error,
+    hasNewerVersion,
+    loadNewerVersion
   };
 }

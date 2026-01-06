@@ -37,7 +37,7 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
           No trend data available
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={300} minWidth={0}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis

@@ -42,7 +42,7 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
 
   return (
     <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-      <ResponsiveContainer>
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <BarChart data={data}>
           <XAxis
             dataKey="day"

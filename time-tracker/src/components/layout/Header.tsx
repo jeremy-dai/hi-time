@@ -17,6 +17,9 @@ interface HeaderProps {
   onChangeStartingHour?: (hour: number) => void
   weekTheme?: string | null
   onChangeWeekTheme?: (theme: string) => void
+  onOpenHistory?: () => void
+  hasNewerVersion?: boolean
+  onLoadNewerVersion?: () => Promise<void>
 }
 
 function toInputDate(d: Date): string {
@@ -26,10 +29,31 @@ function toInputDate(d: Date): string {
   return `${y}-${m}-${dd}`
 }
 
-export default function Header({ currentDate, onChangeDate, syncStatus, lastSynced, hasUnsavedChanges, syncError, onSyncNow, startingHour = 8, onChangeStartingHour, weekTheme, onChangeWeekTheme }: HeaderProps) {
+export default function Header({ currentDate, onChangeDate, syncStatus, lastSynced, hasUnsavedChanges, syncError, onSyncNow, startingHour = 8, onChangeStartingHour, weekTheme, onChangeWeekTheme, onOpenHistory, hasNewerVersion, onLoadNewerVersion }: HeaderProps) {
 
   return (
-    <div className="flex flex-row items-center justify-between gap-4">
+    <div className="flex flex-col gap-2">
+      {/* Newer Version Banner */}
+      {hasNewerVersion && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 text-sm">
+            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-blue-900 font-medium">
+              A newer version is available from the database
+            </span>
+          </div>
+          <button
+            onClick={onLoadNewerVersion}
+            className="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Load Now
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-row items-center justify-between gap-4">
       {/* Left: Theme Input */}
       <div className="flex-1 min-w-0 max-w-xl">
         {onChangeWeekTheme && (
@@ -54,6 +78,18 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
             onSyncNow={onSyncNow}
             compact={true}
           />
+        )}
+
+        {onOpenHistory && (
+          <button
+            onClick={onOpenHistory}
+            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+            title="History"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
         )}
 
         <div className={cn(
@@ -138,6 +174,7 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }
