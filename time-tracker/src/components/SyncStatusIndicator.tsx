@@ -1,5 +1,4 @@
-// Support both SyncStatus definitions (with and without 'idle')
-type SyncStatus = 'idle' | 'synced' | 'pending' | 'syncing' | 'error';
+import type { SyncStatus } from '../hooks/useSyncState'
 
 interface SyncStatusIndicatorProps {
   status: SyncStatus;

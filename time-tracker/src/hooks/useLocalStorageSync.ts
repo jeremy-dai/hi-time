@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-export type SyncStatus = 'synced' | 'pending' | 'syncing' | 'error';
+import type { SyncStatus } from './useSyncState';
 
 // Cached data structure with timestamp
 interface CachedData<T> {

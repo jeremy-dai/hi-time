@@ -9,8 +9,7 @@ import {
   updateGoalMilestone,
   deleteGoalMilestone,
 } from '../api'
-
-type SyncStatus = 'idle' | 'syncing' | 'synced' | 'pending' | 'error'
+import type { SyncStatus } from './useSyncState'
 
 // Helper to determine current quarter from month (1-12)
 export function getQuarterFromMonth(month: number): number {

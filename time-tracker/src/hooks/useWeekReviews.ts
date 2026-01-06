@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { WeekReview, YearWeekReviews } from '../types/time'
 import { getYearWeekReviews, saveWeekReview, deleteWeekReview } from '../api'
-
-type SyncStatus = 'idle' | 'syncing' | 'synced' | 'pending' | 'error'
+import type { SyncStatus } from './useSyncState'
 
 export function useWeekReviews(year: number) {
   const [reviews, setReviews] = useState<Record<number, WeekReview>>({})

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { DailyShipping, YearDailyShipping } from '../types/time'
 import { getYearDailyShipping, saveDailyShipping, deleteDailyShipping } from '../api'
-
-type SyncStatus = 'idle' | 'syncing' | 'synced' | 'pending' | 'error'
+import type { SyncStatus } from './useSyncState'
 
 // Helper to format date as YYYY-MM-DD
 function formatDateKey(year: number, month: number, day: number): string {

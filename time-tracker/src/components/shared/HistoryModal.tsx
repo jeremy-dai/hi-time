@@ -30,6 +30,19 @@ export function HistoryModal({
     setNewSnapshotDesc('');
   };
 
+  const handleDownload = (snapshot: HistorySnapshot) => {
+    const dataStr = JSON.stringify(snapshot, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `snapshot-${format(snapshot.timestamp, 'yyyy-MM-dd-HHmmss')}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -124,6 +137,15 @@ export function HistoryModal({
                       className="px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
                     >
                       Restore
+                    </button>
+                    <button
+                      onClick={() => handleDownload(snapshot)}
+                      className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors"
+                      title="Download JSON"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
                     </button>
                     <button
                       onClick={() => onDeleteSnapshot(snapshot.id)}

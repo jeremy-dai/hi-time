@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { DailyMemory, YearMemories } from '../types/time'
 import { getYearMemories, saveYearMemories } from '../api'
-
-type SyncStatus = 'idle' | 'syncing' | 'synced' | 'pending' | 'error'
+import type { SyncStatus } from './useSyncState'
 
 export function useYearMemories(year: number) {
   const [memories, setMemories] = useState<Record<string, DailyMemory>>({})
