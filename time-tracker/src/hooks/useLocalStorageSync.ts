@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SyncStatus } from './useSyncState';
 
+// Re-export SyncStatus for consumers
+export type { SyncStatus };
+
 // Cached data structure with timestamp
 interface CachedData<T> {
   data: T;
