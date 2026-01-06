@@ -553,23 +553,28 @@ function App() {
         />
       ) : undefined}
     >
-      {activeTab === 'timesheet' && currentWeekData && (
-        <div className="flex flex-col h-full bg-white rounded-xl p-3 shadow-sm overflow-hidden animate-in fade-in duration-200">
-          {/* Timesheet Grid */}
-          <div className="flex-1 overflow-auto bg-white rounded-xl">
-            <HandsontableCalendar
-              weekData={currentWeekData}
-              currentDate={currentDateState}
-              onUpdateBlock={handleUpdateBlock}
-              onUpdateBlocks={handleUpdateBlocks}
-              referenceData={referenceData}
-              userSettings={userSettings}
-              timezone={currentTimezone}
-            />
+      {/* Timesheet */}
+      <div className={activeTab === 'timesheet' ? 'block' : 'hidden'}>
+        {currentWeekData && (
+          <div className="flex flex-col h-full bg-white rounded-xl p-3 shadow-sm overflow-hidden animate-in fade-in duration-200">
+            {/* Timesheet Grid */}
+            <div className="flex-1 overflow-auto bg-white rounded-xl">
+              <HandsontableCalendar
+                weekData={currentWeekData}
+                currentDate={currentDateState}
+                onUpdateBlock={handleUpdateBlock}
+                onUpdateBlocks={handleUpdateBlocks}
+                referenceData={referenceData}
+                userSettings={userSettings}
+                timezone={currentTimezone}
+              />
+            </div>
           </div>
-        </div>
-      )}
-      {activeTab === 'trends' && (
+        )}
+      </div>
+
+      {/* Trends Dashboard */}
+      <div className={activeTab === 'trends' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <Dashboard
             weekData={currentWeekData}
@@ -583,8 +588,10 @@ function App() {
             viewMode="trends"
           />
         </div>
-      )}
-      {activeTab === 'annual' && (
+      </div>
+
+      {/* Annual Dashboard */}
+      <div className={activeTab === 'annual' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <Dashboard
             weekData={currentWeekData}
@@ -598,27 +605,35 @@ function App() {
             viewMode="annual"
           />
         </div>
-      )}
-      {activeTab === 'memories' && (
+      </div>
+
+      {/* Memories */}
+      <div className={activeTab === 'memories' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <Memories />
         </div>
-      )}
-      {activeTab === 'review' && (
+      </div>
+
+      {/* Weekly Review */}
+      <div className={activeTab === 'review' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <WeeklyReview />
         </div>
-      )}
-      {activeTab === 'today' && (
+      </div>
+
+      {/* Today - Daily Shipping */}
+      <div className={activeTab === 'today' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <DailyShipping />
         </div>
-      )}
-      {activeTab === 'settings' && (
+      </div>
+
+      {/* Settings */}
+      <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <Settings onSettingsSaved={loadUserSettings} />
         </div>
-      )}
+      </div>
       </AppLayout>
 
       {/* Starting Hour Warning Modal */}
