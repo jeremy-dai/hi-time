@@ -1056,4 +1056,187 @@ app.delete('/api/milestones/:milestoneId', async (req, res) => {
   }
 });
 
+// ============================================================================
+// Data Snapshots API (History/Version Control)
+// ============================================================================
+
+const MAX_SNAPSHOTS_PER_ENTITY = 50;
+
+// GET /api/snapshots/:entityType/:entityKey - Get all snapshots for an entity
+app.get('/api/snapshots/:entityType/:entityKey', async (req, res) => {
+  const { entityType, entityKey } = req.params;
+
+  if (!entityType || !entityKey) {
+    return res.status(400).json({ error: 'entityType and entityKey are required' });
+  }
+
+  try {
+    // RLS automatically filters by authenticated user
+    const { data, error } = await req.supabase
+      .from('data_snapshots')
+      .select('*')
+      .eq('entity_type', entityType)
+      .eq('entity_key', entityKey)
+      .order('created_at', { ascending: false })
+      .limit(MAX_SNAPSHOTS_PER_ENTITY);
+
+    if (error) {
+      console.error('Error fetching snapshots:', error);
+      return res.status(500).json({ error: 'Failed to fetch snapshots' });
+    }
+
+    // Transform to frontend format
+    const snapshots = (data || []).map(s => ({
+      id: s.id,
+      timestamp: new Date(s.created_at).getTime(),
+      description: s.description || '',
+      data: s.data,
+      metadata: s.metadata || {},
+      type: s.snapshot_type || 'manual',
+    }));
+
+    res.json({ snapshots });
+  } catch (error) {
+    console.error('Error in GET /api/snapshots:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/snapshots/:entityType/:entityKey - Create a new snapshot
+app.post('/api/snapshots/:entityType/:entityKey', async (req, res) => {
+  const { entityType, entityKey } = req.params;
+  const { data, metadata, description, snapshotType } = req.body;
+
+  if (!entityType || !entityKey) {
+    return res.status(400).json({ error: 'entityType and entityKey are required' });
+  }
+
+  if (!data) {
+    return res.status(400).json({ error: 'data is required' });
+  }
+
+  const validTypes = ['manual', 'auto', 'restore'];
+  const type = validTypes.includes(snapshotType) ? snapshotType : 'manual';
+
+  try {
+    // Check current snapshot count and delete oldest if at limit
+    const { data: existingSnapshots, error: countError } = await req.supabase
+      .from('data_snapshots')
+      .select('id, created_at')
+      .eq('entity_type', entityType)
+      .eq('entity_key', entityKey)
+      .order('created_at', { ascending: false });
+
+    if (countError) {
+      console.error('Error checking snapshot count:', countError);
+      return res.status(500).json({ error: 'Failed to check snapshot count' });
+    }
+
+    // If at or over limit, delete oldest snapshots
+    if (existingSnapshots && existingSnapshots.length >= MAX_SNAPSHOTS_PER_ENTITY) {
+      const snapshotsToDelete = existingSnapshots.slice(MAX_SNAPSHOTS_PER_ENTITY - 1);
+      const idsToDelete = snapshotsToDelete.map(s => s.id);
+
+      const { error: deleteError } = await req.supabase
+        .from('data_snapshots')
+        .delete()
+        .in('id', idsToDelete);
+
+      if (deleteError) {
+        console.error('Error deleting old snapshots:', deleteError);
+        // Continue anyway, non-critical
+      }
+    }
+
+    // Create new snapshot
+    const { data: snapshot, error } = await req.supabase
+      .from('data_snapshots')
+      .insert({
+        user_id: req.user.id,
+        entity_type: entityType,
+        entity_key: entityKey,
+        snapshot_type: type,
+        description: description || null,
+        data: data,
+        metadata: metadata || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating snapshot:', error);
+      return res.status(500).json({ error: 'Failed to create snapshot' });
+    }
+
+    res.json({
+      snapshot: {
+        id: snapshot.id,
+        timestamp: new Date(snapshot.created_at).getTime(),
+        description: snapshot.description || '',
+        data: snapshot.data,
+        metadata: snapshot.metadata || {},
+        type: snapshot.snapshot_type,
+      },
+    });
+  } catch (error) {
+    console.error('Error in POST /api/snapshots:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/snapshots/:snapshotId - Delete a specific snapshot
+app.delete('/api/snapshots/:snapshotId', async (req, res) => {
+  const { snapshotId } = req.params;
+
+  if (!snapshotId) {
+    return res.status(400).json({ error: 'snapshotId is required' });
+  }
+
+  try {
+    // RLS automatically ensures user can only delete their own snapshots
+    const { error } = await req.supabase
+      .from('data_snapshots')
+      .delete()
+      .eq('id', snapshotId);
+
+    if (error) {
+      console.error('Error deleting snapshot:', error);
+      return res.status(500).json({ error: 'Failed to delete snapshot' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in DELETE /api/snapshots:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/snapshots/:entityType/:entityKey/all - Delete all snapshots for an entity
+app.delete('/api/snapshots/:entityType/:entityKey/all', async (req, res) => {
+  const { entityType, entityKey } = req.params;
+
+  if (!entityType || !entityKey) {
+    return res.status(400).json({ error: 'entityType and entityKey are required' });
+  }
+
+  try {
+    // RLS automatically ensures user can only delete their own snapshots
+    const { error } = await req.supabase
+      .from('data_snapshots')
+      .delete()
+      .eq('entity_type', entityType)
+      .eq('entity_key', entityKey);
+
+    if (error) {
+      console.error('Error deleting all snapshots:', error);
+      return res.status(500).json({ error: 'Failed to delete snapshots' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in DELETE /api/snapshots/all:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default app;

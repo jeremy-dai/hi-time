@@ -170,8 +170,9 @@ CREATE INDEX IF NOT EXISTS idx_data_snapshots_created_at ON data_snapshots(creat
 
 **Current Status:**
 - ✅ Database migration created
-- ✅ Frontend local snapshots implemented (browser localStorage)
-- ⏳ Backend API endpoints (pending) - would enable cloud backup across devices
+- ✅ Backend API endpoints implemented (`/api/snapshots/*`)
+- ✅ Frontend hook implemented ([`useHistory`](../time-tracker/src/hooks/useHistory.ts))
+- ✅ History Modal with sync status indicator
 
 ## Security (Row Level Security)
 

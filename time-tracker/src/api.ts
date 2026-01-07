@@ -590,3 +590,88 @@ export async function deleteGoalMilestone(milestoneId: string): Promise<boolean>
     return false
   }
 }
+
+// Data Snapshots API (History/Version Control)
+export interface DataSnapshot<T = unknown> {
+  id: string
+  timestamp: number
+  description: string
+  data: T
+  metadata: Record<string, unknown>
+  type: 'manual' | 'auto' | 'restore'
+}
+
+export async function getSnapshots<T = unknown>(
+  entityType: string,
+  entityKey: string
+): Promise<DataSnapshot<T>[]> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/snapshots/${entityType}/${entityKey}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<DataSnapshot<T>[]>>(res, `/snapshots/${entityType}/${entityKey}`)
+    return data.snapshots || []
+  } catch (error) {
+    console.error(`Failed to get snapshots for ${entityType}/${entityKey}:`, error)
+    return []
+  }
+}
+
+export async function createSnapshot<T = unknown>(
+  entityType: string,
+  entityKey: string,
+  snapshotData: T,
+  metadata?: Record<string, unknown>,
+  description?: string,
+  snapshotType?: 'manual' | 'auto' | 'restore'
+): Promise<DataSnapshot<T> | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/snapshots/${entityType}/${entityKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({
+        data: snapshotData,
+        metadata,
+        description,
+        snapshotType,
+      }),
+    })
+    const data = await handleResponse<ApiResponse<DataSnapshot<T>>>(res, `/snapshots/${entityType}/${entityKey}`)
+    return data.snapshot || null
+  } catch (error) {
+    console.error(`Failed to create snapshot for ${entityType}/${entityKey}:`, error)
+    return null
+  }
+}
+
+export async function deleteSnapshot(snapshotId: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/snapshots/${snapshotId}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/snapshots/${snapshotId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete snapshot ${snapshotId}:`, error)
+    return false
+  }
+}
+
+export async function deleteAllSnapshots(entityType: string, entityKey: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/snapshots/${entityType}/${entityKey}/all`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/snapshots/${entityType}/${entityKey}/all`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete all snapshots for ${entityType}/${entityKey}:`, error)
+    return false
+  }
+}

@@ -121,6 +121,49 @@ await updateGoal(goalId, { completed: true })
 
 ---
 
+### Pattern 4: Database-Only (Session History)
+
+**Use for**: Historical snapshots that need to persist across devices and browser sessions
+
+**Hook**: [`useHistory`](../time-tracker/src/hooks/useHistory.ts)
+
+**Strategy**:
+- Load snapshots from database on mount (database is source of truth)
+- Save directly to database on each operation (no localStorage cache)
+- Auto-save throttle: 30 minutes between auto-saves
+- Maximum 50 snapshots per entity (oldest auto-deleted)
+
+**Features**:
+- ✅ Cross-device sync (history available on any device)
+- ✅ Survives browser data clearing
+- ✅ No localStorage quota usage
+- ✅ Automatic cleanup of old snapshots
+- ✅ Sync status indicator in History Modal
+
+**Why database-only?**
+- History is important data users expect to persist
+- Not frequently edited (saves are discrete actions)
+- Cross-device access is valuable for recovery scenarios
+- localStorage-only approach risked data loss on browser clear
+
+**Example Usage**:
+```typescript
+const { snapshots, saveSnapshot, deleteSnapshot, clearHistory, syncStatus } = useHistory('2025-W01')
+
+// Save a snapshot (syncs to DB immediately)
+await saveSnapshot(weekData, metadata, 'Before major changes', 'manual')
+
+// Auto-saves are throttled (30-minute minimum interval)
+await saveSnapshot(weekData, metadata, 'Auto Save', 'auto')
+```
+
+**Snapshot Types**:
+- `manual`: User-initiated via History Modal
+- `auto`: Automatic before bulk edits or CSV imports
+- `restore`: Created when restoring from a previous snapshot
+
+---
+
 ## Choosing the Right Pattern
 
 ```
@@ -130,10 +173,16 @@ await updateGoal(goalId, { completed: true })
                │
        ┌───────┴────────┐
        │                │
-    Editing        Button/Checkbox
-    text area      clicks?
+    Editing        Discrete
+    content?       actions?
        │                │
-       │                └──→ Pattern 3: Optimistic Updates
+       │         ┌──────┴──────┐
+       │         │             │
+       │     Needs         Standard
+       │     persistence?  CRUD?
+       │         │             │
+       │         └──→ Pattern 4   └──→ Pattern 3
+       │         (DB-Only)        (Optimistic)
        │
    ┌───┴────┐
    │        │
@@ -147,14 +196,15 @@ devices?    device?
 
 **Decision criteria**:
 
-| Criteria | Pattern 1 | Pattern 2 | Pattern 3 |
-|----------|-----------|-----------|-----------|
-| **Edit frequency** | High (continuous) | Low (occasional) | Low (discrete) |
-| **Multi-device** | Yes, critical | Yes, but DB is source | Less critical |
-| **Staleness detection** | Required | Not needed | Not needed |
-| **Sync timing** | Batched (30s) | Debounced (5s) | Instant |
-| **Data size** | Large (weeks) | Medium (year data) | Small (individual rows) |
-| **User interaction** | Editing cells | Typing text | Clicking buttons |
+| Criteria | Pattern 1 | Pattern 2 | Pattern 3 | Pattern 4 |
+|----------|-----------|-----------|-----------|-----------|
+| **Edit frequency** | High (continuous) | Low (occasional) | Low (discrete) | Very low (snapshots) |
+| **Multi-device** | Yes, critical | Yes, but DB is source | Less critical | Yes, important |
+| **Staleness detection** | Required | Not needed | Not needed | Not needed |
+| **Sync timing** | Batched (30s) | Debounced (5s) | Instant | Instant |
+| **Data size** | Large (weeks) | Medium (year data) | Small (individual rows) | Medium (snapshots) |
+| **User interaction** | Editing cells | Typing text | Clicking buttons | Manual saves |
+| **localStorage** | Yes (cache) | Yes (cache) | Yes (cache) | No |
 
 ---
 
@@ -170,6 +220,7 @@ devices?    device?
 | **Annual Review** | `annual-review-{year}` | `week_reviews` (week=0) | ❌ DB first | Debounced (5s) |
 | **Quarterly Goals** | `quarterly-goals-{year}-Q{quarter}` | `quarterly_goals` + `goal_milestones` | ❌ DB first | Optimistic (instant) |
 | **Daily Shipping** | `daily-shipping-{year}` | `daily_shipping` (rows) | ❌ DB first | Optimistic (instant) |
+| **Session History** | ❌ None | `data_snapshots` (rows) | ❌ DB first | Optimistic (instant) |
 
 ### Staleness Detection
 
@@ -278,6 +329,7 @@ Each pattern has its own hook with specialized logic:
 3. **`useWeekReviews.ts`**: Reviews-specific hook for Pattern 2 (debounced sync)
 4. **`useQuarterlyGoals.ts`**: Goals-specific hook for Pattern 3 (optimistic updates)
 5. **`useDailyShipping.ts`**: Shipping-specific hook for Pattern 3 (optimistic updates)
+6. **`useHistory.ts`**: History-specific hook for Pattern 4 (database-only with throttled auto-save)
 
 ---
 
@@ -353,15 +405,15 @@ The Dashboard is **read-only** and uses in-memory caching without persistence.
 
 ## Summary
 
-| Aspect | Pattern 1 (Incremental) | Pattern 2 (Debounced) | Pattern 3 (Optimistic) |
-|--------|-------------------------|----------------------|------------------------|
-| **Examples** | Timesheet, Settings | Memories, Reviews | Goals, Shipping |
-| **localStorage** | With timestamp | Plain data | Plain data |
-| **Staleness** | ✅ 1 hour | ❌ DB first | ❌ DB first |
-| **Sync timing** | Batched (30s) | Debounced (5s) | Instant |
-| **Conflict detection** | ✅ Pre-sync check | ❌ Last-write-wins | ❌ Last-write-wins |
-| **Error recovery** | Shows warning | Logs error | Rollback + retry |
-| **Multi-device** | ✅ Staleness + notification | ✅ DB source of truth | ✅ DB source of truth |
-| **Best for** | Frequent edits, multi-device | Occasional text edits | Discrete actions |
+| Aspect | Pattern 1 (Incremental) | Pattern 2 (Debounced) | Pattern 3 (Optimistic) | Pattern 4 (DB-Only) |
+|--------|-------------------------|----------------------|------------------------|---------------------|
+| **Examples** | Timesheet, Settings | Memories, Reviews | Goals, Shipping | Session History |
+| **localStorage** | With timestamp | Plain data | Plain data | None |
+| **Staleness** | ✅ 1 hour | ❌ DB first | ❌ DB first | ❌ DB first |
+| **Sync timing** | Batched (30s) | Debounced (5s) | Instant | Instant (throttled auto) |
+| **Conflict detection** | ✅ Pre-sync check | ❌ Last-write-wins | ❌ Last-write-wins | ❌ Last-write-wins |
+| **Error recovery** | Shows warning | Logs error | Rollback + retry | Shows error state |
+| **Multi-device** | ✅ Staleness + notification | ✅ DB source of truth | ✅ DB source of truth | ✅ DB source of truth |
+| **Best for** | Frequent edits, multi-device | Occasional text edits | Discrete actions | Version history/backup |
 
 **Key Takeaway**: Each pattern is optimized for its specific use case. Choose based on how users interact with the data, not just technical preferences.

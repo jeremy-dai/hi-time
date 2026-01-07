@@ -15,7 +15,7 @@ import { parseTimeCSV } from './utils/csvParser'
 import { Login } from './components/Login'
 import { useAuth } from './hooks/useAuth'
 import { useLocalStorageSync } from './hooks/useLocalStorageSync'
-import { useLocalHistory } from './hooks/useLocalHistory'
+import { useHistory } from './hooks/useHistory'
 import { HistoryModal } from './components/shared/HistoryModal'
 import { ToastProvider } from './components/shared/ToastContext'
 import { ToastContainer } from './components/shared/Toast'
@@ -135,7 +135,15 @@ function App() {
     loadFromDatabase
   })
 
-  const { snapshots, saveSnapshot, deleteSnapshot, clearHistory } = useLocalHistory(currentWeekKey)
+  const {
+    snapshots,
+    isLoading: historyLoading,
+    syncStatus: historySyncStatus,
+    lastSynced: historyLastSynced,
+    saveSnapshot,
+    deleteSnapshot,
+    clearHistory
+  } = useHistory(currentWeekKey)
 
   const handleRestoreSnapshot = useCallback((snapshot: any) => {
     if (snapshot.data) {
@@ -720,6 +728,9 @@ function App() {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         snapshots={snapshots}
+        isLoading={historyLoading}
+        syncStatus={historySyncStatus}
+        lastSynced={historyLastSynced}
         onRestore={handleRestoreSnapshot}
         onSaveSnapshot={(desc) => saveSnapshot(currentWeekData, currentWeekMetadata, desc)}
         onDeleteSnapshot={deleteSnapshot}
