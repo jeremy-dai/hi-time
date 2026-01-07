@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import type { TimeBlock } from '../types/time'
-import { getSnapshots, createSnapshot, deleteSnapshot, deleteAllSnapshots, DataSnapshot } from '../api'
+import { getSnapshots, createSnapshot, deleteSnapshot, deleteAllSnapshots } from '../api'
 import type { SyncStatus } from './useSyncState'
 
 export type HistorySnapshot = {

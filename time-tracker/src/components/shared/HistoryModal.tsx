@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Modal } from './Modal';
 import type { HistorySnapshot } from '../../hooks/useHistory';
-import type { SyncStatus } from '../../hooks/useSyncState';
-import { SyncStatusIndicator } from '../SyncStatusIndicator';
 import { format } from 'date-fns';
 
 interface HistoryModalProps {
@@ -10,8 +8,6 @@ interface HistoryModalProps {
   onClose: () => void;
   snapshots: HistorySnapshot[];
   isLoading?: boolean;
-  syncStatus?: SyncStatus;
-  lastSynced?: Date | null;
   onRestore: (snapshot: HistorySnapshot) => void;
   onSaveSnapshot: (description: string) => void;
   onDeleteSnapshot: (id: string) => void;
@@ -23,8 +19,6 @@ export function HistoryModal({
   onClose,
   snapshots,
   isLoading = false,
-  syncStatus = 'idle',
-  lastSynced = null,
   onRestore,
   onSaveSnapshot,
   onDeleteSnapshot,
@@ -55,17 +49,7 @@ export function HistoryModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={
-        <div className="flex items-center gap-3">
-          <span>Session History</span>
-          <SyncStatusIndicator
-            status={syncStatus}
-            lastSynced={lastSynced}
-            hasUnsavedChanges={false}
-            compact
-          />
-        </div>
-      }
+      title="Session History"
       description="View and restore previous versions of your timesheet for this week. History is synced across devices."
       icon={
         <svg className="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

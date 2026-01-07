@@ -138,8 +138,6 @@ function App() {
   const {
     snapshots,
     isLoading: historyLoading,
-    syncStatus: historySyncStatus,
-    lastSynced: historyLastSynced,
     saveSnapshot,
     deleteSnapshot,
     clearHistory
@@ -729,8 +727,6 @@ function App() {
         onClose={() => setIsHistoryOpen(false)}
         snapshots={snapshots}
         isLoading={historyLoading}
-        syncStatus={historySyncStatus}
-        lastSynced={historyLastSynced}
         onRestore={handleRestoreSnapshot}
         onSaveSnapshot={(desc) => saveSnapshot(currentWeekData, currentWeekMetadata, desc)}
         onDeleteSnapshot={deleteSnapshot}
