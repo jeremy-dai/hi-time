@@ -366,7 +366,7 @@ export function HandsontableCalendar({
     // Colors
     const colorMap = isGhost ? GHOST_CATEGORY_COLORS_HEX : CATEGORY_COLORS_HEX
     const colors = colorMap[category as keyof typeof CATEGORY_COLORS_HEX] || colorMap['']
-    
+
     // Create inner block container
     const block = document.createElement('div')
     block.style.width = '100%'
@@ -376,7 +376,7 @@ export function HandsontableCalendar({
     block.style.alignItems = 'center'
     block.style.overflow = 'hidden'
     block.style.position = 'relative'
-    
+
     // Apply background only if there is a category
     if (category) {
       block.style.backgroundColor = colors.bg
@@ -397,7 +397,7 @@ export function HandsontableCalendar({
     if (category && subcategory) {
       const shades = SUBCATEGORY_SHADES_HEX[category as keyof typeof SUBCATEGORY_SHADES_HEX] || SUBCATEGORY_SHADES_HEX['']
       const indicatorColor = shades[subcategoryIndex % shades.length]
-      
+
       const indicator = document.createElement('div')
       indicator.style.position = 'absolute'
       indicator.style.left = '0'
@@ -421,7 +421,7 @@ export function HandsontableCalendar({
     content.style.position = 'relative'
     content.style.zIndex = '2' // Text sits ON TOP of everything
     content.style.paddingLeft = (category && subcategory) ? '10px' : (category ? '8px' : '0')
-    
+
     if (subcategory && notes) {
       // Bold subcategory, normal notes
       const b = document.createElement('strong')
@@ -437,10 +437,10 @@ export function HandsontableCalendar({
     }
 
     if (category) {
-       block.appendChild(content)
-       td.appendChild(block)
+      block.appendChild(content)
+      td.appendChild(block)
     }
-    
+
     return td
   }
 
@@ -595,7 +595,7 @@ export function HandsontableCalendar({
         const maxCol = Math.max(startCol, endCol)
 
         if (coords.row >= minRow && coords.row <= maxRow &&
-            coords.col >= minCol && coords.col <= maxCol) {
+          coords.col >= minCol && coords.col <= maxCol) {
           isInSelection = true
         }
       })
@@ -1189,14 +1189,14 @@ export function HandsontableCalendar({
 
                   return (
                     <Fragment key={key}>
-                      <tr 
+                      <tr
                         className="border-b border-gray-200/60 hover:bg-opacity-40 transition-colors"
-                        style={{ 
+                        style={{
                           backgroundColor: hexToRgba(colors.bg, 0.3)
                         }}
                       >
                         <td
-                          className="py-2.5 px-1 text-center"
+                          className="py-2.5 px-1 relative"
                           style={{
                             width: '45px',
                             backgroundColor: colors.bg,
@@ -1212,8 +1212,9 @@ export function HandsontableCalendar({
                             })
                           }}
                         >
-                          <div className="font-bold text-base leading-tight">
-                            {categoryTotal.total}
+                          <span className="absolute top-0.5 left-1 text-[9px] font-extrabold opacity-60">{key}</span>
+                          <div className="flex items-center justify-center h-full">
+                            <span className="font-bold text-base">{categoryTotal.total}</span>
                           </div>
                         </td>
                         {categoryTotal.perDay.map((count, idx) => {
@@ -1237,15 +1238,15 @@ export function HandsontableCalendar({
                           const shadeColor = shades[subData.index % shades.length]
 
                           return (
-                            <tr 
-                              key={subName} 
+                            <tr
+                              key={subName}
                               className="border-b border-gray-200/40"
-                              style={{ 
+                              style={{
                                 backgroundColor: hexToRgba(shadeColor, 0.22)
                               }}
                             >
                               <td
-                                className="py-2 px-1 text-center"
+                                className="py-2 px-1 text-right pr-2.5"
                                 style={{
                                   width: '45px',
                                   backgroundColor: shadeColor,
@@ -1261,7 +1262,7 @@ export function HandsontableCalendar({
                                   })
                                 }}
                               >
-                                <div className="font-semibold text-sm leading-tight">{subData.total}</div>
+                                <div className="font-semibold text-xs leading-tight opacity-90">{subData.total}</div>
                               </td>
                               {subData.perDay.map((count, idx) => (
                                 <td key={`${subName}-day-${idx}`} className="text-center py-2 px-2 text-sm" style={{ color: colors.text }}>
