@@ -19,13 +19,13 @@ export default function AnnualMemoryCalendar({
 }: AnnualMemoryCalendarProps) {
   const [editingDate, setEditingDate] = useState<string | null>(null)
   const [editingMemory, setEditingMemory] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
-  // Focus textarea when editing
+  // Focus input when editing
   useEffect(() => {
-    if (editingDate && textareaRef.current) {
-      textareaRef.current.focus()
-      textareaRef.current.select()
+    if (editingDate && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
     }
   }, [editingDate])
 
@@ -81,7 +81,7 @@ export default function AnnualMemoryCalendar({
     setEditingMemory('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleBlur()
@@ -172,30 +172,32 @@ export default function AnnualMemoryCalendar({
                         className={cn(
                           'border-b border-gray-200 px-0 py-0 cursor-text transition-all duration-200 relative h-6 sm:h-7 max-h-6 sm:max-h-7',
                           idx < calendarData.length - 1 && "border-r border-gray-200",
-                          isEditing && 'ring-2 ring-emerald-400 ring-inset bg-emerald-50 shadow-inner z-10',
+                          isEditing && 'z-10 bg-white',
                           !isEditing && hasMemory && 'bg-[#b5d3e8] hover:bg-[#9ec3e0] hover:shadow-sm',
                           !isEditing && !hasMemory && 'bg-white/50 hover:bg-emerald-50/40'
                         )}
                         onClick={() => !isEditing && handleCellClick(dayData.dateStr)}
                       >
                         {isEditing ? (
-                          <textarea
-                            ref={textareaRef}
+                          <input
+                            type="text"
+                            ref={inputRef}
+                            autoFocus
                             value={editingMemory}
                             onChange={(e) => setEditingMemory(e.target.value)}
                             onBlur={handleBlur}
                             onKeyDown={handleKeyDown}
-                            placeholder="Add a memory..."
+                            placeholder="Type..."
                             className={cn(
-                              'w-full h-full min-h-[24px] sm:min-h-[28px] px-0.5 sm:px-1 py-0.5 text-[8.5px] sm:text-[9.5px] leading-snug',
-                              'focus:outline-none resize-none',
+                              'w-full h-full px-1 py-0 text-xs leading-none',
+                              'focus:outline-none focus:bg-white',
                               'text-[#0d2535] placeholder-gray-400 bg-transparent font-medium'
                             )}
                           />
                         ) : (
                           <div className="h-6 sm:h-7 px-0.5 sm:px-1 py-0.5 overflow-hidden flex items-center">
                             {hasMemory && (
-                              <div className="text-[8.5px] sm:text-[9.5px] leading-snug text-[#0d2535] line-clamp-1 font-medium">
+                              <div className="text-xs leading-snug text-[#0d2535] line-clamp-1 font-medium">
                                 {dayData.memory.memory}
                               </div>
                             )}
