@@ -51,7 +51,6 @@ export function useLocalStorageSync<T>(
   const [hasNewerVersion, setHasNewerVersion] = useState(false);
   const newerVersionDataRef = useRef<T | null>(null);
 
-  const syncIntervalRef = useRef<number | null>(null);
   const isSyncingRef = useRef(false);
   const lastSyncedDataRef = useRef<string | null>(null);
   const syncToDatabaseRef = useRef(syncToDatabase);
@@ -352,17 +351,17 @@ export function useLocalStorageSync<T>(
       isPollingPausedRef.current = false;
       // Determine the next interval based on state
       let nextInterval = syncInterval;
-      
+
       const now = Date.now();
       const timeSinceInteraction = now - lastInteractionTimeRef.current;
       const isHidden = document.hidden;
-      
+
       // ADAPTIVE POLLING STRATEGY:
       // 1. Active: Default interval (e.g., 30s)
       // 2. Idle (> 2 mins): 4x interval (e.g., 2 mins)
       // 3. Hidden: 10x interval (e.g., 5 mins)
       // 4. Sleep Mode (> 30 mins idle): Stop polling until activity
-      
+
       if (timeSinceInteraction > 30 * 60 * 1000) {
         // Sleep mode: User hasn't touched the app in 30 mins
         console.debug('[useLocalStorageSync] 😴 Sleep mode: Polling paused due to inactivity');
@@ -388,7 +387,7 @@ export function useLocalStorageSync<T>(
         // If no local changes, check if there are updates from other devices
         checkForUpdates();
       }
-      
+
       // Schedule next tick
       timeoutId = window.setTimeout(tick, nextInterval);
     };
