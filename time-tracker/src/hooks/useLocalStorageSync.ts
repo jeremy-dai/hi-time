@@ -56,6 +56,12 @@ export function useLocalStorageSync<T>(
   const lastSyncedDataRef = useRef<string | null>(null);
   const syncToDatabaseRef = useRef(syncToDatabase);
   const loadFromDatabaseRef = useRef(loadFromDatabase);
+  
+  // Track hasUnsavedChanges in a ref for use in useCallback without dependency
+  const hasUnsavedChangesRef = useRef(hasUnsavedChanges);
+  useEffect(() => {
+    hasUnsavedChangesRef.current = hasUnsavedChanges;
+  }, [hasUnsavedChanges]);
 
   // Keep refs up to date
   useEffect(() => {
@@ -63,57 +69,62 @@ export function useLocalStorageSync<T>(
     loadFromDatabaseRef.current = loadFromDatabase;
   });
 
-  // OPTIMIZED LOAD: Show local data immediately, then check database in background
-  useEffect(() => {
-    const loadData = async () => {
+  // Check for updates from database
+  const checkForUpdates = useCallback(async () => {
+    if (isSyncingRef.current) return;
+
+    try {
+      const dbData = await loadFromDatabaseRef.current();
+      
+      // Get local data to compare
       let localDataParsed: T | null = null;
       let localTimestamp: number | null = null;
-
-      // STEP 1: Load from localStorage IMMEDIATELY for instant UI
-      const localData = localStorage.getItem(storageKey);
-      if (localData) {
-        try {
+      
+      try {
+        const localData = localStorage.getItem(storageKey);
+        if (localData) {
           const cached: CachedData<T> = JSON.parse(localData);
-          const age = Date.now() - cached.timestamp;
-
-          if (age < STALENESS_THRESHOLD) {
-            localDataParsed = cached.data;
-            localTimestamp = cached.timestamp;
-
-            // Show local data immediately (instant load!)
-            setDataState(localDataParsed);
-            lastSyncedDataRef.current = JSON.stringify(localDataParsed);
-            console.log('[useLocalStorageSync] ⚡ Instant load from localStorage');
-          }
-        } catch (err) {
-          console.error('Failed to parse localStorage data:', err);
+          localDataParsed = cached.data;
+          localTimestamp = cached.timestamp;
         }
+      } catch (e) {
+        console.error('Failed to parse localStorage for comparison', e);
       }
 
-      // STEP 2: Fetch database in BACKGROUND to check for newer version
-      try {
-        const dbData = await loadFromDatabaseRef.current();
+      if (dbData) {
+        const dbDataStr = JSON.stringify(dbData);
+        
+        const localDataStr = localDataParsed ? JSON.stringify(localDataParsed) : null;
 
-        if (dbData) {
-          const dbDataStr = JSON.stringify(dbData);
-          const localDataStr = localDataParsed ? JSON.stringify(localDataParsed) : null;
-
-          // Compare database with local
-          if (dbDataStr !== localDataStr) {
+        // Compare database with local
+        if (dbDataStr !== localDataStr) {
             // Data is different - check which is newer
             const dbUpdatedAt = (dbData as any)?.updatedAt;
 
             // If we have timestamps, compare them
             if (dbUpdatedAt && localTimestamp) {
               if (dbUpdatedAt > localTimestamp) {
-                // Database is NEWER - save it and notify user
+                // Database is NEWER
                 console.warn('[useLocalStorageSync] 🔔 Database has newer version!');
-                console.warn(`  DB: ${new Date(dbUpdatedAt).toISOString()}`);
-                console.warn(`  Local: ${new Date(localTimestamp).toISOString()}`);
-
-                // Store newer version in ref for user to load
-                newerVersionDataRef.current = dbData;
-                setHasNewerVersion(true);
+                
+                // AUTO UPDATE if no unsaved changes
+                if (!hasUnsavedChangesRef.current) {
+                    console.log('[useLocalStorageSync] 🔄 Auto-updating data (no unsaved changes)');
+                    setDataState(dbData);
+                    
+                    const cached: CachedData<T> = {
+                        data: dbData,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem(storageKey, JSON.stringify(cached));
+                    lastSyncedDataRef.current = JSON.stringify(dbData);
+                    setLastSynced(new Date());
+                    setHasNewerVersion(false);
+                } else {
+                    // Notify user
+                    newerVersionDataRef.current = dbData;
+                    setHasNewerVersion(true);
+                }
               } else {
                 console.log('[useLocalStorageSync] ✓ Local version is up to date');
               }
@@ -130,22 +141,70 @@ export function useLocalStorageSync<T>(
               lastSyncedDataRef.current = JSON.stringify(dbData);
               setLastSynced(new Date());
             }
-          } else {
-            console.log('[useLocalStorageSync] ✓ Local and database are in sync');
-            setLastSynced(new Date());
-          }
-        } else if (!localDataParsed) {
-          // No data anywhere
-          console.log('[useLocalStorageSync] No data in database or localStorage');
+        } else {
+            // In sync
+             if (!hasUnsavedChangesRef.current) {
+                 setLastSynced(new Date());
+                 setHasNewerVersion(false);
+             }
         }
-      } catch (err) {
-        console.error('[useLocalStorageSync] Failed to fetch from database:', err);
-        // Local data already shown, continue with it
+      } else if (!localDataParsed) {
+        // No data in database AND no data in local storage
+        console.log('[useLocalStorageSync] No data in database');
+      }
+    } catch (err) {
+        console.error('[useLocalStorageSync] Failed to check for updates:', err);
+    }
+  }, [storageKey]); // removed data and hasUnsavedChanges dependencies
+
+  // OPTIMIZED LOAD: Show local data immediately, then check database in background
+  useEffect(() => {
+    const loadLocalData = () => {
+      // STEP 1: Load from localStorage IMMEDIATELY for instant UI
+      const localData = localStorage.getItem(storageKey);
+      if (localData) {
+        try {
+          const cached: CachedData<T> = JSON.parse(localData);
+          const age = Date.now() - cached.timestamp;
+
+          if (age < STALENESS_THRESHOLD) {
+             // Show local data immediately (instant load!)
+             setDataState(cached.data);
+             lastSyncedDataRef.current = JSON.stringify(cached.data);
+             console.log('[useLocalStorageSync] ⚡ Instant load from localStorage');
+          }
+        } catch (err) {
+          console.error('Failed to parse localStorage data:', err);
+        }
       }
     };
 
-    loadData();
-  }, [storageKey]);
+    loadLocalData();
+    checkForUpdates();
+  }, [storageKey, checkForUpdates]);
+
+  // Auto-fetch on visibility change or focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('[useLocalStorageSync] 👁️ App became visible, checking for updates...');
+        checkForUpdates();
+      }
+    };
+
+    const handleFocus = () => {
+        console.log('[useLocalStorageSync] 🎯 Window focused, checking for updates...');
+        checkForUpdates();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [checkForUpdates]);
 
   // Save to localStorage immediately when data changes
   const setData = useCallback((newData: T) => {
@@ -239,22 +298,110 @@ export function useLocalStorageSync<T>(
     }
   }, [data, hasUnsavedChanges]);
 
-  // Periodic sync
+  const lastInteractionTimeRef = useRef<number>(Date.now());
+  const isPollingPausedRef = useRef(false);
+  const startPollingRef = useRef<(() => void) | null>(null);
+
+  // Track user activity to optimize polling
+  useEffect(() => {
+    const updateInteractionTime = () => {
+      const wasPaused = isPollingPausedRef.current;
+      lastInteractionTimeRef.current = Date.now();
+      
+      // If we were in sleep mode, wake up the polling loop
+      if (wasPaused && startPollingRef.current) {
+        console.debug('[useLocalStorageSync] ⚡ Activity detected, waking up from sleep mode');
+        startPollingRef.current();
+      }
+    };
+
+    // Throttle the event listeners to avoid performance impact
+    let throttleTimer: number | null = null;
+    const throttledHandler = () => {
+      if (!throttleTimer) {
+        throttleTimer = window.setTimeout(() => {
+          updateInteractionTime();
+          throttleTimer = null;
+        }, 1000);
+      }
+    };
+
+    window.addEventListener('mousemove', throttledHandler);
+    window.addEventListener('keydown', throttledHandler);
+    window.addEventListener('click', throttledHandler);
+    window.addEventListener('scroll', throttledHandler);
+    window.addEventListener('touchstart', throttledHandler);
+
+    return () => {
+      window.removeEventListener('mousemove', throttledHandler);
+      window.removeEventListener('keydown', throttledHandler);
+      window.removeEventListener('click', throttledHandler);
+      window.removeEventListener('scroll', throttledHandler);
+      window.removeEventListener('touchstart', throttledHandler);
+      if (throttleTimer) clearTimeout(throttleTimer);
+    };
+  }, []);
+
+  // Periodic sync and update check with adaptive interval
   useEffect(() => {
     if (syncInterval <= 0) return;
 
-    syncIntervalRef.current = window.setInterval(() => {
-      if (hasUnsavedChanges) {
-        syncNow();
+    let timeoutId: number;
+
+    const tick = () => {
+      isPollingPausedRef.current = false;
+      // Determine the next interval based on state
+      let nextInterval = syncInterval;
+      
+      const now = Date.now();
+      const timeSinceInteraction = now - lastInteractionTimeRef.current;
+      const isHidden = document.hidden;
+      
+      // ADAPTIVE POLLING STRATEGY:
+      // 1. Active: Default interval (e.g., 30s)
+      // 2. Idle (> 2 mins): 4x interval (e.g., 2 mins)
+      // 3. Hidden: 10x interval (e.g., 5 mins)
+      // 4. Sleep Mode (> 30 mins idle): Stop polling until activity
+      
+      if (timeSinceInteraction > 30 * 60 * 1000) {
+        // Sleep mode: User hasn't touched the app in 30 mins
+        console.debug('[useLocalStorageSync] 😴 Sleep mode: Polling paused due to inactivity');
+        isPollingPausedRef.current = true;
+        return; // Don't schedule next tick, wait for interaction
       }
-    }, syncInterval);
+
+      if (isHidden) {
+        nextInterval = syncInterval * 10;
+      } else if (timeSinceInteraction > 2 * 60 * 1000) {
+        nextInterval = syncInterval * 4;
+      }
+
+      // Add Jitter (±10%) to avoid "thundering herd" on database
+      const jitter = nextInterval * 0.1 * (Math.random() * 2 - 1);
+      nextInterval = Math.max(1000, nextInterval + jitter);
+
+      console.debug(`[useLocalStorageSync] 🕒 Next poll in ${Math.round(nextInterval / 1000)}s`);
+
+      if (hasUnsavedChangesRef.current) {
+        syncNow();
+      } else {
+        // If no local changes, check if there are updates from other devices
+        checkForUpdates();
+      }
+      
+      // Schedule next tick
+      timeoutId = window.setTimeout(tick, nextInterval);
+    };
+
+    startPollingRef.current = tick;
+
+    // Start the loop
+    timeoutId = window.setTimeout(tick, syncInterval);
 
     return () => {
-      if (syncIntervalRef.current) {
-        clearInterval(syncIntervalRef.current);
-      }
+      window.clearTimeout(timeoutId);
     };
-  }, [syncInterval, hasUnsavedChanges, syncNow]);
+  }, [syncInterval, syncNow, checkForUpdates]);
 
   // Warn user before closing tab if there are unsaved changes
   useEffect(() => {
