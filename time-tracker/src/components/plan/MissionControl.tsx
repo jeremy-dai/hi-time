@@ -277,7 +277,6 @@ export function MissionControl({ data }: MissionControlProps) {
     planName,
     trackers,
     updateTrackerValue,
-    cycles,
     allWeeks,
     currentWeek,
     currentCycle,
@@ -374,7 +373,7 @@ export function MissionControl({ data }: MissionControlProps) {
             {/* Connector line */}
             <div className="absolute left-4 top-2 bottom-4 w-0.5 bg-gray-200" />
             
-            {upcomingWeeks.map((w, i) => (
+            {upcomingWeeks.map((w) => (
               <div key={w.weekNumber} className="relative pl-8">
                 {/* Node */}
                 <div className="absolute left-[-5px] top-1.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-200 ring-4 ring-gray-50" />

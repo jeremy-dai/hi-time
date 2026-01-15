@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { PlanWeek } from '../../../hooks/useQuarterlyPlan'
 import { Modal } from '../../shared/Modal'
-import { CheckCircle2, Circle, Plus, Trash2, X } from 'lucide-react'
+import { CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react'
 import { cn } from '../../../utils/classNames'
 
 interface WeekEditModalProps {

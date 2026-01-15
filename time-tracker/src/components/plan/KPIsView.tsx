@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import type { UseQuarterlyPlanReturn, PlanTracker } from '../../hooks/useQuarterlyPlan'
+import type { UseQuarterlyPlanReturn } from '../../hooks/useQuarterlyPlan'
 import { KPICard } from './components/KPICard'
 import { SyncStatusIndicator } from '../SyncStatusIndicator'
 

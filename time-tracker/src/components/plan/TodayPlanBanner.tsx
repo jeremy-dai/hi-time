@@ -1,23 +1,10 @@
 import { useState } from 'react'
-import type { UseQuarterlyPlanReturn, PlanWeek } from '../../hooks/useQuarterlyPlan'
+import type { UseQuarterlyPlanReturn } from '../../hooks/useQuarterlyPlan'
 import { Target, ChevronDown, ChevronRight, CheckCircle2, Circle, Sparkles, Calendar } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
 interface TodayPlanBannerProps {
   planData: UseQuarterlyPlanReturn
-}
-
-function getDayName(dayStr: string): string {
-  const days: Record<string, string> = {
-    'Monday': 'Mon',
-    'Tuesday': 'Tue',
-    'Wednesday': 'Wed',
-    'Thursday': 'Thu',
-    'Friday': 'Fri',
-    'Saturday': 'Sat',
-    'Sunday': 'Sun'
-  }
-  return days[dayStr] || dayStr.slice(0, 3)
 }
 
 function getCurrentDayOfWeek(): string {
