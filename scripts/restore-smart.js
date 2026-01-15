@@ -133,6 +133,8 @@ function getConflictKey(tableName) {
     daily_shipping: 'user_id,year,month,day',
     quarterly_goals: 'id',
     quarterly_goal_milestones: 'id',
+    quarterly_plans: 'user_id,plan_id',
+    data_snapshots: 'id',
   };
   return conflictKeys[tableName] || 'id';
 }
@@ -197,6 +199,8 @@ function mergeIncrementalBackups(fullBackup, incrementalBackups) {
     daily_shipping: new Map(fullBackup.tables.daily_shipping.map(r => [getRecordKey('daily_shipping', r), r])),
     quarterly_goals: new Map((fullBackup.tables.quarterly_goals || []).map(r => [getRecordKey('quarterly_goals', r), r])),
     quarterly_goal_milestones: new Map((fullBackup.tables.quarterly_goal_milestones || []).map(r => [getRecordKey('quarterly_goal_milestones', r), r])),
+    quarterly_plans: new Map((fullBackup.tables.quarterly_plans || []).map(r => [getRecordKey('quarterly_plans', r), r])),
+    data_snapshots: new Map((fullBackup.tables.data_snapshots || []).map(r => [getRecordKey('data_snapshots', r), r])),
   };
 
   // Apply each incremental backup in order
@@ -244,6 +248,8 @@ function getRecordKey(tableName, record) {
     daily_shipping: `${record.user_id}_${record.year}_${record.month}_${record.day}`,
     quarterly_goals: record.id,
     quarterly_goal_milestones: record.id,
+    quarterly_plans: `${record.user_id}_${record.plan_id}`,
+    data_snapshots: record.id,
   };
   return keyMap[tableName] || record.id;
 }
@@ -348,16 +354,16 @@ async function performRestore(backupFile, mode = 'upsert') {
   await restoreTable('year_memories', backupData.tables.year_memories, mode);
   await restoreTable('week_reviews', backupData.tables.week_reviews, mode);
   if (backupData.tables.daily_shipping) {
-    await restoreTable('daily_shipping', backupData.tables.daily_shipping, mode);
-  }
-  if (backupData.tables.quarterly_goals) {
-    await restoreTable('quarterly_goals', backupData.tables.quarterly_goals, mode);
-  }
-  if (backupData.tables.quarterly_goal_milestones) {
-    await restoreTable('quarterly_goal_milestones', backupData.tables.quarterly_goal_milestones, mode);
-  }
+      await restoreTable('daily_shipping', backupData.tables.daily_shipping, mode);
+    }
+    if (backupData.tables.quarterly_plans) {
+      await restoreTable('quarterly_plans', backupData.tables.quarterly_plans, mode);
+    }
+    if (backupData.tables.data_snapshots) {
+      await restoreTable('data_snapshots', backupData.tables.data_snapshots, mode);
+    }
 
-  console.log(`\n✅ Restore completed successfully!\n`);
+    console.log(`\n✅ Smart restore completed successfully!\n`);
 }
 
 // Parse command line arguments

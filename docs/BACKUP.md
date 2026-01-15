@@ -205,8 +205,8 @@ The `.github/workflows/backup.yml` workflow is stored in your **MAIN repo** (`hi
 - `year_memories` - Current year only
 - `week_reviews` - Last 14 days of updates
 - `daily_shipping` - Current month only
-- `quarterly_goals` - All goals (always included, typically small)
-- `quarterly_goal_milestones` - All milestones (always included, typically small)
+- `quarterly_plans` - All plans (always included, typically small)
+- `data_snapshots` - Last 14 days of snapshots
 
 **Why incremental?** You typically only edit the current week and occasionally fix last week's data. This captures your active work while being 90% smaller than full backups.
 

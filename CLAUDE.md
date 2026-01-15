@@ -49,7 +49,7 @@ This is a **monorepo** (NPM workspaces) with two packages:
 
 ### Database (`database/`)
 - PostgreSQL schema in `schema.sql`
-- Tables: `weeks`, `user_settings`, `year_memories`, `week_reviews`, `daily_shipping`, `quarterly_goals`, `weekly_snapshots`
+- Tables: `weeks`, `user_settings`, `year_memories`, `week_reviews`, `daily_shipping`, `quarterly_plans`, `data_snapshots`
 
 ## Key Concepts
 

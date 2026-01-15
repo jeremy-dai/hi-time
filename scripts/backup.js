@@ -98,31 +98,31 @@ async function performBackup() {
 
   try {
     // Fetch all data from all tables
-    const [weeks, userSettings, yearMemories, weekReviews, dailyShipping, quarterlyGoals, quarterlyGoalMilestones] = await Promise.all([
+    const [weeks, userSettings, yearMemories, weekReviews, dailyShipping, quarterlyPlans, dataSnapshots] = await Promise.all([
       fetchAllFromTable('weeks'),
       fetchAllFromTable('user_settings'),
       fetchAllFromTable('year_memories'),
       fetchAllFromTable('week_reviews'),
       fetchAllFromTable('daily_shipping'),
-      fetchAllFromTable('quarterly_goals'),
-      fetchAllFromTable('quarterly_goal_milestones'),
+      fetchAllFromTable('quarterly_plans'),
+      fetchAllFromTable('data_snapshots'),
     ]);
 
     // Compile backup data
     const backupData = {
       timestamp,
-      version: '1.0',
+      version: '1.1',
       tables: {
         weeks,
         user_settings: userSettings,
         year_memories: yearMemories,
         week_reviews: weekReviews,
         daily_shipping: dailyShipping,
-        quarterly_goals: quarterlyGoals,
-        quarterly_goal_milestones: quarterlyGoalMilestones,
+        quarterly_plans: quarterlyPlans,
+        data_snapshots: dataSnapshots,
       },
       metadata: {
-        totalRecords: weeks.length + userSettings.length + yearMemories.length + weekReviews.length + dailyShipping.length + quarterlyGoals.length + quarterlyGoalMilestones.length,
+        totalRecords: weeks.length + userSettings.length + yearMemories.length + weekReviews.length + dailyShipping.length + quarterlyPlans.length + dataSnapshots.length,
         encrypted: !!BACKUP_ENCRYPTION_KEY,
       }
     };
@@ -133,8 +133,8 @@ async function performBackup() {
     console.log(`  • year_memories: ${yearMemories.length} records`);
     console.log(`  • week_reviews: ${weekReviews.length} records`);
     console.log(`  • daily_shipping: ${dailyShipping.length} records`);
-    console.log(`  • quarterly_goals: ${quarterlyGoals.length} records`);
-    console.log(`  • quarterly_goal_milestones: ${quarterlyGoalMilestones.length} records`);
+    console.log(`  • quarterly_plans: ${quarterlyPlans.length} records`);
+    console.log(`  • data_snapshots: ${dataSnapshots.length} records`);
     console.log(`  • Total: ${backupData.metadata.totalRecords} records`);
 
     // Create backups directory if it doesn't exist

@@ -86,12 +86,11 @@ updateMemory('2025-01-15', { text: 'Great day!', tags: ['work'] })
 
 ---
 
-### Pattern 3: Optimistic Updates (Quarterly Goals, Daily Shipping)
+### Pattern 3: Optimistic Updates (Daily Shipping)
 
 **Use for**: Discrete actions (button clicks, checkboxes, form submissions)
 
 **Hooks**:
-- [`useQuarterlyGoals`](../time-tracker/src/hooks/useQuarterlyGoals.ts)
 - [`useDailyShipping`](../time-tracker/src/hooks/useDailyShipping.ts)
 
 **Strategy**:

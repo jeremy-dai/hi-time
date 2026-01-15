@@ -45,8 +45,8 @@ async function main() {
     'year_memories',
     'week_reviews',
     'daily_shipping',
-    'quarterly_goals',
-    'quarterly_goal_milestones'
+    'quarterly_plans',
+    'data_snapshots'
   ];
 
   for (const table of tables) {
