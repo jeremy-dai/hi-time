@@ -112,10 +112,10 @@ updateMemory('2025-01-15', { text: 'Great day!', tags: ['work'] })
 
 **Example Usage**:
 ```typescript
-const { goals, updateGoal, syncStatus } = useQuarterlyGoals(2025, 1)
+const { updateShipping, syncStatus } = useDailyShipping(2025)
 
 // Instantly updates UI, syncs to DB, rolls back if fails
-await updateGoal(goalId, { completed: true })
+await updateShipping('2025-01-15', { shipped: 'Launched v1.0', completed: true })
 ```
 
 ---
@@ -326,9 +326,8 @@ Each pattern has its own hook with specialized logic:
 1. **`useLocalStorageSync.ts`**: Generic hook for Pattern 1 (incremental sync with staleness)
 2. **`useYearMemories.ts`**: Memories-specific hook for Pattern 2 (debounced sync)
 3. **`useWeekReviews.ts`**: Reviews-specific hook for Pattern 2 (debounced sync)
-4. **`useQuarterlyGoals.ts`**: Goals-specific hook for Pattern 3 (optimistic updates)
-5. **`useDailyShipping.ts`**: Shipping-specific hook for Pattern 3 (optimistic updates)
-6. **`useHistory.ts`**: History-specific hook for Pattern 4 (database-only with throttled auto-save)
+4. **`useDailyShipping.ts`**: Shipping-specific hook for Pattern 3 (optimistic updates)
+5. **`useHistory.ts`**: History-specific hook for Pattern 4 (database-only with throttled auto-save)
 
 ---
 

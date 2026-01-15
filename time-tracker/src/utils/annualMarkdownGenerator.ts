@@ -1,5 +1,5 @@
 import type { YTDStats } from './analytics'
-import type { TimeBlock, DailyMemory, WeekReview, DailyShipping, QuarterlyGoal } from '../types/time'
+import type { TimeBlock, DailyMemory, WeekReview, DailyShipping } from '../types/time'
 import { CATEGORY_KEYS } from '../types/time'
 import { CATEGORY_LABELS } from '../constants/colors'
 
@@ -13,7 +13,6 @@ export interface AnnualExportData {
   weeksStore: Record<string, TimeBlock[][]>
   weekReviews: Record<number, WeekReview>
   dailyShipping?: Record<string, DailyShipping>
-  quarterlyGoals?: QuarterlyGoal[]
   year: number
 }
 
@@ -22,7 +21,7 @@ export interface AnnualExportData {
  */
 export function generateAnnualReport(data: AnnualExportData): string {
   const sections: string[] = []
-  const { ytdStats, weekThemes, memories, weeksStore, weekReviews, dailyShipping, quarterlyGoals, year } = data
+  const { ytdStats, weekThemes, memories, weeksStore, weekReviews, dailyShipping, year } = data
 
   // Title
   const firstWeek = ytdStats.weeklyData[ytdStats.weeklyData.length - 1]?.weekKey || ''
@@ -72,16 +71,6 @@ export function generateAnnualReport(data: AnnualExportData): string {
   sections.push('')
   sections.push(formatDailyHeatmap(ytdStats, weeksStore))
   sections.push('')
-
-  // ========== SECTION 5.5: QUARTERLY GOALS ==========
-  if (quarterlyGoals && quarterlyGoals.length > 0) {
-    sections.push('---')
-    sections.push('')
-    sections.push('# 🎯 Section 5.5: Quarterly Goals')
-    sections.push('')
-    sections.push(formatQuarterlyGoals(quarterlyGoals))
-    sections.push('')
-  }
 
   // ========== SECTION 6: MEMORIES ==========
   sections.push('---')
@@ -566,77 +555,6 @@ function collectAllDays(ytdStats: YTDStats, weeksStore: Record<string, TimeBlock
   return days
 }
 
-// ========== SECTION 5.5: QUARTERLY GOALS ==========
-
-function formatQuarterlyGoals(quarterlyGoals: QuarterlyGoal[]): string {
-  const lines: string[] = []
-
-  // Group goals by quarter
-  const goalsByQuarter: Record<number, QuarterlyGoal[]> = {
-    1: [],
-    2: [],
-    3: [],
-    4: []
-  }
-
-  for (const goal of quarterlyGoals) {
-    if (goal.quarter >= 1 && goal.quarter <= 4) {
-      goalsByQuarter[goal.quarter].push(goal)
-    }
-  }
-
-  // Count total goals and completed
-  const totalGoals = quarterlyGoals.length
-  const completedGoals = quarterlyGoals.filter(g => g.completed).length
-  const completionRate = totalGoals > 0 ? ((completedGoals / totalGoals) * 100).toFixed(1) : '0.0'
-
-  lines.push('## Goals Summary')
-  lines.push('')
-  lines.push(`**Total Goals:** ${totalGoals}`)
-  lines.push(`**Completed Goals:** ${completedGoals}`)
-  lines.push(`**Completion Rate:** ${completionRate}%`)
-  lines.push('')
-
-  // Display each quarter's goals
-  const QUARTER_NAMES = ['Q1 (Jan-Mar)', 'Q2 (Apr-Jun)', 'Q3 (Jul-Sep)', 'Q4 (Oct-Dec)']
-
-  for (let q = 1; q <= 4; q++) {
-    const goals = goalsByQuarter[q]
-    if (goals.length === 0) continue
-
-    lines.push(`### ${QUARTER_NAMES[q - 1]}`)
-    lines.push('')
-
-    // Sort by display order
-    const sortedGoals = [...goals].sort((a, b) => a.displayOrder - b.displayOrder)
-
-    for (const goal of sortedGoals) {
-      const status = goal.completed ? '✅' : '⬜'
-      lines.push(`${status} **${goal.title}**`)
-
-      if (goal.description) {
-        lines.push(`   *${goal.description}*`)
-      }
-
-      // Display milestones if any
-      if (goal.milestones && goal.milestones.length > 0) {
-        const sortedMilestones = [...goal.milestones].sort((a, b) => a.displayOrder - b.displayOrder)
-        const completedMilestones = sortedMilestones.filter(m => m.completed).length
-
-        lines.push(`   **Milestones:** ${completedMilestones}/${sortedMilestones.length} completed`)
-
-        for (const milestone of sortedMilestones) {
-          const mStatus = milestone.completed ? '✅' : '⬜'
-          lines.push(`   - ${mStatus} ${milestone.title}`)
-        }
-      }
-
-      lines.push('')
-    }
-  }
-
-  return lines.join('\n')
-}
 
 // ========== SECTION 6: MEMORIES ==========
 

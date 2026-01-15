@@ -4,7 +4,6 @@ import { aggregateYTDData } from '../../utils/analytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
 import { useWeekReviews } from '../../hooks/useWeekReviews'
 import { useDailyShipping } from '../../hooks/useDailyShipping'
-import { useYearQuarterlyGoals } from '../../hooks/useYearQuarterlyGoals'
 import AnnualCategoryBreakdown from './AnnualCategoryBreakdown'
 import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
@@ -37,7 +36,6 @@ export default function AnnualDashboard({
   const { memories, isLoading: isLoadingMemories } = useYearMemories(year)
   const { reviews: weekReviews, isLoading: isLoadingReviews } = useWeekReviews(year)
   const { entries: dailyShippingEntries, isLoading: isLoadingShipping } = useDailyShipping(year)
-  const { goals: quarterlyGoals, isLoading: isLoadingGoals } = useYearQuarterlyGoals(year)
 
   // Extract themes from metadata store
   const weekThemes = useMemo(() => {
@@ -158,13 +156,12 @@ export default function AnnualDashboard({
       weeksStore,
       weekReviews,
       dailyShipping,
-      quarterlyGoals,
       year
     })
     downloadAnnualMarkdownReport(content, year)
   }
 
-  const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping || isLoadingGoals
+  const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping
 
   return (
     <div className="space-y-6">
