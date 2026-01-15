@@ -1,0 +1,403 @@
+import { useState, useRef, useEffect, useMemo } from 'react'
+import type { UseQuarterlyPlanReturn } from '../../hooks/useQuarterlyPlan'
+import { useDailyShipping } from '../../hooks/useDailyShipping'
+import { KPICard } from './components/KPICard'
+import { ActiveMissionCard } from './components/ActiveMissionCard'
+import { Package, CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { cn } from '../../utils/classNames'
+import { SyncStatusIndicator } from '../SyncStatusIndicator'
+
+interface MissionControlProps {
+  data: UseQuarterlyPlanReturn
+}
+
+// Get the week dates for a given date
+function getWeekRange(date: Date): { start: Date; end: Date; dates: Date[] } {
+  const d = new Date(date)
+  const day = d.getDay() // 0 = Sunday
+  const start = new Date(d)
+  start.setDate(d.getDate() - day) // Start from Sunday
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6) // End on Saturday
+
+  const dates: Date[] = []
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(start)
+    date.setDate(start.getDate() + i)
+    dates.push(date)
+  }
+
+  return { start, end, dates }
+}
+
+// Format date for display
+function formatDateKey(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Weekly Shipping Component
+function WeeklyShipping() {
+  const [weekOffset, setWeekOffset] = useState(0)
+  const today = new Date()
+  const selectedDate = useMemo(() => {
+    const d = new Date(today)
+    d.setDate(today.getDate() + weekOffset * 7)
+    return d
+  }, [weekOffset])
+
+  const weekRange = useMemo(() => getWeekRange(selectedDate), [selectedDate])
+  const year = weekRange.start.getFullYear()
+  const endYear = weekRange.end.getFullYear()
+
+  // We may need entries from two different years if week spans year boundary
+  const { entries: entriesThisYear, updateEntry: updateEntryThisYear, isLoading: loadingThisYear, syncStatus } = useDailyShipping(year)
+  const { entries: entriesNextYear, updateEntry: updateEntryNextYear, isLoading: loadingNextYear } = useDailyShipping(endYear !== year ? endYear : year)
+
+  const isLoading = loadingThisYear || (endYear !== year && loadingNextYear)
+
+  const getEntry = (date: Date) => {
+    const dateKey = formatDateKey(date)
+    const y = date.getFullYear()
+    return y === year ? entriesThisYear[dateKey] : entriesNextYear[dateKey]
+  }
+
+  const handleUpdateEntry = (date: Date, shipped: string, completed: boolean) => {
+    const y = date.getFullYear()
+    const m = date.getMonth() + 1
+    const d = date.getDate()
+    if (y === year) {
+      updateEntryThisYear(y, m, d, shipped, completed)
+    } else {
+      updateEntryNextYear(y, m, d, shipped, completed)
+    }
+  }
+
+  const isToday = (date: Date) => {
+    return date.toDateString() === today.toDateString()
+  }
+
+  const isPast = (date: Date) => {
+    const todayStart = new Date(today)
+    todayStart.setHours(0, 0, 0, 0)
+    return date < todayStart
+  }
+
+  // Inline editing state
+  const [editingDate, setEditingDate] = useState<string | null>(null)
+  const [tempValue, setTempValue] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editingDate && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [editingDate])
+
+  const startEditing = (date: Date) => {
+    const dateKey = formatDateKey(date)
+    const entry = getEntry(date)
+    setEditingDate(dateKey)
+    setTempValue(entry?.shipped || '')
+  }
+
+  const saveEdit = (date: Date) => {
+    const entry = getEntry(date)
+    handleUpdateEntry(date, tempValue, entry?.completed || false)
+    setEditingDate(null)
+    setTempValue('')
+  }
+
+  const toggleComplete = (date: Date) => {
+    const entry = getEntry(date)
+    if (entry?.shipped) {
+      handleUpdateEntry(date, entry.shipped, !entry.completed)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-4 animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div className="space-y-2">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-100 rounded"></div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const weekLabel = weekRange.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+    ' - ' + weekRange.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+  return (
+    <div className="bg-gradient-to-br from-white to-emerald-50 rounded-xl border border-emerald-200 p-4 h-full flex flex-col">
+      {/* Header with week navigation */}
+      <div className="flex items-center justify-between mb-4 min-h-[28px]">
+        <div className="flex items-center gap-2">
+          <Package className="h-5 w-5 text-emerald-600" />
+          <h3 className="font-semibold text-gray-900">Daily Shipping</h3>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setWeekOffset(w => w - 1)}
+            className="p-1 hover:bg-white rounded transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 text-gray-600" />
+          </button>
+          <span className="text-sm text-gray-600 min-w-[140px] text-center">{weekLabel}</span>
+          <button
+            onClick={() => setWeekOffset(w => w + 1)}
+            disabled={weekOffset >= 0}
+            className={cn(
+              'p-1 hover:bg-white rounded transition-colors',
+              weekOffset >= 0 && 'opacity-30 cursor-not-allowed'
+            )}
+          >
+            <ChevronRight className="h-4 w-4 text-gray-600" />
+          </button>
+          {weekOffset !== 0 && (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="text-xs text-emerald-600 hover:text-emerald-700 ml-2"
+            >
+              Today
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Week grid */}
+      <div className="space-y-1 flex-1">
+        {weekRange.dates.map((date) => {
+          const dateKey = formatDateKey(date)
+          const entry = getEntry(date)
+          const hasContent = entry?.shipped && entry.shipped.trim().length > 0
+          const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short' })
+          const dateLabel = date.getDate()
+
+          return (
+            <div
+              key={dateKey}
+              className={cn(
+                'flex items-center gap-3 p-2 rounded-lg transition-colors',
+                isToday(date) && 'bg-emerald-100/50 border border-emerald-200',
+                !isToday(date) && isPast(date) && !hasContent && 'opacity-50'
+              )}
+            >
+              {/* Date */}
+              <div className="w-12 shrink-0 text-center">
+                <div className={cn(
+                  'text-xs font-medium',
+                  isToday(date) ? 'text-emerald-700' : 'text-gray-500'
+                )}>
+                  {dayLabel}
+                </div>
+                <div className={cn(
+                  'text-lg font-bold',
+                  isToday(date) ? 'text-emerald-700' : 'text-gray-700'
+                )}>
+                  {dateLabel}
+                </div>
+              </div>
+
+              {/* Checkbox */}
+              <button
+                onClick={() => toggleComplete(date)}
+                disabled={!hasContent}
+                className={cn(
+                  'shrink-0 transition-colors',
+                  hasContent ? 'cursor-pointer' : 'cursor-not-allowed opacity-30'
+                )}
+              >
+                {entry?.completed ? (
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                ) : (
+                  <Circle className="h-5 w-5 text-gray-400" />
+                )}
+              </button>
+
+              {/* Input/Display */}
+              {editingDate === dateKey ? (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={tempValue}
+                  onChange={(e) => setTempValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      saveEdit(date)
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault()
+                      setEditingDate(null)
+                    }
+                  }}
+                  onBlur={() => saveEdit(date)}
+                  placeholder="What did you ship?"
+                  className="flex-1 px-2 py-1 text-sm border border-emerald-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                />
+              ) : (
+                <div
+                  onClick={() => startEditing(date)}
+                  className={cn(
+                    'flex-1 px-2 py-1 text-sm rounded cursor-pointer transition-colors min-h-[28px]',
+                    entry?.completed && 'line-through text-gray-500',
+                    hasContent && !entry?.completed && 'text-gray-900 hover:bg-white/50',
+                    !hasContent && 'text-gray-400 italic hover:bg-white/50'
+                  )}
+                >
+                  {entry?.shipped || (isToday(date) ? 'What will you ship today?' : 'What did you ship?')}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Sync status */}
+      <div className="mt-3 pt-3 border-t border-emerald-200/50 flex justify-end">
+        <SyncStatusIndicator
+          status={syncStatus}
+          lastSynced={null}
+          hasUnsavedChanges={syncStatus === 'pending'}
+          compact
+        />
+      </div>
+    </div>
+  )
+}
+
+export function MissionControl({ data }: MissionControlProps) {
+  const {
+    planData,
+    planName,
+    trackers,
+    updateTrackerValue,
+    cycles,
+    allWeeks,
+    currentWeek,
+    currentCycle,
+    currentWeekIndex,
+    updateTodoStatus,
+    updateDeliverableStatus,
+    syncStatus,
+    lastSynced,
+    hasUnsavedChanges,
+    syncNow
+  } = data
+
+  const areTrackersComputed = !!planData?.work_types
+
+  // Get upcoming weeks (next 3 after current)
+  const upcomingWeeks = currentWeek
+    ? allWeeks
+        .filter(w => w.weekNumber > currentWeekIndex && w.weekNumber <= currentWeekIndex + 3)
+        .sort((a, b) => a.weekNumber - b.weekNumber)
+    : []
+
+  return (
+    <div className="flex flex-col gap-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Mission Control</h1>
+          <p className="text-gray-600">
+            {planName || 'Tracking the trajectory to your goals.'}
+          </p>
+        </div>
+        <SyncStatusIndicator
+          status={syncStatus}
+          lastSynced={lastSynced}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onSyncNow={syncNow}
+          compact={false}
+        />
+      </div>
+
+      {/* KPIs Section (Top Row) */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold text-gray-900">Key Performance Indicators</h2>
+        {trackers.length > 0 ? (
+          <div className="overflow-x-auto -mx-4 px-4">
+            <div className="flex gap-4 min-w-max">
+              {trackers.map(tracker => (
+                <div key={tracker.id} className="flex-shrink-0 w-36">
+                  <KPICard 
+                    tracker={tracker} 
+                    onUpdate={areTrackersComputed ? undefined : (value) => updateTrackerValue(tracker.id, value)}
+                    compact={true}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+            No KPIs defined
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-8 md:grid-cols-2 items-stretch">
+        {/* Left Column: Daily Shipping */}
+        <WeeklyShipping />
+
+        {/* Right Column: Active Mission */}
+        {currentWeek ? (
+          <ActiveMissionCard
+            week={currentWeek}
+            cycle={currentCycle}
+            onTodoStatusChange={(todoId, status) => {
+              updateTodoStatus(currentWeek.weekNumber, todoId, status)
+            }}
+            onDeliverableStatusChange={(deliverableId, status) => {
+              updateDeliverableStatus(currentWeek.weekNumber, deliverableId, status)
+            }}
+          />
+        ) : (
+          <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+            {planData ? 'No active week found. You may be ahead of or behind the plan schedule.' : 'Import a plan to get started.'}
+          </div>
+        )}
+      </div>
+
+      {/* Upcoming Trajectory (Full Width) */}
+      {upcomingWeeks.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">Upcoming Trajectory</h3>
+          <div className="relative pl-4 space-y-6">
+            {/* Connector line */}
+            <div className="absolute left-4 top-2 bottom-4 w-0.5 bg-gray-200" />
+            
+            {upcomingWeeks.map((w, i) => (
+              <div key={w.weekNumber} className="relative pl-8">
+                {/* Node */}
+                <div className="absolute left-[-5px] top-1.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-200 ring-4 ring-gray-50" />
+
+                <div className="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 transition-colors">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono font-medium text-emerald-600">
+                      Week {w.weekNumber}
+                    </span>
+                    <span className="text-xs text-gray-500">
+                      {w.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </div>
+                  <h4 className="font-medium text-gray-900 mb-1">{w.theme || w.name}</h4>
+                  {w.goals && w.goals.length > 0 && (
+                    <p className="text-sm text-gray-500">{w.goals.join(' · ')}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

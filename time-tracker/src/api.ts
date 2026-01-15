@@ -675,3 +675,189 @@ export async function deleteAllSnapshots(entityType: string, entityKey: string):
     return false
   }
 }
+
+// Quarterly Plans API (Pattern 2: Debounced Sync - DB is source of truth)
+export interface PlanListItem {
+  planId: string
+  name: string
+  description: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuarterlyPlanData {
+  planId: string
+  planData: PlanJSON
+  createdAt: number
+  updatedAt: number
+}
+
+// Plan JSON structure following PLAN_FORMAT_V2.md
+export interface PlanJSON {
+  plan: {
+    id: string
+    name: string
+    description?: string
+    created_at?: string
+    updated_at?: string
+    anchor_date?: string // V2 uses anchor_date at root of plan
+    timezone?: string
+    anchor?: { // V1 compatibility
+      start_date: string
+      week_starts_on?: 'monday' | 'sunday'
+      timezone?: string
+    }
+  }
+  work_types?: Array<{
+    id: string
+    name: string
+    color: string
+    kpi_target?: {
+      unit: string
+      weekly_value: number
+    }
+  }>
+  templates?: Record<string, string>
+  weekly_habit?: {
+    name: string
+    timing: string
+    questions: string[]
+    logs: Array<{ week: number; date: string; answers: Record<string, string> }>
+  }
+  cycles: Array<{
+    id: string
+    name: string
+    theme?: string
+    description?: string
+    core_competencies?: string[]
+    status?: 'not_started' | 'in_progress' | 'completed'
+    resume_story?: string
+    weeks: Array<{
+      // V2: Derived week_number, start_date, end_date
+      week_number?: number // Optional/Legacy
+      name?: string // Optional
+      theme?: string
+      description?: string
+      start_date?: string // Legacy
+      end_date?: string // Legacy
+      status?: 'not_started' | 'current' | 'in_progress' | 'completed'
+      
+      // V2 Fields
+      goals?: string[]
+      reflection_questions?: string[]
+      acceptance_criteria?: string[]
+      
+      // Legacy Fields (kept for compatibility or mapped)
+      focus_areas?: string[]
+      product_questions?: string[]
+      validation_criteria?: string[]
+      
+      daily_plan?: Array<{
+        day: string
+        tech_work?: string
+        product_action?: string
+        tech_hours?: number
+        product_minutes?: number
+      }>
+      
+      todos?: Array<{
+        id: string
+        title: string // V2
+        name?: string // Legacy
+        description?: string
+        type_id?: string // V2
+        category?: string // Legacy
+        priority?: 'low' | 'medium' | 'high'
+        estimate?: number // V2
+        estimated_hours?: number // Legacy
+        status?: 'not_started' | 'in_progress' | 'blocked' | 'done'
+        dependencies?: string[]
+      }>
+      
+      deliverables?: Array<{
+        id: string
+        title: string // V2
+        name?: string // Legacy
+        description?: string
+        type_id?: string // V2
+        template_id?: string // V2
+        type?: string // Legacy
+        format?: string
+        status?: 'not_started' | 'in_progress' | 'done'
+        resume_value?: number // Legacy
+      }>
+    }>
+  }>
+  trackers?: Array<{ // Legacy compatibility
+    id: string
+    name: string
+    unit?: string
+    baseline: string | number
+    target: string | number
+    current?: string | number
+    source?: {
+      type: 'manual' | 'count' | 'exists'
+      entity?: string
+      where?: Record<string, unknown>
+    }
+  }>
+}
+
+export async function listPlans(): Promise<PlanListItem[]> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/plans`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<PlanListItem[]>>(res, '/plans')
+    return data.plans || []
+  } catch (error) {
+    console.error('Failed to list plans:', error)
+    return []
+  }
+}
+
+export async function getPlan(planId: string): Promise<QuarterlyPlanData | null> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/plans/${encodeURIComponent(planId)}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<QuarterlyPlanData>>(res, `/plans/${planId}`)
+    return data.plan || null
+  } catch (error) {
+    console.error(`Failed to get plan ${planId}:`, error)
+    return null
+  }
+}
+
+export async function savePlan(planId: string, planData: PlanJSON): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/plans/${encodeURIComponent(planId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ planData }),
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/plans/${planId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to save plan ${planId}:`, error)
+    return false
+  }
+}
+
+export async function deletePlan(planId: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/plans/${encodeURIComponent(planId)}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/plans/${planId}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete plan ${planId}:`, error)
+    return false
+  }
+}

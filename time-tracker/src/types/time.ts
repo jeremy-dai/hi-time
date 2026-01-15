@@ -99,3 +99,8 @@ export interface QuarterGoals {
   quarter: number
   goals: QuarterlyGoal[]
 }
+
+// ============================================
+// Quarterly Plan Types - See PLAN_FORMAT.md for full specification
+// Types are now defined in hooks/useQuarterlyPlan.ts and api.ts
+// ============================================

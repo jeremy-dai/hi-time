@@ -138,6 +138,43 @@ create index idx_daily_shipping_user_date on daily_shipping(user_id, year, month
 - `shipped` (text): What the user shipped/accomplished that day
 - `completed` (boolean): Whether the item has been marked as done
 
+**Implementation Details:**
+- Uses **Cache-First Pattern**: localStorage cache loads instantly, then syncs with database in background
+- Optimistic updates with instant UI feedback and error recovery
+- Year-based API endpoint for efficient bulk loading: `GET /api/shipping/{year}`
+- Automatic localStorage cache management via `useDailyShipping` hook
+- Individual entries saved to database immediately: `PUT /api/shipping/{year}/{month}/{day}`
+
+### `quarterly_plans` 🆕
+Stores quarterly planning data following the JSON structure defined below. **Migration available** at [database/migrations/02_quarterly_plans.sql](../database/migrations/02_quarterly_plans.sql).
+
+```sql
+CREATE TABLE IF NOT EXISTS quarterly_plans (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id text NOT NULL,
+  plan_id text NOT NULL,
+  plan_data jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE (user_id, plan_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_quarterly_plans_user_id ON quarterly_plans(user_id);
+CREATE INDEX IF NOT EXISTS idx_quarterly_plans_user_plan ON quarterly_plans(user_id, plan_id);
+```
+
+**Implementation Details:**
+- Uses **Pattern 2 (Debounced Sync)**: Database is source of truth, 5-second debounce for frontend updates
+- Supports multiple plans per user via `plan_id` field
+- Complete plan structure stored in `plan_data` JSONB column
+- See [Plan JSON Format](#plan-json-format) section below for complete structure
+
+**Current Status:**
+- ✅ Database migration created
+- ✅ Backend API endpoints implemented (`/api/plans/*`)
+- ✅ Frontend hook implemented ([`useQuarterlyPlan`](../time-tracker/src/hooks/useQuarterlyPlan.ts))
+- ✅ Mission Control UI with inline editing and sync status
+
 ### `data_snapshots` 🆕
 Stores historical snapshots of data for version control and recovery. **Migration available** at [database/migrations/01_history_table.sql](../database/migrations/01_history_table.sql).
 
@@ -187,6 +224,7 @@ alter table user_settings enable row level security;
 alter table year_memories enable row level security;
 alter table week_reviews enable row level security;
 alter table daily_shipping enable row level security;
+alter table quarterly_plans enable row level security; -- 🆕
 alter table data_snapshots enable row level security; -- 🆕
 
 -- Policies
@@ -215,6 +253,12 @@ on daily_shipping for all
 using ((select auth.uid())::text = user_id)
 with check ((select auth.uid())::text = user_id);
 
+-- 🆕 Quarterly plans policy
+create policy "Users can only access their own quarterly plans"
+on quarterly_plans for all
+using ((select auth.uid())::text = user_id)
+with check ((select auth.uid())::text = user_id);
+
 -- 🆕 Snapshots policy
 create policy "Users can only access their own snapshots"
 on data_snapshots for all
@@ -225,3 +269,158 @@ with check ((select auth.uid())::text = user_id);
 ## Setup Instructions
 
 Run the complete schema from [database/schema.sql](../database/schema.sql) in your Supabase SQL Editor. This creates all tables, indexes, and RLS policies in one step.
+
+---
+
+## Plan JSON Format (V2)
+
+The `quarterly_plans.plan_data` JSONB column stores a complete planning document using the structure defined below.
+
+**Guiding Principle**: Store only **canonical fields** in the database and **derive the rest** (week numbers, cycle ranges, dates, KPI values) in code.
+
+### Schema Version
+
+Current version: `2`
+
+```json
+{
+  "schema_version": 2
+}
+```
+
+### Top-Level Structure
+
+```json
+{
+  "plan": { ... },
+  "work_types": [ ... ],
+  "templates": { ... },
+  "weekly_habit": { ... },
+  "cycles": [ ... ]
+}
+```
+
+### `plan` Object
+
+Canonical plan metadata + the **single anchor** used to compute derived week/date fields.
+
+```json
+{
+  "id": "string",
+  "name": "string",
+  "description": "string",
+  "created_at": "YYYY-MM-DD",
+  "updated_at": "YYYY-MM-DD",
+  "anchor_date": "YYYY-MM-DD",
+  "timezone": "IANA timezone, e.g. Asia/Shanghai"
+}
+```
+
+**Notes:**
+- `plan.anchor_date` is the only required date input
+- All week dates are derived from this anchor point
+- Week indices map to dates: `start_date + (week_index * 7 days)`
+
+### `work_types` Array (New in V2)
+
+Defines the types of work being tracked (replacing categories and trackers).
+
+```json
+{
+  "id": "tech",
+  "name": "Engineering",
+  "color": "blue", // tailwind color name
+  "kpi_target": {
+    "unit": "hours",
+    "weekly_value": 20
+  }
+}
+```
+
+### `templates` Object (New in V2)
+
+Reusable Markdown templates for deliverables.
+
+```json
+{
+  "product_spec": "## Problem\n...\n## Solution\n...",
+  "weekly_log": "## Highlights\n..."
+}
+```
+
+### `weekly_habit` Object
+
+Reusable weekly ritual/check-in.
+
+```json
+{
+  "name": "string",
+  "timing": "string",
+  "questions": ["string", "..."],
+  "logs": []
+}
+```
+
+### `cycles` Array
+
+A cycle groups multiple weeks.
+
+```json
+{
+  "id": "string",
+  "name": "string",
+  "theme": "string (optional)",
+  "description": "string (optional)",
+  "status": "not_started|in_progress|completed (optional)",
+  "weeks": [ ... ]
+}
+```
+
+### `weeks` Array (within a cycle)
+
+Weeks contain the actionable plan.
+
+```json
+{
+  "theme": "string (optional)",
+  "goals": ["string", "..."], // Replaces focus_areas
+  
+  "todos": [ ... ],
+  "deliverables": [ ... ],
+  
+  "reflection_questions": [ ... ], // Replaces product_questions
+  "acceptance_criteria": [ ... ] // Replaces validation_criteria
+}
+```
+
+**Note**: `week_number` is optional and usually derived from the array index.
+
+### `todos` Array
+
+Linked to `work_types` for KPI calculation.
+
+```json
+{
+  "id": "string",
+  "title": "string",
+  "type_id": "string", // Links to work_types.id
+  "priority": "low|medium|high",
+  "estimate": 1, // Hours or points
+  "status": "not_started|in_progress|blocked|done",
+  "dependencies": ["todo_id", "..."]
+}
+```
+
+### `deliverables` Array
+
+Linked to `templates`.
+
+```json
+{
+  "id": "string",
+  "title": "string",
+  "type_id": "string", // Links to work_types.id
+  "template_id": "string", // Links to templates key
+  "status": "not_started|in_progress|done"
+}
+```

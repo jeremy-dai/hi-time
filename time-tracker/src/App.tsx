@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
 import Memories from './components/Memories'
 import WeeklyReview from './components/WeeklyReview'
-import DailyShipping from './components/DailyShipping'
+import { QuarterlyPlan } from './components/plan/QuarterlyPlan'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
 import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
@@ -549,7 +549,12 @@ function App() {
 
   // Show login if not authenticated
   if (!isAuthenticated) {
-    return <Login />
+    return (
+      <ToastProvider>
+        <ToastContainer />
+        <Login />
+      </ToastProvider>
+    )
   }
 
   return (
@@ -663,10 +668,10 @@ function App() {
         </div>
       </div>
 
-      {/* Today - Daily Shipping */}
-      <div className={activeTab === 'today' ? 'block' : 'hidden'}>
-        <div className="animate-in fade-in duration-200">
-          <DailyShipping />
+      {/* Today - Quarterly Plan */}
+      <div className={activeTab === 'today' ? 'block h-full' : 'hidden'}>
+        <div className="animate-in fade-in duration-200 h-full">
+          <QuarterlyPlan />
         </div>
       </div>
 

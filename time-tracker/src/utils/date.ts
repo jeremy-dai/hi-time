@@ -159,3 +159,31 @@ export function getWeeksInRange(startDate: Date, endDate: Date): string[] {
 
   return keys
 }
+
+/**
+ * Calculate ISO week key from an anchor date and week index
+ * Used for quarterly plan week calculation - allows weeks to be reordered
+ * without manual renumbering.
+ *
+ * @param anchorDate - The start date in YYYY-MM-DD format
+ * @param weekIndex - Zero-based index of the week (0 = first week, 1 = second week, etc.)
+ * @returns ISO week key (e.g., "2025-W03")
+ *
+ * @example
+ * getISOWeekFromAnchor("2025-01-01", 0) // "2024-W53" (Jan 1 is in week 53 of 2024)
+ * getISOWeekFromAnchor("2025-01-01", 1) // "2025-W01" (second week starts Jan 5)
+ */
+export function getISOWeekFromAnchor(anchorDate: string, weekIndex: number): string {
+  // Parse anchor date (YYYY-MM-DD format)
+  const [year, month, day] = anchorDate.split('-').map(Number)
+  const anchor = new Date(Date.UTC(year, month - 1, day))
+
+  // Find the start of the week containing the anchor date
+  const weekStart = startOfISOWeek(anchor)
+
+  // Add weekIndex weeks to get target week
+  const targetWeek = addWeeks(weekStart, weekIndex)
+
+  // Format as ISO week key
+  return formatWeekKey(targetWeek)
+}

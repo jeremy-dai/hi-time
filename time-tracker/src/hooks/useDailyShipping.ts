@@ -15,7 +15,7 @@ export function useDailyShipping(year: number) {
   const [lastSynced, setLastSynced] = useState<Date | null>(null)
   const isMountedRef = useRef(true)
 
-  // Load from database on mount, fallback to localStorage
+  // Load from localStorage first for instant UI, then sync with database
   useEffect(() => {
     isMountedRef.current = true
     let cancelled = false
@@ -24,51 +24,55 @@ export function useDailyShipping(year: number) {
       setIsLoading(true)
       const localKey = `daily-shipping-${year}`
 
-      // Try loading from database first
+      // Helper to convert entries to UI format
+      const convertEntries = (dbEntries: Record<string, DailyShipping>) => {
+        const entriesMap: Record<string, { shipped: string; completed: boolean }> = {}
+        Object.entries(dbEntries || {}).forEach(([dateKey, entry]) => {
+          entriesMap[dateKey] = {
+            shipped: entry.shipped,
+            completed: entry.completed || false
+          }
+        })
+        return entriesMap
+      }
+
+      // Load from localStorage FIRST for instant UI
+      const stored = localStorage.getItem(localKey)
+      if (stored && !cancelled) {
+        try {
+          const parsed: YearDailyShipping = JSON.parse(stored)
+          const entriesMap = convertEntries(parsed.entries)
+          setEntries(entriesMap)
+          setIsLoading(false) // Show cached data immediately
+          setSyncStatus('pending')
+        } catch (err) {
+          console.error('Failed to parse daily shipping from localStorage:', err)
+          setIsLoading(false)
+        }
+      } else {
+        setIsLoading(false)
+      }
+
+      // Then fetch from database to update with fresh data
       try {
         const dbData = await getYearDailyShipping(year)
         if (!cancelled && dbData) {
-          // Convert DailyShipping objects to our format
-          const entriesMap: Record<string, { shipped: string; completed: boolean }> = {}
-          Object.entries(dbData.entries || {}).forEach(([dateKey, entry]) => {
-            entriesMap[dateKey] = {
-              shipped: entry.shipped,
-              completed: entry.completed || false
-            }
-          })
+          const entriesMap = convertEntries(dbData.entries)
           setEntries(entriesMap)
           // Update localStorage cache
           localStorage.setItem(localKey, JSON.stringify(dbData))
           setSyncStatus('synced')
           setLastSynced(new Date())
-          setIsLoading(false)
-          return
+        } else if (!cancelled && !stored) {
+          // No data in DB or cache, stay at idle
+          setSyncStatus('idle')
         }
       } catch (err) {
         console.error('Failed to load daily shipping from database:', err)
-      }
-
-      // Fallback to localStorage if database fails or returns null
-      if (!cancelled) {
-        const stored = localStorage.getItem(localKey)
-        if (stored) {
-          try {
-            const parsed: YearDailyShipping = JSON.parse(stored)
-            const entriesMap: Record<string, { shipped: string; completed: boolean }> = {}
-            Object.entries(parsed.entries || {}).forEach(([dateKey, entry]) => {
-              entriesMap[dateKey] = {
-                shipped: entry.shipped,
-                completed: entry.completed || false
-              }
-            })
-            setEntries(entriesMap)
-            // Mark as pending sync since we loaded from localStorage
-            setSyncStatus('pending')
-          } catch (err) {
-            console.error('Failed to parse daily shipping from localStorage:', err)
-          }
+        if (!cancelled && stored) {
+          // We have cached data, mark as error but keep showing it
+          setSyncStatus('error')
         }
-        setIsLoading(false)
       }
     }
 

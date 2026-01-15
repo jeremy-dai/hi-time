@@ -9,8 +9,9 @@ interface ModalProps {
   icon?: ReactNode
   variant?: 'default' | 'danger' | 'warning'
   children?: ReactNode
-  actions: ReactNode
+  actions?: ReactNode
   closeOnBackdrop?: boolean
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 }
 
 export function Modal({
@@ -22,7 +23,8 @@ export function Modal({
   variant = 'default',
   children,
   actions,
-  closeOnBackdrop = true
+  closeOnBackdrop = true,
+  maxWidth = 'md'
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const previousActiveElement = useRef<HTMLElement | null>(null)
@@ -32,6 +34,15 @@ export function Modal({
     default: 'bg-emerald-100',
     danger: 'bg-red-100',
     warning: 'bg-amber-100'
+  }
+
+  // Max width classes
+  const maxWidthClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-xl',
+    '2xl': 'max-w-2xl'
   }
 
   // Handle ESC key
@@ -118,7 +129,7 @@ export function Modal({
       {/* Modal */}
       <div
         ref={modalRef}
-        className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in zoom-in-95 fade-in duration-200"
+        className={`relative bg-white rounded-xl shadow-2xl ${maxWidthClasses[maxWidth]} w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 animate-in zoom-in-95 fade-in duration-200`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -144,9 +155,11 @@ export function Modal({
 
         {children && <div className="mt-4">{children}</div>}
 
-        <div className="flex gap-3 pt-2">
-          {actions}
-        </div>
+        {actions && (
+          <div className="flex gap-3 pt-2">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   )

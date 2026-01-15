@@ -1,0 +1,922 @@
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import type { PlanJSON } from '../api'
+import { getPlan, savePlan, listPlans } from '../api'
+import type { SyncStatus } from './useSyncState'
+
+const STORAGE_KEY = 'quarterly-plan-data'
+const DEFAULT_PLAN_ID = 'default'
+const SYNC_DEBOUNCE_MS = 5000 // 5 seconds
+
+// Computed state derived from PlanJSON
+export interface ComputedPlanState {
+  currentWeekIndex: number
+  currentWeek: PlanWeek | null
+  currentCycle: PlanCycle | null
+  totalWeeks: number
+  completedWeeks: number
+  overallProgress: number // 0-100
+}
+
+// Flattened week structure for UI consumption
+export interface PlanWeek {
+  weekNumber: number
+  cycleId: string
+  cycleName: string
+  name: string
+  theme?: string
+  description?: string
+  startDate: Date
+  endDate: Date
+  status: 'not_started' | 'current' | 'in_progress' | 'completed'
+  
+  // V2 Fields
+  goals: string[]
+  reflectionQuestions: string[]
+
+  // Legacy/Compatibility
+  focusAreas: string[]
+  productQuestions: string[]
+  validationCriteria: string[]
+
+  dailyPlan: Array<{
+    day: string
+    techWork?: string
+    productAction?: string
+    techHours?: number
+    productMinutes?: number
+  }>
+  todos: Array<{
+    id: string
+    title: string
+    name?: string
+    description?: string
+    typeId?: string
+    category?: string
+    priority?: 'low' | 'medium' | 'high'
+    estimate?: number
+    estimatedHours?: number
+    status?: 'not_started' | 'in_progress' | 'blocked' | 'done'
+    dependencies?: string[]
+  }>
+  deliverables: Array<{
+    id: string
+    title: string
+    name?: string
+    description?: string
+    typeId?: string
+    templateId?: string
+    type?: string
+    format?: string
+    status?: 'not_started' | 'in_progress' | 'done'
+    resumeValue?: number
+  }>
+}
+
+// Flattened cycle structure for UI consumption
+export interface PlanCycle {
+  id: string
+  name: string
+  theme?: string
+  description?: string
+  coreCompetencies: string[]
+  status: 'not_started' | 'in_progress' | 'completed'
+  resumeStory?: string
+  startWeek: number
+  endWeek: number
+  weeks: PlanWeek[]
+}
+
+// Tracker with computed current value
+export interface PlanTracker {
+  id: string
+  name: string
+  unit?: string
+  baseline: string | number
+  target: string | number
+  current: string | number
+  // V2
+  color?: string
+}
+
+export interface UseQuarterlyPlanReturn {
+  // Raw data
+  planData: PlanJSON | null
+  planId: string
+
+  // Computed state
+  planName: string
+  planDescription: string
+  startDate: Date | null
+  cycles: PlanCycle[]
+  allWeeks: PlanWeek[]
+  trackers: PlanTracker[]
+  weeklyHabit: PlanJSON['weekly_habit'] | null
+
+  // Current state
+  currentWeekIndex: number
+  currentWeek: PlanWeek | null
+  currentCycle: PlanCycle | null
+
+  // Sync state
+  isLoading: boolean
+  syncStatus: SyncStatus
+  lastSynced: Date | null
+  hasUnsavedChanges: boolean
+
+  // Actions
+  setPlanData: (data: PlanJSON) => void
+  updateWeekStatus: (weekNumber: number, status: PlanWeek['status']) => void
+  updateTodoStatus: (weekNumber: number, todoId: string, status: 'not_started' | 'in_progress' | 'blocked' | 'done') => void
+  updateDeliverableStatus: (weekNumber: number, deliverableId: string, status: 'not_started' | 'in_progress' | 'done') => void
+  updateTrackerValue: (trackerId: string, value: string | number) => void
+  addWeeklyHabitLog: (weekNumber: number, answers: Record<string, string>) => void
+  importPlan: (json: PlanJSON) => void
+  exportPlan: () => PlanJSON | null
+  clearPlan: () => void
+  syncNow: () => Promise<void>
+  updateWeekDetails: (weekNumber: number, details: { name?: string; theme?: string }) => void
+  updateCycleDetails: (cycleId: string, details: { name?: string; theme?: string; status?: PlanCycle['status'] }) => void
+  updateTodoDetails: (weekNumber: number, todoId: string, details: { title?: string; priority?: 'low' | 'medium' | 'high'; estimate?: number }) => void
+  updateDeliverableDetails: (weekNumber: number, deliverableId: string, details: { title?: string }) => void
+  addTodo: (weekNumber: number, todo: { title: string; typeId?: string; priority?: 'low' | 'medium' | 'high'; estimate?: number }) => void
+  deleteTodo: (weekNumber: number, todoId: string) => void
+  addDeliverable: (weekNumber: number, deliverable: { title: string; typeId?: string }) => void
+  deleteDeliverable: (weekNumber: number, deliverableId: string) => void
+  updateWeekComprehensive: (weekNumber: number, updates: { name?: string; theme?: string; status?: PlanWeek['status']; todos?: PlanWeek['todos']; deliverables?: PlanWeek['deliverables'] }) => void
+  addWeek: (cycleId: string, weekData?: Partial<PlanWeek>) => void
+  deleteWeek: (weekNumber: number) => void
+}
+
+// Helper to compute week dates from plan anchor
+function getWeekDates(startDate: string, weekNumber: number): { start: Date; end: Date } {
+  const planStart = new Date(startDate)
+  const weekStart = new Date(planStart)
+  weekStart.setDate(planStart.getDate() + (weekNumber - 1) * 7)
+  const weekEnd = new Date(weekStart)
+  weekEnd.setDate(weekStart.getDate() + 6)
+  return { start: weekStart, end: weekEnd }
+}
+
+// Helper to determine current week index based on today's date
+function getCurrentWeekIndex(startDate: string): number {
+  const start = new Date(startDate)
+  const today = new Date()
+  const diffTime = today.getTime() - start.getTime()
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+  return Math.max(1, Math.floor(diffDays / 7) + 1)
+}
+
+// Transform PlanJSON to UI-friendly structures
+function transformPlanData(planData: PlanJSON): {
+  cycles: PlanCycle[]
+  allWeeks: PlanWeek[]
+  trackers: PlanTracker[]
+} {
+  // V2 uses anchor_date at root, V1 uses anchor.start_date
+  const startDateStr = planData.plan.anchor_date || planData.plan.anchor?.start_date
+  if (!startDateStr) {
+    console.error('No start date found in plan data')
+    return { cycles: [], allWeeks: [], trackers: [] }
+  }
+
+  const allWeeks: PlanWeek[] = []
+  const cycles: PlanCycle[] = []
+
+  let globalWeekIndex = 0 // Changed to 0-based index
+
+  for (const cycle of planData.cycles) {
+    const cycleWeeks: PlanWeek[] = []
+    let minWeek = Infinity
+    let maxWeek = -Infinity
+
+    for (const week of cycle.weeks) {
+      // V3: week_number is optional in JSON and auto-calculated from position
+      // This allows weeks to be reordered/inserted/deleted without manual renumbering
+      // If week_number exists (legacy format), use it; otherwise use position-based index
+      const weekNumber = week.week_number ?? globalWeekIndex + 1
+      globalWeekIndex++
+
+      const dates = getWeekDates(startDateStr, weekNumber)
+      minWeek = Math.min(minWeek, weekNumber)
+      maxWeek = Math.max(maxWeek, weekNumber)
+
+      const planWeek: PlanWeek = {
+        weekNumber: weekNumber,
+        cycleId: cycle.id,
+        cycleName: cycle.name,
+        name: week.name || `Week ${weekNumber}`,
+        theme: week.theme,
+        description: week.description,
+        startDate: dates.start,
+        endDate: dates.end,
+        status: week.status || 'not_started',
+        
+        // Map V2/V1 fields
+        goals: week.goals || week.focus_areas || [],
+        focusAreas: week.focus_areas || week.goals || [], // Back-compat
+        
+        reflectionQuestions: week.reflection_questions || week.product_questions || [],
+        productQuestions: week.product_questions || week.reflection_questions || [], // Back-compat
+
+        validationCriteria: week.validation_criteria || [], // Back-compat
+
+        dailyPlan: (week.daily_plan || []).map(d => ({
+          day: d.day,
+          techWork: d.tech_work,
+          productAction: d.product_action,
+          techHours: d.tech_hours,
+          productMinutes: d.product_minutes,
+        })),
+        todos: (week.todos || []).map(t => ({
+          id: t.id,
+          title: t.title || t.name || '',
+          name: t.name || t.title || '',
+          description: t.description,
+          typeId: t.type_id,
+          category: t.category,
+          priority: t.priority,
+          estimate: t.estimate,
+          estimatedHours: t.estimated_hours,
+          status: t.status,
+          dependencies: t.dependencies,
+        })),
+        deliverables: (week.deliverables || []).map(d => ({
+          id: d.id,
+          title: d.title || d.name || '',
+          name: d.name || d.title || '',
+          description: d.description,
+          typeId: d.type_id,
+          templateId: d.template_id,
+          type: d.type,
+          format: d.format,
+          status: d.status,
+          resumeValue: d.resume_value,
+        })),
+      }
+
+      cycleWeeks.push(planWeek)
+      allWeeks.push(planWeek)
+    }
+
+    cycles.push({
+      id: cycle.id,
+      name: cycle.name,
+      theme: cycle.theme,
+      description: cycle.description,
+      coreCompetencies: cycle.core_competencies || [],
+      status: cycle.status || 'not_started',
+      resumeStory: cycle.resume_story,
+      startWeek: minWeek === Infinity ? 1 : minWeek,
+      endWeek: maxWeek === -Infinity ? 1 : maxWeek,
+      weeks: cycleWeeks,
+    })
+  }
+
+  // Sort allWeeks by week number
+  allWeeks.sort((a, b) => a.weekNumber - b.weekNumber)
+
+  // Transform trackers
+  // V2: Derived from work_types
+  let trackers: PlanTracker[] = []
+  
+  if (planData.work_types) {
+    trackers = planData.work_types.map(wt => {
+      // Calculate current value based on completed todos
+      let current = 0
+      
+      // Example logic: Sum estimates of DONE todos with this type_id
+      // This is a simplification; you might want more complex logic later
+      for (const week of allWeeks) {
+        for (const todo of week.todos) {
+          if (todo.typeId === wt.id && todo.status === 'done') {
+             current += (todo.estimate || 0)
+          }
+        }
+      }
+
+      return {
+        id: wt.id,
+        name: wt.name,
+        unit: wt.kpi_target?.unit,
+        baseline: 0,
+        target: wt.kpi_target?.weekly_value || 0, // This is weekly target, might need total? Or just display weekly
+        current: current, // This is cumulative. 
+        color: wt.color
+      }
+    })
+  } else {
+    // Legacy trackers
+    trackers = (planData.trackers || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      unit: t.unit,
+      baseline: t.baseline,
+      target: t.target,
+      current: t.current ?? t.baseline,
+    }))
+  }
+
+  return { cycles, allWeeks, trackers }
+}
+
+// Load from localStorage
+function loadFromStorage(): { planId: string; planData: PlanJSON } | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (parsed.planData && parsed.planId) {
+        return parsed
+      }
+      // Legacy format: just planData
+      if (parsed.plan) {
+        return { planId: parsed.plan.id || DEFAULT_PLAN_ID, planData: parsed }
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load quarterly plan from storage:', e)
+  }
+  return null
+}
+
+// Save to localStorage
+function saveToStorage(planId: string, planData: PlanJSON): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ planId, planData }))
+  } catch (e) {
+    console.error('Failed to save quarterly plan to storage:', e)
+  }
+}
+
+export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
+  const [planId, setPlanId] = useState<string>(DEFAULT_PLAN_ID)
+  const [planData, setPlanDataState] = useState<PlanJSON | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
+  const [lastSynced, setLastSynced] = useState<Date | null>(null)
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isMountedRef = useRef(true)
+
+  // Load from database on mount, fallback to localStorage
+  useEffect(() => {
+    isMountedRef.current = true
+    let cancelled = false
+
+    const loadPlan = async () => {
+      setIsLoading(true)
+
+      // Try loading from localStorage first for instant UI
+      const localData = loadFromStorage()
+      if (localData && !cancelled) {
+        setPlanId(localData.planId)
+        setPlanDataState(localData.planData)
+      }
+
+      // Then try loading from database
+      try {
+        // First, list available plans
+        const plans = await listPlans()
+        if (cancelled) return
+
+        if (plans.length > 0) {
+          // Load the most recently updated plan
+          const mostRecent = plans[0]
+          const dbPlan = await getPlan(mostRecent.planId)
+
+          if (!cancelled && dbPlan && dbPlan.planData) {
+            setPlanId(dbPlan.planId)
+            setPlanDataState(dbPlan.planData)
+            saveToStorage(dbPlan.planId, dbPlan.planData)
+            setSyncStatus('synced')
+            setLastSynced(new Date())
+          }
+        } else if (localData) {
+          // No plans in DB but we have local data, mark as pending
+          setSyncStatus('pending')
+        }
+      } catch (err) {
+        console.error('Failed to load plan from database:', err)
+        if (localData) {
+          setSyncStatus('pending')
+        }
+      }
+
+      if (!cancelled) {
+        setIsLoading(false)
+      }
+    }
+
+    loadPlan()
+
+    return () => {
+      cancelled = true
+      isMountedRef.current = false
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Sync to database with debouncing
+  const syncToDatabase = useCallback(async (id: string, data: PlanJSON) => {
+    if (!isMountedRef.current) return
+
+    setSyncStatus('syncing')
+
+    try {
+      const success = await savePlan(id, data)
+
+      if (!isMountedRef.current) return
+
+      if (success) {
+        setSyncStatus('synced')
+        setLastSynced(new Date())
+      } else {
+        setSyncStatus('error')
+      }
+    } catch (err) {
+      console.error('Failed to sync plan to database:', err)
+      if (isMountedRef.current) {
+        setSyncStatus('error')
+      }
+    }
+  }, [])
+
+  // Set plan data and trigger debounced sync
+  const setPlanData = useCallback((data: PlanJSON) => {
+    const id = data.plan.id || planId
+    setPlanId(id)
+    setPlanDataState(data)
+    saveToStorage(id, data)
+
+    // Debounce database sync
+    setSyncStatus('pending')
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current)
+    }
+
+    syncTimeoutRef.current = setTimeout(() => {
+      syncToDatabase(id, data)
+    }, SYNC_DEBOUNCE_MS)
+  }, [planId, syncToDatabase])
+
+  // Computed values
+  const transformed = useMemo(() => {
+    if (!planData) return { cycles: [], allWeeks: [], trackers: [] }
+    return transformPlanData(planData)
+  }, [planData])
+
+  const currentWeekIndex = useMemo(() => {
+    if (!planData) return 1
+    const startDate = planData.plan.anchor_date || planData.plan.anchor?.start_date
+    if (!startDate) return 1
+    return getCurrentWeekIndex(startDate)
+  }, [planData])
+
+  const currentWeek = useMemo(() => {
+    return transformed.allWeeks.find(w => w.weekNumber === currentWeekIndex) || null
+  }, [transformed.allWeeks, currentWeekIndex])
+
+  const currentCycle = useMemo(() => {
+    if (!currentWeek) return null
+    return transformed.cycles.find(c => c.id === currentWeek.cycleId) || null
+  }, [transformed.cycles, currentWeek])
+
+  // Update week status
+  const updateWeekStatus = useCallback((weekNumber: number, status: PlanWeek['status']) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week) {
+        week.status = status
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Update week details
+  const updateWeekDetails = useCallback((weekNumber: number, details: { name?: string; theme?: string }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week) {
+        if (details.name !== undefined) week.name = details.name
+        if (details.theme !== undefined) week.theme = details.theme
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Update todo status
+  const updateTodoStatus = useCallback((weekNumber: number, todoId: string, status: 'not_started' | 'in_progress' | 'blocked' | 'done') => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week && week.todos) {
+        const todo = week.todos.find(t => t.id === todoId)
+        if (todo) {
+          todo.status = status
+          break
+        }
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Update deliverable status
+  const updateDeliverableStatus = useCallback((weekNumber: number, deliverableId: string, status: 'not_started' | 'in_progress' | 'done') => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week && week.deliverables) {
+        const deliverable = week.deliverables.find(d => d.id === deliverableId)
+        if (deliverable) {
+          deliverable.status = status
+          break
+        }
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Update tracker value
+  const updateTrackerValue = useCallback((trackerId: string, value: string | number) => {
+    if (!planData || !planData.trackers) return
+
+    const newPlanData = { ...planData }
+    const tracker = newPlanData.trackers?.find(t => t.id === trackerId)
+    if (tracker) {
+      tracker.current = value
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Add weekly habit log
+  const addWeeklyHabitLog = useCallback((weekNumber: number, answers: Record<string, string>) => {
+    if (!planData || !planData.weekly_habit) return
+
+    const newPlanData = { ...planData }
+    if (!newPlanData.weekly_habit!.logs) {
+      newPlanData.weekly_habit!.logs = []
+    }
+
+    newPlanData.weekly_habit!.logs.push({
+      week: weekNumber,
+      date: new Date().toISOString().split('T')[0],
+      answers,
+    })
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Import plan from JSON
+  const importPlan = useCallback((json: PlanJSON) => {
+    const id = json.plan.id || DEFAULT_PLAN_ID
+    setPlanId(id)
+    setPlanDataState(json)
+    saveToStorage(id, json)
+
+    // Sync immediately on import
+    syncToDatabase(id, json)
+  }, [syncToDatabase])
+
+  // Export plan to JSON
+  const exportPlan = useCallback((): PlanJSON | null => {
+    return planData
+  }, [planData])
+
+  // Clear plan
+  const clearPlan = useCallback(() => {
+    setPlanDataState(null)
+    localStorage.removeItem(STORAGE_KEY)
+    setSyncStatus('idle')
+  }, [])
+
+  // Manual sync
+  const syncNow = useCallback(async () => {
+    if (!planData || syncStatus === 'syncing') return
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current)
+      syncTimeoutRef.current = null
+    }
+
+    await syncToDatabase(planId, planData)
+  }, [planId, planData, syncStatus, syncToDatabase])
+
+  // Update cycle details
+  const updateCycleDetails = useCallback((cycleId: string, details: { name?: string; theme?: string; status?: PlanCycle['status'] }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    const cycle = newPlanData.cycles.find(c => c.id === cycleId)
+    if (cycle) {
+      if (details.name !== undefined) cycle.name = details.name
+      if (details.theme !== undefined) cycle.theme = details.theme
+      if (details.status !== undefined) cycle.status = details.status
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Update todo details
+  const updateTodoDetails = useCallback((weekNumber: number, todoId: string, details: { title?: string; priority?: 'low' | 'medium' | 'high'; estimate?: number }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week && week.todos) {
+        const todo = week.todos.find(t => t.id === todoId)
+        if (todo) {
+          if (details.title !== undefined) {
+            todo.title = details.title
+            todo.name = details.title
+          }
+          if (details.priority !== undefined) todo.priority = details.priority
+          if (details.estimate !== undefined) todo.estimate = details.estimate
+          break
+        }
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Update deliverable details
+  const updateDeliverableDetails = useCallback((weekNumber: number, deliverableId: string, details: { title?: string }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week && week.deliverables) {
+        const deliverable = week.deliverables.find(d => d.id === deliverableId)
+        if (deliverable) {
+          if (details.title !== undefined) {
+            deliverable.title = details.title
+            deliverable.name = details.title
+          }
+          break
+        }
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Add todo
+  const addTodo = useCallback((weekNumber: number, todo: { title: string; typeId?: string; priority?: 'low' | 'medium' | 'high'; estimate?: number }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week) {
+        if (!week.todos) week.todos = []
+        const newTodo = {
+          id: `todo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          title: todo.title,
+          name: todo.title,
+          type_id: todo.typeId,
+          priority: todo.priority || 'medium',
+          estimate: todo.estimate || 0,
+          status: 'not_started' as const
+        }
+        week.todos.push(newTodo)
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Delete todo
+  const deleteTodo = useCallback((weekNumber: number, todoId: string) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week && week.todos) {
+        week.todos = week.todos.filter(t => t.id !== todoId)
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Add deliverable
+  const addDeliverable = useCallback((weekNumber: number, deliverable: { title: string; typeId?: string }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week) {
+        if (!week.deliverables) week.deliverables = []
+        const newDeliverable = {
+          id: `deliverable-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          title: deliverable.title,
+          name: deliverable.title,
+          type_id: deliverable.typeId,
+          status: 'not_started' as const
+        }
+        week.deliverables.push(newDeliverable)
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Delete deliverable
+  const deleteDeliverable = useCallback((weekNumber: number, deliverableId: string) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week && week.deliverables) {
+        week.deliverables = week.deliverables.filter(d => d.id !== deliverableId)
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Comprehensive week update (all at once)
+  const updateWeekComprehensive = useCallback((weekNumber: number, updates: {
+    name?: string
+    theme?: string
+    status?: PlanWeek['status']
+    todos?: PlanWeek['todos']
+    deliverables?: PlanWeek['deliverables']
+  }) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      if (week) {
+        if (updates.name !== undefined) week.name = updates.name
+        if (updates.theme !== undefined) week.theme = updates.theme
+        if (updates.status !== undefined) week.status = updates.status
+        if (updates.todos !== undefined) {
+          // Map back to the raw format
+          week.todos = updates.todos.map(t => ({
+            id: t.id,
+            title: t.title || t.name || '',
+            name: t.name || t.title,
+            type_id: t.typeId,
+            priority: t.priority,
+            estimate: t.estimate,
+            status: t.status
+          }))
+        }
+        if (updates.deliverables !== undefined) {
+          // Map back to the raw format
+          week.deliverables = updates.deliverables.map(d => ({
+            id: d.id,
+            title: d.title || d.name || '',
+            name: d.name || d.title,
+            type_id: d.typeId,
+            status: d.status
+          }))
+        }
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Add week to a cycle at a specific position
+  const addWeek = useCallback((cycleId: string, weekData?: Partial<PlanWeek>, insertAfterWeekNumber?: number) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    const cycle = newPlanData.cycles.find(c => c.id === cycleId)
+    if (cycle) {
+      // Find the next week number
+      const allWeekNumbers = newPlanData.cycles.flatMap(c => c.weeks.map(w => w.week_number || 0))
+      const nextWeekNumber = Math.max(...allWeekNumbers, 0) + 1
+
+      const newWeek = {
+        week_number: nextWeekNumber,
+        name: weekData?.name || `Week ${nextWeekNumber}`,
+        theme: weekData?.theme,
+        status: weekData?.status || 'not_started',
+        goals: weekData?.goals || [],
+        todos: weekData?.todos?.map(t => ({
+          id: t.id,
+          title: t.title || t.name || '',
+          name: t.name || t.title || '',
+          type_id: t.typeId,
+          priority: t.priority,
+          estimate: t.estimate,
+          status: t.status
+        })) || [],
+        deliverables: weekData?.deliverables?.map(d => ({
+          id: d.id,
+          title: d.title || d.name || '',
+          name: d.name || d.title || '',
+          type_id: d.typeId,
+          status: d.status
+        })) || []
+      }
+
+      // Insert at specific position if provided
+      if (insertAfterWeekNumber !== undefined) {
+        const insertIndex = cycle.weeks.findIndex(w => w.week_number === insertAfterWeekNumber)
+        if (insertIndex !== -1) {
+          // Insert after the found week
+          cycle.weeks.splice(insertIndex + 1, 0, newWeek)
+        } else {
+          // If week not found, append to end
+          cycle.weeks.push(newWeek)
+        }
+      } else {
+        // No position specified, append to end
+        cycle.weeks.push(newWeek)
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // Delete week
+  const deleteWeek = useCallback((weekNumber: number) => {
+    if (!planData) return
+
+    const newPlanData = { ...planData }
+    for (const cycle of newPlanData.cycles) {
+      const weekIndex = cycle.weeks.findIndex(w => w.week_number === weekNumber)
+      if (weekIndex !== -1) {
+        cycle.weeks.splice(weekIndex, 1)
+        break
+      }
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  const hasUnsavedChanges = syncStatus === 'pending'
+
+  return {
+    planData,
+    planId,
+    planName: planData?.plan.name || '',
+    planDescription: planData?.plan.description || '',
+    startDate: planData ? new Date(planData.plan.anchor_date || planData.plan.anchor?.start_date || '') : null,
+    cycles: transformed.cycles,
+    allWeeks: transformed.allWeeks,
+    trackers: transformed.trackers,
+    weeklyHabit: planData?.weekly_habit || null,
+    currentWeekIndex,
+    currentWeek,
+    currentCycle,
+    isLoading,
+    syncStatus,
+    lastSynced,
+    hasUnsavedChanges,
+    setPlanData,
+    updateWeekStatus,
+    updateWeekDetails,
+    updateTodoStatus,
+    updateDeliverableStatus,
+    updateTrackerValue,
+    addWeeklyHabitLog,
+    importPlan,
+    exportPlan,
+    clearPlan,
+    syncNow,
+    updateCycleDetails,
+    updateTodoDetails,
+    updateDeliverableDetails,
+    addTodo,
+    deleteTodo,
+    addDeliverable,
+    deleteDeliverable,
+    updateWeekComprehensive,
+    addWeek,
+    deleteWeek,
+  }
+}

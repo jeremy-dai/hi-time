@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useDailyShipping } from '../hooks/useDailyShipping'
-import { useQuarterlyGoals, getQuarterFromMonth } from '../hooks/useQuarterlyGoals'
+import { useQuarterlyPlan } from '../hooks/useQuarterlyPlan'
 import YearNavigator from './shared/YearNavigator'
-import QuarterlyGoalsBanner from './QuarterlyGoalsBanner'
+import TodayPlanBanner from './plan/TodayPlanBanner'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { Package, Calendar, CheckCircle2, Circle } from 'lucide-react'
 import { cn } from '../utils/classNames'
@@ -241,25 +241,11 @@ function MonthSection({ month, year, dates, entries, onUpdate }: MonthSectionPro
 
 export default function DailyShipping() {
   const currentYear = new Date().getFullYear()
-  const currentMonth = new Date().getMonth() + 1
-  const currentQuarter = getQuarterFromMonth(currentMonth)
 
   const [selectedYear, setSelectedYear] = useState(currentYear)
-  const [goalsYear, setGoalsYear] = useState(currentYear)
-  const [goalsQuarter, setGoalsQuarter] = useState(currentQuarter)
 
   const { entries: entriesData, isLoading, syncStatus, lastSynced, hasUnsavedChanges, updateEntry } = useDailyShipping(selectedYear)
-
-  const {
-    goals,
-    isLoading: goalsLoading,
-    addGoal,
-    updateGoal,
-    removeGoal,
-    addMilestone,
-    updateMilestone,
-    removeMilestone,
-  } = useQuarterlyGoals(goalsYear, goalsQuarter)
+  const planData = useQuarterlyPlan()
 
   // Convert simple string entries to full objects
   const entries = useMemo(() => {
@@ -311,21 +297,8 @@ export default function DailyShipping() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Quarterly Goals Banner */}
-      <QuarterlyGoalsBanner
-        year={goalsYear}
-        quarter={goalsQuarter}
-        goals={goals}
-        isLoading={goalsLoading}
-        onYearChange={setGoalsYear}
-        onQuarterChange={setGoalsQuarter}
-        onAddGoal={addGoal}
-        onUpdateGoal={updateGoal}
-        onRemoveGoal={removeGoal}
-        onAddMilestone={addMilestone}
-        onUpdateMilestone={updateMilestone}
-        onRemoveMilestone={removeMilestone}
-      />
+      {/* Plan Banner */}
+      <TodayPlanBanner planData={planData} />
 
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-8 py-6">
