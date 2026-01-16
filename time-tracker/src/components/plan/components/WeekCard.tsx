@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import type { PlanWeek } from '../../../hooks/useQuarterlyPlan'
 import { cn } from '../../../utils/classNames'
-import { CheckCircle2, Circle, Edit2 } from 'lucide-react'
+import { CheckCircle2, Circle, Edit2, FileText } from 'lucide-react'
 import { WeekEditModal } from './WeekEditModal'
+import { TemplateModal } from './TemplateModal'
 
 interface WeekCardProps {
   week: PlanWeek
+  templates?: Record<string, string>
   onTodoStatusChange?: (todoId: string, status: 'not_started' | 'in_progress' | 'blocked' | 'done') => void
   onEdit?: (updates: {
     name?: string
@@ -32,15 +34,29 @@ const STATUS_LABELS: Record<PlanWeek['status'], string> = {
   not_started: 'Todo',
 }
 
-export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
+export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
   const isDone = week.status === 'completed'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [templateModalOpen, setTemplateModalOpen] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<{ title: string; markdown: string } | null>(null)
+  const [showAllTodos, setShowAllTodos] = useState(false)
 
   // Calculate completion
   const totalTodos = week.todos.length
   const completedTodos = week.todos.filter(t => t.status === 'done').length
   const totalDeliverables = week.deliverables.length
   const completedDeliverables = week.deliverables.filter(d => d.status === 'done').length
+
+  // Handle template icon click
+  const handleTemplateClick = (todoTitle: string, templateId: string) => {
+    if (templates && templates[templateId]) {
+      setSelectedTemplate({
+        title: todoTitle,
+        markdown: templates[templateId]
+      })
+      setTemplateModalOpen(true)
+    }
+  }
 
   return (
     <>
@@ -105,11 +121,11 @@ export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className
                   </svg>
                   <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Goals</h5>
                 </div>
-                <ul className="space-y-2 pl-7">
+                <ul className="space-y-1.5 pl-7">
                   {week.goals.map((goal, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="text-emerald-500 font-bold shrink-0">•</span>
-                      <span className="leading-relaxed">{goal}</span>
+                      <span className="text-emerald-500 font-bold shrink-0 mt-0.5">•</span>
+                      <span className="leading-snug break-words">{goal}</span>
                     </li>
                   ))}
                 </ul>
@@ -125,11 +141,11 @@ export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className
                   </svg>
                   <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Reflection Questions</h5>
                 </div>
-                <ul className="space-y-3 pl-7">
+                <ul className="space-y-2 pl-7">
                   {week.reflectionQuestions.map((question, index) => (
                     <li key={index} className="flex items-start gap-2 text-sm text-gray-600 italic">
-                      <span className="text-purple-500 font-bold shrink-0">?</span>
-                      <span className="leading-relaxed">{question}</span>
+                      <span className="text-purple-500 font-bold shrink-0 mt-0.5">?</span>
+                      <span className="leading-snug break-words">{question}</span>
                     </li>
                   ))}
                 </ul>
@@ -138,8 +154,8 @@ export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className
           </div>
         )}
 
-        {/* Todos & Deliverables Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
+        {/* Todos & Deliverables */}
+        <div className="flex flex-col gap-6">
           {/* Todos */}
           {week.todos.length > 0 && (
             <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
@@ -150,16 +166,23 @@ export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className
                 </span>
               </h5>
               <ul className="space-y-2">
-                {week.todos.slice(0, 5).map((todo) => (
+                {(showAllTodos ? week.todos : week.todos.slice(0, 5)).map((todo) => (
                   <li key={todo.id} className="text-sm text-gray-700 flex items-start gap-2">
                     <button
-                      onClick={() => {
+                      type="button"
+                      disabled={!onTodoStatusChange}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
                         if (onTodoStatusChange) {
                           const nextStatus = todo.status === 'done' ? 'not_started' : 'done'
                           onTodoStatusChange(todo.id, nextStatus)
                         }
                       }}
-                      className="mt-0.5 shrink-0"
+                      className={cn(
+                        "mt-0.5 shrink-0 transition-colors",
+                        onTodoStatusChange ? "cursor-pointer" : "cursor-not-allowed opacity-50"
+                      )}
                     >
                       {todo.status === 'done' ? (
                         <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -168,44 +191,42 @@ export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className
                       )}
                     </button>
                     <span className={cn(
-                      'leading-relaxed',
+                      'leading-snug flex-1 break-words',
                       todo.status === 'done' && 'line-through text-gray-400'
                     )}>
                       {todo.name || todo.title}
                     </span>
+                    {todo.templateId && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleTemplateClick(todo.name || todo.title, todo.templateId!)
+                        }}
+                        className="shrink-0 p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                        title="View template"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </button>
+                    )}
                   </li>
                 ))}
                 {week.todos.length > 5 && (
-                  <li className="text-xs text-gray-500 pl-6">+{week.todos.length - 5} more</li>
+                  <li className="pl-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllTodos(!showAllTodos)}
+                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
+                    >
+                      {showAllTodos ? 'Show less' : `+${week.todos.length - 5} more`}
+                    </button>
+                  </li>
                 )}
               </ul>
             </div>
           )}
 
-          {/* Deliverables */}
-          {week.deliverables.length > 0 && (
-            <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
-              <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center justify-between">
-                <span>Deliverables</span>
-                <span className="text-gray-500 font-normal">
-                  {completedDeliverables}/{totalDeliverables}
-                </span>
-              </h5>
-              <div className="flex flex-wrap gap-2">
-                {week.deliverables.map((del) => (
-                  <span
-                    key={del.id}
-                    className={cn(
-                      'text-xs font-medium bg-white px-3 py-1.5 rounded-lg border text-gray-700 shadow-sm',
-                      del.status === 'done' && 'bg-green-50 border-green-200 text-green-700'
-                    )}
-                  >
-                    {del.name || del.title}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -217,6 +238,19 @@ export function WeekCard({ week, onTodoStatusChange, onEdit, onDelete, className
           onClose={() => setIsEditModalOpen(false)}
           onSave={onEdit}
           onDelete={onDelete}
+        />
+      )}
+
+      {/* Template Modal */}
+      {selectedTemplate && (
+        <TemplateModal
+          isOpen={templateModalOpen}
+          onClose={() => {
+            setTemplateModalOpen(false)
+            setSelectedTemplate(null)
+          }}
+          title={selectedTemplate.title}
+          markdown={selectedTemplate.markdown}
         />
       )}
     </>

@@ -8,17 +8,17 @@ interface WeekNavigationProps {
   allWeeks: PlanWeek[]
   activeWeekNumber?: number
   onWeekClick: (weekNumber: number) => void
+  isCollapsed: boolean
+  onToggleCollapse: () => void
 }
 
-export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick }: WeekNavigationProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
-
+export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick, isCollapsed, onToggleCollapse }: WeekNavigationProps) {
   if (isCollapsed) {
     return (
-      <div className="fixed left-0 top-1/2 -translate-y-1/2 z-20">
+      <div className="flex items-center justify-center py-4">
         <button
-          onClick={() => setIsCollapsed(false)}
-          className="bg-white border border-gray-200 rounded-r-xl p-2 shadow-lg hover:bg-gray-50 transition-colors"
+          onClick={onToggleCollapse}
+          className="bg-white border border-gray-200 rounded-xl p-2 shadow-lg hover:bg-gray-50 transition-colors"
           title="Show navigation"
         >
           <ChevronRight className="h-5 w-5 text-gray-600" />
@@ -28,13 +28,13 @@ export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick
   }
 
   return (
-    <div className="w-64 flex-shrink-0 border-r border-gray-200 bg-gray-50/50 overflow-y-auto">
+    <div className="min-h-0 h-full">
       <div className="sticky top-0 bg-gray-50/95 backdrop-blur z-10 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
           Timeline
         </h3>
         <button
-          onClick={() => setIsCollapsed(true)}
+          onClick={onToggleCollapse}
           className="p-1 hover:bg-gray-200 rounded transition-colors"
           title="Hide navigation"
         >

@@ -563,31 +563,29 @@ export interface QuarterlyPlanData {
   updatedAt: number
 }
 
-// Plan JSON structure following PLAN_FORMAT_V2.md
+// Plan JSON structure following PLAN_FORMAT.md V5 (Weeks in Cycles)
 export interface PlanJSON {
   plan: {
     id: string
     name: string
     description?: string
+    anchor_date: string
+    timezone?: string
+    // Legacy V1-V2 compatibility
     created_at?: string
     updated_at?: string
-    anchor_date?: string // V2 uses anchor_date at root of plan
-    timezone?: string
-    anchor?: { // V1 compatibility
+    anchor?: {
       start_date: string
       week_starts_on?: 'monday' | 'sunday'
       timezone?: string
     }
   }
-  work_types?: Array<{
-    id: string
+  // V5: work_types for KPI tracking
+  work_types: Array<{
     name: string
-    color: string
-    kpi_target?: {
-      unit: string
-      weekly_value: number
-    }
+    description?: string
   }>
+  // V5: templates at root level
   templates?: Record<string, string>
   weekly_habit?: {
     name: string
@@ -600,29 +598,37 @@ export interface PlanJSON {
     name: string
     theme?: string
     description?: string
-    core_competencies?: string[]
-    status?: 'not_started' | 'in_progress' | 'completed'
-    resume_story?: string
-    weeks: Array<{
-      // V2: Derived week_number, start_date, end_date
-      week_number?: number // Optional/Legacy
-      name?: string // Optional
+    status: 'not_started' | 'in_progress' | 'completed'
+    // V5: weeks with todos (supports both V5 and V3 formats)
+    weeks?: Array<{
       theme?: string
-      description?: string
-      start_date?: string // Legacy
-      end_date?: string // Legacy
-      status?: 'not_started' | 'current' | 'in_progress' | 'completed'
-      
-      // V2 Fields
       goals?: string[]
+      todos?: Array<{
+        id: string
+        // V5 fields
+        text?: string
+        type?: string // Work type category (must match a work_types[].name)
+        status?: 'pending' | 'in_progress' | 'completed' | 'blocked' | 'not_started' | 'done'
+        // V3 legacy fields
+        title?: string
+        name?: string
+        type_id?: string
+        priority?: 'low' | 'medium' | 'high'
+        estimate?: number
+        template_id?: string
+      }>
       reflection_questions?: string[]
+      status?: 'not_started' | 'current' | 'in_progress' | 'completed' // V3 legacy
+      // Legacy V3 fields
+      week_number?: number
+      name?: string
+      description?: string
+      start_date?: string
+      end_date?: string
       acceptance_criteria?: string[]
-      
-      // Legacy Fields (kept for compatibility or mapped)
       focus_areas?: string[]
       product_questions?: string[]
       validation_criteria?: string[]
-      
       daily_plan?: Array<{
         day: string
         tech_work?: string
@@ -630,36 +636,32 @@ export interface PlanJSON {
         tech_hours?: number
         product_minutes?: number
       }>
-      
-      todos?: Array<{
-        id: string
-        title: string // V2
-        name?: string // Legacy
-        description?: string
-        type_id?: string // V2
-        category?: string // Legacy
-        priority?: 'low' | 'medium' | 'high'
-        estimate?: number // V2
-        estimated_hours?: number // Legacy
-        status?: 'not_started' | 'in_progress' | 'blocked' | 'done'
-        dependencies?: string[]
-      }>
-      
       deliverables?: Array<{
         id: string
-        title: string // V2
-        name?: string // Legacy
+        title: string
+        name?: string
         description?: string
-        type_id?: string // V2
-        template_id?: string // V2
-        type?: string // Legacy
+        type_id?: string
+        template_id?: string
+        type?: string
         format?: string
         status?: 'not_started' | 'in_progress' | 'done'
-        resume_value?: number // Legacy
+        resume_value?: number
       }>
     }>
+    // V4: items directly in cycle (legacy)
+    items?: Array<{
+      title: string
+      type: string // Must match a work_types[].name
+      priority: 1 | 2 | 3 // 1 = low, 2 = medium, 3 = high
+      status: 'pending' | 'completed'
+      template_id?: string
+    }>
+    // Legacy V3 fields
+    core_competencies?: string[]
+    resume_story?: string
   }>
-  trackers?: Array<{ // Legacy compatibility
+  trackers?: Array<{
     id: string
     name: string
     unit?: string

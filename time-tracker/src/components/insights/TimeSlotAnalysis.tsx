@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import type { TimeSlotPattern } from '../../types/insights'
 import { CATEGORY_KEYS } from '../../types/time'
 import { cn } from '../../utils/classNames'
@@ -10,6 +11,29 @@ interface TimeSlotAnalysisProps {
 }
 
 export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect()
+        setDimensions({ width, height })
+      }
+    }
+
+    // Initial measurement
+    updateDimensions()
+
+    // Use ResizeObserver for responsive updates
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(containerRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
   if (timeSlotData.length === 0) {
     return (
       <div className={cn(
@@ -101,9 +125,10 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
         </div>
       )}
 
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
+      <div ref={containerRef} className="h-[300px] w-full min-w-[300px]">
+        {dimensions.width > 0 && dimensions.height > 0 && (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
             data={chartData}
             margin={{ top: 10, right: 0, left: -10, bottom: 5 }}
           >
@@ -143,8 +168,9 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
                 />
               )
             })}
-          </BarChart>
-        </ResponsiveContainer>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   )

@@ -84,8 +84,6 @@ export function HandsontableCalendar({
   } | null>(null)
   const previousTimeCellRef = useRef<HTMLElement | null>(null)
   const rowPositionsCache = useRef<{ positions: number[], heights: number[] } | null>(null)
-  const scrollPositionRef = useRef<{ row: number; col: number } | null>(null)
-  const shouldRestoreScrollRef = useRef<boolean>(false)
 
   // Cache row positions when table renders/updates
   useEffect(() => {
@@ -483,46 +481,9 @@ export function HandsontableCalendar({
     return cols
   }, [dayHeaders])
 
-  // Preserve scroll position before data updates using Handsontable's official API
-  const preserveScrollPosition = () => {
-    const hot = hotRef.current?.hotInstance
-    if (!hot) return
-
-    // Use Handsontable's official methods to get current scroll position
-    const firstVisibleRow = hot.getFirstVisibleRow?.() ?? 0
-    const firstVisibleCol = hot.getFirstVisibleColumn?.() ?? 0
-
-    scrollPositionRef.current = {
-      row: firstVisibleRow,
-      col: firstVisibleCol
-    }
-
-    // Set flag to indicate we should restore scroll on next render
-    shouldRestoreScrollRef.current = true
-  }
-
-  // Restore scroll position after render using Handsontable's official API
-  useEffect(() => {
-    const hot = hotRef.current?.hotInstance
-    if (!hot || !scrollPositionRef.current || !shouldRestoreScrollRef.current) return
-
-    // Restore scroll position on next frame to ensure DOM is ready
-    requestAnimationFrame(() => {
-      if (scrollPositionRef.current && hot.scrollViewportTo) {
-        hot.scrollViewportTo(scrollPositionRef.current.row, scrollPositionRef.current.col)
-      }
-      // Clear the flag and position after restoration so manual scrolling isn't overridden
-      shouldRestoreScrollRef.current = false
-      scrollPositionRef.current = null
-    })
-  }, [weekData])
-
   // Handle cell changes (from paste or fill)
   const handleAfterChange = (changes: any, source: string) => {
     if (!changes || source === 'loadData') return
-
-    // Preserve scroll position before triggering state updates
-    preserveScrollPosition()
 
     const updates: { day: number; timeIndex: number; block: TimeBlock }[] = []
 
@@ -650,9 +611,6 @@ export function HandsontableCalendar({
 
     const hot = hotRef.current?.hotInstance
     if (!hot) return
-
-    // Preserve scroll position before triggering state updates
-    preserveScrollPosition()
 
     const { row, col } = contextMenu
     const day = col
@@ -863,7 +821,16 @@ export function HandsontableCalendar({
   }
 
   // Track selected row for time indicator
-  const handleAfterSelection = (row: number) => {
+  const handleAfterSelection = (
+    row: number,
+    _column: number,
+    _row2: number,
+    _column2: number,
+    preventScrolling: { value: boolean }
+  ) => {
+    // CRITICAL: Prevent Handsontable from scrolling the viewport to the selected cell
+    preventScrolling.value = true
+
     const hot = hotRef.current?.hotInstance
     if (!hot) return
 

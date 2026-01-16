@@ -56,12 +56,17 @@ export function QuarterlyPlan() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="max-w-7xl mx-auto">
-          {activeTab === 'mission' && <MissionControl data={planData} />}
-          {activeTab === 'timeline' && <Timeline data={planData} />}
-          {activeTab === 'settings' && <PlanSettings data={planData} />}
-        </div>
+      <div className="flex-1 min-h-0 flex flex-col bg-gray-50">
+        {activeTab === 'timeline' ? (
+          <Timeline data={planData} />
+        ) : (
+          <div className="flex-1 overflow-y-auto px-8 py-6">
+            <div className="max-w-7xl mx-auto">
+              {activeTab === 'mission' && <MissionControl data={planData} />}
+              {activeTab === 'settings' && <PlanSettings data={planData} />}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

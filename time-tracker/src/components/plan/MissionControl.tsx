@@ -3,6 +3,7 @@ import type { UseQuarterlyPlanReturn } from '../../hooks/useQuarterlyPlan'
 import { useDailyShipping } from '../../hooks/useDailyShipping'
 import { KPICard } from './components/KPICard'
 import { ActiveMissionCard } from './components/ActiveMissionCard'
+import { CycleCard } from './components/CycleCard'
 import { Package, CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { SyncStatusIndicator } from '../SyncStatusIndicator'
@@ -281,8 +282,12 @@ export function MissionControl({ data }: MissionControlProps) {
     currentWeek,
     currentCycle,
     currentWeekIndex,
+    cycles,
     updateTodoStatus,
     updateDeliverableStatus,
+    updateCycleDetails,
+    updateWeekComprehensive,
+    deleteWeek,
     syncStatus,
     lastSynced,
     hasUnsavedChanges,
@@ -290,6 +295,44 @@ export function MissionControl({ data }: MissionControlProps) {
   } = data
 
   const areTrackersComputed = !!planData?.work_types
+
+  // Get current cycle index (1-based)
+  const currentCycleIndex = currentCycle
+    ? cycles.findIndex(c => c.id === currentCycle.id) + 1
+    : undefined
+
+  // Calculate cycle-specific trackers
+  const cycleTrackers = useMemo(() => {
+    if (!currentCycle || !planData?.work_types) return trackers
+
+    // For computed trackers (work_types), recalculate based on current cycle's weeks only
+    return planData.work_types.map(wt => {
+      let total = 0
+      let completed = 0
+
+      // Count todos in current cycle only
+      for (const week of currentCycle.weeks) {
+        for (const todo of week.todos) {
+          if (todo.typeId === wt.name) {
+            total++
+            if (todo.status === 'done') {
+              completed++
+            }
+          }
+        }
+      }
+
+      return {
+        id: wt.name,
+        name: wt.name,
+        unit: undefined,
+        baseline: 0,
+        target: total,
+        current: completed,
+        color: (wt as any).color
+      }
+    })
+  }, [currentCycle, planData?.work_types, trackers])
 
   // Get upcoming weeks (next 3 after current)
   const upcomingWeeks = currentWeek
@@ -317,28 +360,44 @@ export function MissionControl({ data }: MissionControlProps) {
         />
       </div>
 
-      {/* KPIs Section (Top Row) */}
+      {/* Cycle and KPIs Section */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">Key Performance Indicators</h2>
-        {trackers.length > 0 ? (
-          <div className="overflow-x-auto -mx-4 px-4">
-            <div className="flex gap-4 min-w-max">
-              {trackers.map(tracker => (
-                <div key={tracker.id} className="flex-shrink-0 w-36">
-                  <KPICard 
-                    tracker={tracker} 
-                    onUpdate={areTrackersComputed ? undefined : (value) => updateTrackerValue(tracker.id, value)}
-                    compact={true}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
-            No KPIs defined
+        {/* Current Cycle */}
+        {currentCycle && (
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Cycle</h2>
+            <CycleCard
+              cycle={currentCycle}
+              cycleIndex={currentCycleIndex}
+              onEdit={(details) => updateCycleDetails(currentCycle.id, details)}
+              onStatusChange={(status) => updateCycleDetails(currentCycle.id, { status })}
+            />
           </div>
         )}
+
+        {/* KPIs */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">
+            Key Performance Indicators
+            {currentCycle && <span className="text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}
+          </h2>
+          {cycleTrackers.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {cycleTrackers.map(tracker => (
+                <KPICard
+                  key={tracker.id}
+                  tracker={tracker}
+                  onUpdate={areTrackersComputed ? undefined : (value) => updateTrackerValue(tracker.id, value)}
+                  compact={true}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+              No KPIs defined
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main Content Grid */}
@@ -350,12 +409,18 @@ export function MissionControl({ data }: MissionControlProps) {
         {currentWeek ? (
           <ActiveMissionCard
             week={currentWeek}
-            cycle={currentCycle}
+            templates={planData?.templates}
             onTodoStatusChange={(todoId, status) => {
               updateTodoStatus(currentWeek.weekNumber, todoId, status)
             }}
             onDeliverableStatusChange={(deliverableId, status) => {
               updateDeliverableStatus(currentWeek.weekNumber, deliverableId, status)
+            }}
+            onWeekEdit={(updates) => {
+              updateWeekComprehensive(currentWeek.weekNumber, updates)
+            }}
+            onWeekDelete={() => {
+              deleteWeek(currentWeek.weekNumber)
             }}
           />
         ) : (

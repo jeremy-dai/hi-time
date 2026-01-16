@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { YTDStats } from '../../utils/analytics'
 import { CATEGORY_COLORS_HEX, CATEGORY_LABELS } from '../../constants/colors'
@@ -14,6 +14,28 @@ interface AnnualWeeklyBreakdownProps {
 export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTheme }: AnnualWeeklyBreakdownProps) {
   const [editingWeek, setEditingWeek] = useState<string | null>(null)
   const [editingTheme, setEditingTheme] = useState('')
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect()
+        setDimensions({ width, height })
+      }
+    }
+
+    // Initial measurement
+    updateDimensions()
+
+    // Use ResizeObserver for responsive updates
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(containerRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [])
 
   const chartData = useMemo(() => {
     return ytdStats.weeklyData.map(({ weekKey, categoryHours }) => {
@@ -128,9 +150,10 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
         </div>
       ) : (
         <div className="overflow-x-auto overflow-y-visible">
-          <div style={{ minWidth: chartWidth, height: 400 }}>
-            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-              <BarChart data={chartData}>
+          <div ref={containerRef} style={{ minWidth: chartWidth, height: 400 }}>
+            {dimensions.width > 0 && dimensions.height > 0 && (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                 <XAxis
                   dataKey="week"
@@ -183,8 +206,9 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
                     }}
                   />
                 ))}
-              </BarChart>
-            </ResponsiveContainer>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       )}

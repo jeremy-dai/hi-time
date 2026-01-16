@@ -51,6 +51,7 @@ export interface PlanWeek {
     name?: string
     description?: string
     typeId?: string
+    templateId?: string
     category?: string
     priority?: 'low' | 'medium' | 'high'
     estimate?: number
@@ -98,6 +99,15 @@ export interface PlanTracker {
   color?: string
 }
 
+// V4: Work type stats (completion-based KPI)
+export interface WorkTypeStats {
+  name: string
+  description?: string
+  total: number
+  completed: number
+  completionRate: number // 0-100
+}
+
 export interface UseQuarterlyPlanReturn {
   // Raw data
   planData: PlanJSON | null
@@ -111,6 +121,7 @@ export interface UseQuarterlyPlanReturn {
   allWeeks: PlanWeek[]
   trackers: PlanTracker[]
   weeklyHabit: PlanJSON['weekly_habit'] | null
+  workTypeStats: WorkTypeStats[] // V4: Completion-based KPIs per work type
 
   // Current state
   currentWeekIndex: number
@@ -145,6 +156,9 @@ export interface UseQuarterlyPlanReturn {
   updateWeekComprehensive: (weekNumber: number, updates: { name?: string; theme?: string; status?: PlanWeek['status']; todos?: PlanWeek['todos']; deliverables?: PlanWeek['deliverables'] }) => void
   addWeek: (cycleId: string, weekData?: Partial<PlanWeek>) => void
   deleteWeek: (weekNumber: number) => void
+
+  // V4 Actions
+  updateItemStatus: (cycleId: string, itemIndex: number, status: 'pending' | 'completed') => void
 }
 
 // Helper to compute week dates from plan anchor
@@ -175,7 +189,14 @@ function transformPlanData(planData: PlanJSON): {
   // V2 uses anchor_date at root, V1 uses anchor.start_date
   const startDateStr = planData.plan.anchor_date || planData.plan.anchor?.start_date
   if (!startDateStr) {
-    console.error('No start date found in plan data')
+    console.error('No start date found in plan data', {
+      planId: planData.plan?.id,
+      planName: planData.plan?.name,
+      hasAnchorDate: !!planData.plan.anchor_date,
+      hasAnchor: !!planData.plan.anchor,
+      anchorStartDate: planData.plan.anchor?.start_date,
+      planKeys: Object.keys(planData.plan || {}),
+    })
     return { cycles: [], allWeeks: [], trackers: [] }
   }
 
@@ -204,43 +225,60 @@ function transformPlanData(planData: PlanJSON): {
         weekNumber: weekNumber,
         cycleId: cycle.id,
         cycleName: cycle.name,
-        name: week.name || `Week ${weekNumber}`,
+        name: week.name || week.theme || `Week ${weekNumber}`,
         theme: week.theme,
         description: week.description,
         startDate: dates.start,
         endDate: dates.end,
         status: week.status || 'not_started',
-        
+
         // Map V2/V1 fields
-        goals: week.goals || week.focus_areas || [],
-        focusAreas: week.focus_areas || week.goals || [], // Back-compat
-        
-        reflectionQuestions: week.reflection_questions || week.product_questions || [],
-        productQuestions: week.product_questions || week.reflection_questions || [], // Back-compat
+        goals: week.goals || (week as any).focus_areas || [],
+        focusAreas: (week as any).focus_areas || week.goals || [], // Back-compat
 
-        validationCriteria: week.validation_criteria || [], // Back-compat
+        reflectionQuestions: week.reflection_questions || (week as any).product_questions || [],
+        productQuestions: (week as any).product_questions || week.reflection_questions || [], // Back-compat
 
-        dailyPlan: (week.daily_plan || []).map(d => ({
+        validationCriteria: (week as any).validation_criteria || [], // Back-compat
+
+        dailyPlan: ((week as any).daily_plan || []).map((d: any) => ({
           day: d.day,
           techWork: d.tech_work,
           productAction: d.product_action,
           techHours: d.tech_hours,
           productMinutes: d.product_minutes,
         })),
-        todos: (week.todos || []).map(t => ({
-          id: t.id,
-          title: t.title || t.name || '',
-          name: t.name || t.title || '',
-          description: t.description,
-          typeId: t.type_id,
-          category: t.category,
-          priority: t.priority,
-          estimate: t.estimate,
-          estimatedHours: t.estimated_hours,
-          status: t.status,
-          dependencies: t.dependencies,
-        })),
-        deliverables: (week.deliverables || []).map(d => ({
+        // V5: todos have `text`, `type`, status: 'pending'|'in_progress'|'completed'|'blocked'
+        // V3: todos have `title`, `type_id`, status: 'not_started'|'in_progress'|'blocked'|'done'
+        todos: (week.todos || []).map((t: any) => {
+          // Check if V5 format (has `text` field)
+          const isV5 = 'text' in t
+
+          // Map V5 status to V3 legacy status
+          let todoStatus = t.status || 'not_started'
+          if (isV5) {
+            if (t.status === 'pending') todoStatus = 'not_started'
+            else if (t.status === 'completed') todoStatus = 'done'
+            else if (t.status === 'blocked') todoStatus = 'blocked'
+            else todoStatus = t.status // in_progress maps directly
+          }
+
+          return {
+            id: t.id,
+            title: isV5 ? t.text : (t.title || t.name || ''),
+            name: isV5 ? t.text : (t.name || t.title || ''),
+            description: t.description,
+            typeId: isV5 ? t.type : t.type_id,
+            templateId: t.template_id,
+            category: t.category,
+            priority: t.priority,
+            estimate: t.estimate,
+            estimatedHours: t.estimated_hours,
+            status: todoStatus,
+            dependencies: t.dependencies,
+          }
+        }),
+        deliverables: ((week as any).deliverables || []).map((d: any) => ({
           id: d.id,
           title: d.title || d.name || '',
           name: d.name || d.title || '',
@@ -278,29 +316,33 @@ function transformPlanData(planData: PlanJSON): {
   // Transform trackers
   // V2: Derived from work_types
   let trackers: PlanTracker[] = []
-  
+
   if (planData.work_types) {
     trackers = planData.work_types.map(wt => {
-      // Calculate current value based on completed todos
-      let current = 0
-      
-      // Example logic: Sum estimates of DONE todos with this type_id
-      // This is a simplification; you might want more complex logic later
+      // Calculate total and completed todos for this work type
+      let total = 0
+      let completed = 0
+
+      // Count todos by matching work type name
       for (const week of allWeeks) {
         for (const todo of week.todos) {
-          if (todo.typeId === wt.id && todo.status === 'done') {
-             current += (todo.estimate || 0)
+          // Match by work type name (typeId in transformed data is the work type name)
+          if (todo.typeId === wt.name) {
+            total++
+            if (todo.status === 'done') {
+              completed++
+            }
           }
         }
       }
 
       return {
-        id: wt.id,
+        id: wt.name, // Use name as ID since work_types don't have id field
         name: wt.name,
-        unit: wt.kpi_target?.unit,
+        unit: undefined,
         baseline: 0,
-        target: wt.kpi_target?.weekly_value || 0, // This is weekly target, might need total? Or just display weekly
-        current: current, // This is cumulative. 
+        target: total, // Total number of todos for this work type
+        current: completed, // Number of completed todos
         color: wt.color
       }
     })
@@ -384,11 +426,22 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
           const dbPlan = await getPlan(mostRecent.planId)
 
           if (!cancelled && dbPlan && dbPlan.planData) {
-            setPlanId(dbPlan.planId)
-            setPlanDataState(dbPlan.planData)
-            saveToStorage(dbPlan.planId, dbPlan.planData)
-            setSyncStatus('synced')
-            setLastSynced(new Date())
+            // Validate that the plan has a start date
+            const hasStartDate = dbPlan.planData.plan?.anchor_date || dbPlan.planData.plan?.anchor?.start_date
+
+            if (hasStartDate) {
+              setPlanId(dbPlan.planId)
+              setPlanDataState(dbPlan.planData)
+              saveToStorage(dbPlan.planId, dbPlan.planData)
+              setSyncStatus('synced')
+              setLastSynced(new Date())
+            } else {
+              console.warn('Plan from database is missing start date, keeping local data')
+              if (localData) {
+                // Local data is more recent and valid, sync it to DB
+                setSyncStatus('pending')
+              }
+            }
           }
         } else if (localData) {
           // No plans in DB but we have local data, mark as pending
@@ -586,12 +639,22 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
   // Import plan from JSON
   const importPlan = useCallback((json: PlanJSON) => {
+    console.log('Importing plan:', {
+      planId: json.plan?.id,
+      planName: json.plan?.name,
+      hasAnchorDate: !!json.plan?.anchor_date,
+      anchorDate: json.plan?.anchor_date,
+      hasAnchor: !!json.plan?.anchor,
+      anchorStartDate: json.plan?.anchor?.start_date,
+    })
+
     const id = json.plan.id || DEFAULT_PLAN_ID
     setPlanId(id)
     setPlanDataState(json)
     saveToStorage(id, json)
 
-    // Sync immediately on import
+    // Sync immediately on import - this will overwrite any old database data
+    setSyncStatus('syncing')
     syncToDatabase(id, json)
   }, [syncToDatabase])
 
@@ -878,18 +941,59 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
     setPlanData(newPlanData)
   }, [planData, setPlanData])
 
+  // V4: Update item status (cycleId, itemIndex within that cycle)
+  const updateItemStatus = useCallback((cycleId: string, itemIndex: number, status: 'pending' | 'completed') => {
+    if (!planData || !planData.cycles) return
+
+    const newPlanData = { ...planData }
+    const cycle = newPlanData.cycles.find(c => c.id === cycleId)
+    if (cycle && cycle.items && cycle.items[itemIndex]) {
+      cycle.items[itemIndex].status = status
+    }
+
+    setPlanData(newPlanData)
+  }, [planData, setPlanData])
+
+  // V5: Compute work type stats across all todos in all weeks
+  const workTypeStats = useMemo((): WorkTypeStats[] => {
+    if (!planData || !planData.work_types || !planData.cycles) {
+      return []
+    }
+
+    // Collect all todos from all weeks in all cycles
+    const allTodos = planData.cycles.flatMap(cycle =>
+      (cycle.weeks || []).flatMap(week => week.todos || [])
+    )
+
+    return planData.work_types.map(workType => {
+      const todosOfType = allTodos.filter(todo => todo.type === workType.name)
+      const completedTodos = todosOfType.filter(todo => todo.status === 'completed')
+
+      return {
+        name: workType.name,
+        description: workType.description,
+        total: todosOfType.length,
+        completed: completedTodos.length,
+        completionRate: todosOfType.length > 0
+          ? Math.round((completedTodos.length / todosOfType.length) * 100)
+          : 0
+      }
+    })
+  }, [planData])
+
   const hasUnsavedChanges = syncStatus === 'pending'
 
   return {
     planData,
     planId,
-    planName: planData?.plan.name || '',
-    planDescription: planData?.plan.description || '',
-    startDate: planData ? new Date(planData.plan.anchor_date || planData.plan.anchor?.start_date || '') : null,
+    planName: planData?.plan?.name || '',
+    planDescription: planData?.plan?.description || '',
+    startDate: planData?.plan ? new Date(planData.plan.anchor_date || planData.plan.anchor?.start_date || '') : null,
     cycles: transformed.cycles,
     allWeeks: transformed.allWeeks,
     trackers: transformed.trackers,
     weeklyHabit: planData?.weekly_habit || null,
+    workTypeStats,
     currentWeekIndex,
     currentWeek,
     currentCycle,
@@ -918,5 +1022,6 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
     updateWeekComprehensive,
     addWeek,
     deleteWeek,
+    updateItemStatus,
   }
 }

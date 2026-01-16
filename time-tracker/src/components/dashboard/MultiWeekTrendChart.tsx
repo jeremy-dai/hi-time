@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MultiWeekStats } from '../../utils/analytics'
 import { CATEGORY_COLORS_HEX } from '../../constants/colors'
@@ -9,6 +9,29 @@ interface MultiWeekTrendChartProps {
 }
 
 export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect()
+        setDimensions({ width, height })
+      }
+    }
+
+    // Initial measurement
+    updateDimensions()
+
+    // Use ResizeObserver for responsive updates
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(containerRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
   const chartData = useMemo(() => {
     // Reverse the weeks array to show oldest to newest (left to right)
     return multiWeekStats.weeks.slice().reverse().map(({ weekKey, stats }) => {
@@ -37,8 +60,10 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
           No trend data available
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={300} minWidth={0}>
-          <LineChart data={chartData}>
+        <div ref={containerRef} style={{ width: '100%', height: 300, minWidth: 300 }}>
+          {dimensions.width > 0 && dimensions.height > 0 && (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey="week"
@@ -93,8 +118,10 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
               strokeWidth={4}
               dot={{ r: 4 }}
             />
-          </LineChart>
-        </ResponsiveContainer>
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       )}
     </div>
   )

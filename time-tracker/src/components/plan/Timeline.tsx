@@ -52,16 +52,16 @@ export function Timeline({ data }: TimelineProps) {
     insertAfterWeekNumber?: number
   } | null>(null)
 
+  // State for sidebar collapse
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
   // Week refs for scrolling
   const weekRefs = useRef<Map<number, HTMLDivElement>>(new Map())
-  const [activeWeekNumber, setActiveWeekNumber] = useState<number | undefined>()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [activeWeekNumber, setActiveWeekNumber] = useState<number | undefined>()
 
-  // Track visible week on scroll
+  // Track visible week on scroll (using viewport as root since parent handles scroll)
   useEffect(() => {
-    const container = scrollContainerRef.current
-    if (!container) return
-
     const observer = new IntersectionObserver(
       (entries) => {
         // Find the most visible week
@@ -83,7 +83,8 @@ export function Timeline({ data }: TimelineProps) {
         }
       },
       {
-        root: container,
+        root: null, // Use viewport since layout is not strictly constrained in height
+        rootMargin: '-100px 0px -100px 0px', // Offset for header
         threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
       }
     )
@@ -100,7 +101,14 @@ export function Timeline({ data }: TimelineProps) {
   const handleWeekClick = (weekNumber: number) => {
     const element = weekRefs.current.get(weekNumber)
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const headerOffset = 100
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.scrollY - headerOffset
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
       setActiveWeekNumber(weekNumber)
     }
   }
@@ -118,19 +126,30 @@ export function Timeline({ data }: TimelineProps) {
   }
 
   return (
-    <div className="flex h-full">
+    <div className="flex bg-gray-50 min-h-[calc(100vh-8rem)]">
       {/* Week Navigation Sidebar */}
-      <WeekNavigation
-        cycles={cycles}
-        allWeeks={allWeeks}
-        activeWeekNumber={activeWeekNumber}
-        onWeekClick={handleWeekClick}
-      />
+      <div className={cn(
+        "shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-gray-200 bg-gray-50/50 transition-all duration-300 z-20",
+        isSidebarCollapsed ? "w-16" : "w-64"
+      )}>
+        <WeekNavigation
+          cycles={cycles}
+          allWeeks={allWeeks}
+          activeWeekNumber={activeWeekNumber}
+          onWeekClick={handleWeekClick}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col gap-8 overflow-hidden">
+      <div 
+        ref={scrollContainerRef}
+        className="flex-1 min-w-0"
+      >
+        <div className="max-w-5xl mx-auto p-8 flex flex-col gap-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-8">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Timeline</h1>
             <p className="text-gray-600">Detailed weekly breakdown and status tracking.</p>
@@ -145,17 +164,20 @@ export function Timeline({ data }: TimelineProps) {
         </div>
 
         {/* Timeline by Cycle */}
-        <div ref={scrollContainerRef} className="flex-1 overflow-y-auto space-y-8 px-8 pb-12">
+        <div className="flex-1 space-y-8">
         {/* Strategic Cycles Overview */}
         {cycles.length > 0 && (
           <div className="space-y-4">
              <h2 className="text-xl font-semibold text-gray-900">Strategic Cycles</h2>
-             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {cycles.map(cycle => (
+             <div className="space-y-3">
+              {cycles.map((cycle, index) => (
                 <CycleCard
                   key={cycle.id}
                   cycle={cycle}
+                  cycleIndex={index + 1}
                   onStatusChange={(status) => updateCycleDetails(cycle.id, { status })}
+                  onEdit={(details) => updateCycleDetails(cycle.id, details)}
+                  className="w-full"
                 />
               ))}
             </div>
@@ -261,6 +283,7 @@ export function Timeline({ data }: TimelineProps) {
 
                           <WeekCard
                             week={week}
+                            templates={data.planData?.templates}
                             onTodoStatusChange={(todoId, status) => updateTodoStatus(week.weekNumber, todoId, status)}
                             onEdit={(updates) => updateWeekComprehensive(week.weekNumber, updates)}
                             onDelete={() => deleteWeek(week.weekNumber)}
@@ -310,6 +333,7 @@ export function Timeline({ data }: TimelineProps) {
             insertPosition={selectedCycleForAdd.insertPosition}
           />
         )}
+        </div>
       </div>
     </div>
   )

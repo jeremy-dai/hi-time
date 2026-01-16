@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DailyBreakdown } from '../../types/insights'
 import { CATEGORY_COLORS_HEX } from '../../constants/colors'
@@ -9,6 +9,29 @@ interface WeeklyBreakdownChartProps {
 }
 
 export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    const updateDimensions = () => {
+      if (containerRef.current) {
+        const { width, height } = containerRef.current.getBoundingClientRect()
+        setDimensions({ width, height })
+      }
+    }
+
+    // Initial measurement
+    updateDimensions()
+
+    // Use ResizeObserver for responsive updates
+    const resizeObserver = new ResizeObserver(updateDimensions)
+    resizeObserver.observe(containerRef.current)
+
+    return () => resizeObserver.disconnect()
+  }, [])
+
   const data = useMemo(() => {
     const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -41,9 +64,10 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
   }, [dailyPattern])
 
   return (
-    <div style={{ width: '100%', height: 320, minWidth: 0 }}>
-      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-        <BarChart data={data}>
+    <div ref={containerRef} style={{ width: '100%', height: 320, minWidth: 300 }}>
+      {dimensions.width > 0 && dimensions.height > 0 && (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data}>
           <XAxis
             dataKey="day"
             stroke="#6b7280"
@@ -72,8 +96,9 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
               radius={idx === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
             />
           ))}
-        </BarChart>
-      </ResponsiveContainer>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   )
 }
