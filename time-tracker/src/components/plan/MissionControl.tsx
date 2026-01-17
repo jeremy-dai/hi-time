@@ -410,6 +410,7 @@ export function MissionControl({ data }: MissionControlProps) {
           <ActiveMissionCard
             week={currentWeek}
             templates={planData?.templates}
+            workTypes={planData?.work_types}
             onTodoStatusChange={(todoId, status) => {
               updateTodoStatus(currentWeek.weekNumber, todoId, status)
             }}

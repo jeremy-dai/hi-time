@@ -284,6 +284,7 @@ export function Timeline({ data }: TimelineProps) {
                           <WeekCard
                             week={week}
                             templates={data.planData?.templates}
+                            workTypes={data.planData?.work_types}
                             onTodoStatusChange={(todoId, status) => updateTodoStatus(week.weekNumber, todoId, status)}
                             onEdit={(updates) => updateWeekComprehensive(week.weekNumber, updates)}
                             onDelete={() => deleteWeek(week.weekNumber)}

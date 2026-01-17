@@ -211,10 +211,9 @@ function transformPlanData(planData: PlanJSON): {
     let maxWeek = -Infinity
 
     for (const week of cycle.weeks) {
-      // V3: week_number is optional in JSON and auto-calculated from position
-      // This allows weeks to be reordered/inserted/deleted without manual renumbering
-      // If week_number exists (legacy format), use it; otherwise use position-based index
-      const weekNumber = week.week_number ?? globalWeekIndex + 1
+      // V3: week_number is ALWAYS calculated from position (ignores any week_number in JSON)
+      // This allows weeks to be reordered/inserted/deleted with automatic renumbering
+      const weekNumber = globalWeekIndex + 1
       globalWeekIndex++
 
       const dates = getWeekDates(startDateStr, weekNumber)
@@ -495,12 +494,29 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
     }
   }, [])
 
+  // Normalize plan data by removing week_number (always calculated from position)
+  const normalizePlanData = useCallback((data: PlanJSON): PlanJSON => {
+    const normalized = { ...data }
+
+    // Remove week_number from all weeks - it's always calculated from position
+    for (const cycle of normalized.cycles) {
+      if (cycle.weeks) {
+        for (const week of cycle.weeks) {
+          delete week.week_number
+        }
+      }
+    }
+
+    return normalized
+  }, [])
+
   // Set plan data and trigger debounced sync
   const setPlanData = useCallback((data: PlanJSON) => {
-    const id = data.plan.id || planId
+    const normalizedData = normalizePlanData(data)
+    const id = normalizedData.plan.id || planId
     setPlanId(id)
-    setPlanDataState(data)
-    saveToStorage(id, data)
+    setPlanDataState(normalizedData)
+    saveToStorage(id, normalizedData)
 
     // Debounce database sync
     setSyncStatus('pending')
@@ -509,9 +525,9 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
     }
 
     syncTimeoutRef.current = setTimeout(() => {
-      syncToDatabase(id, data)
+      syncToDatabase(id, normalizedData)
     }, SYNC_DEBOUNCE_MS)
-  }, [planId, syncToDatabase])
+  }, [planId, syncToDatabase, normalizePlanData])
 
   // Computed values
   const transformed = useMemo(() => {
@@ -878,13 +894,9 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
     const newPlanData = { ...planData }
     const cycle = newPlanData.cycles.find(c => c.id === cycleId)
     if (cycle) {
-      // Find the next week number
-      const allWeekNumbers = newPlanData.cycles.flatMap(c => c.weeks.map(w => w.week_number || 0))
-      const nextWeekNumber = Math.max(...allWeekNumbers, 0) + 1
-
+      // Create new week WITHOUT week_number (calculated from position)
       const newWeek = {
-        week_number: nextWeekNumber,
-        name: weekData?.name || `Week ${nextWeekNumber}`,
+        name: weekData?.name || 'New Week',
         theme: weekData?.theme,
         status: weekData?.status || 'not_started',
         goals: weekData?.goals || [],
@@ -908,16 +920,32 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
       // Insert at specific position if provided
       if (insertAfterWeekNumber !== undefined) {
-        const insertIndex = cycle.weeks.findIndex(w => w.week_number === insertAfterWeekNumber)
+        // Find the position in the cycle's weeks array
+        let insertIndex = -1
+        let currentWeekNum = 0
+
+        // Calculate which position in THIS cycle corresponds to the global week number
+        for (const c of newPlanData.cycles) {
+          if (!c.weeks) continue
+          for (let i = 0; i < c.weeks.length; i++) {
+            currentWeekNum++
+            if (c.id === cycleId && currentWeekNum === insertAfterWeekNumber) {
+              insertIndex = i
+              break
+            }
+          }
+          if (insertIndex !== -1) break
+        }
+
         if (insertIndex !== -1) {
-          // Insert after the found week
+          // Insert after the found position
           cycle.weeks.splice(insertIndex + 1, 0, newWeek)
         } else {
-          // If week not found, append to end
+          // If position not found in this cycle, append to end
           cycle.weeks.push(newWeek)
         }
       } else {
-        // No position specified, append to end
+        // No position specified, append to end of cycle
         cycle.weeks.push(newWeek)
       }
     }

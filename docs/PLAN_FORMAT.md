@@ -100,6 +100,19 @@ Each week represents a planning unit with its own theme, goals, todos, and refle
 | `todos` | array | Yes | List of Todo objects |
 | `reflection_questions` | array | No | Questions to reflect on at week's end |
 
+**Week Numbering (Dynamic Calculation)**
+
+Week numbers are **NOT stored** in the JSON. They are calculated dynamically from the week's position in the array (across all cycles):
+- Week 1 = First week in first cycle
+- Week 2 = Second week in first cycle (or first week in second cycle if first cycle has only 1 week)
+- And so on...
+
+**Automatic Renumbering:** When a week is deleted, all subsequent weeks are automatically renumbered with no gaps. For example:
+- If you delete Week 2, the old Week 3 becomes Week 2, old Week 4 becomes Week 3, etc.
+- This happens automatically on every render because week numbers are recalculated from array position
+
+**Important:** Do NOT include a `week_number` field in the JSON. The system will strip it out before saving to ensure clean, position-based numbering.
+
 ### Todo Object
 
 | Field | Type | Required | Description |
@@ -333,9 +346,19 @@ Optional reusable markdown templates for todos that have deliverables or standar
 - Removed cycle-level `items` array
 - Todos moved inside weeks with full status options restored
 - Added `type` field to todos for work type categorization
+- **Week numbers are now dynamically calculated** from array position (not stored in JSON)
 
 **Kept:**
 - `plan` metadata (id, name, description, anchor_date, timezone)
 - `work_types` array for KPI calculation
 - `templates` object (dictionary format)
 - Cycle structure (id, name, theme, description, status)
+
+## Data Normalization
+
+Before saving to the database, the system automatically:
+1. **Strips `week_number` fields** from all weeks to ensure clean JSON
+2. **Validates position-based integrity** (week numbers recalculate from array position)
+3. **Ensures no gaps** in week sequencing (automatic renumbering after deletions)
+
+This ensures the stored JSON remains clean and the source of truth for week numbers is always the array position, not stored data.

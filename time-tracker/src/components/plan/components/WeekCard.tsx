@@ -1,13 +1,20 @@
 import { useState } from 'react'
 import type { PlanWeek } from '../../../hooks/useQuarterlyPlan'
 import { cn } from '../../../utils/classNames'
-import { CheckCircle2, Circle, Edit2, FileText } from 'lucide-react'
+import { CheckCircle2, Circle, Edit2, FileText, Target, HelpCircle, Layout, ChevronDown, ChevronUp } from 'lucide-react'
 import { WeekEditModal } from './WeekEditModal'
 import { TemplateModal } from './TemplateModal'
+
+interface WorkType {
+  name: string
+  description?: string
+  color?: string
+}
 
 interface WeekCardProps {
   week: PlanWeek
   templates?: Record<string, string>
+  workTypes?: WorkType[]
   onTodoStatusChange?: (todoId: string, status: 'not_started' | 'in_progress' | 'blocked' | 'done') => void
   onEdit?: (updates: {
     name?: string
@@ -20,22 +27,16 @@ interface WeekCardProps {
   className?: string
 }
 
-const STATUS_STYLES: Record<PlanWeek['status'], string> = {
-  completed: 'bg-green-100 text-green-700 border-green-200',
-  current: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  in_progress: 'bg-blue-100 text-blue-700 border-blue-200',
-  not_started: 'bg-gray-100 text-gray-600 border-gray-200',
+const STATUS_CONFIG: Record<PlanWeek['status'], { label: string, color: string, bg: string, border: string }> = {
+  completed: { label: 'Done', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
+  current: { label: 'Current', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  in_progress: { label: 'In Progress', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+  not_started: { label: 'Todo', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
 }
 
-const STATUS_LABELS: Record<PlanWeek['status'], string> = {
-  completed: 'Done',
-  current: 'Current',
-  in_progress: 'In Progress',
-  not_started: 'Todo',
-}
-
-export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
+export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
   const isDone = week.status === 'completed'
+  const isCurrent = week.status === 'current'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [templateModalOpen, setTemplateModalOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<{ title: string; markdown: string } | null>(null)
@@ -44,10 +45,8 @@ export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete
   // Calculate completion
   const totalTodos = week.todos.length
   const completedTodos = week.todos.filter(t => t.status === 'done').length
-  const totalDeliverables = week.deliverables.length
-  const completedDeliverables = week.deliverables.filter(d => d.status === 'done').length
+  const progress = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0
 
-  // Handle template icon click
   const handleTemplateClick = (todoTitle: string, templateId: string) => {
     if (templates && templates[templateId]) {
       setSelectedTemplate({
@@ -58,201 +57,230 @@ export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete
     }
   }
 
+  const statusStyle = STATUS_CONFIG[week.status]
+
   return (
     <>
       <div
         className={cn(
-          'bg-white rounded-xl border p-6 transition-all hover:border-emerald-300',
-          isDone && 'opacity-60 bg-gray-50',
-          week.status === 'current' && 'border-emerald-400 shadow-md shadow-emerald-50',
+          'group bg-white rounded-xl border transition-all duration-300',
+          isCurrent 
+            ? 'border-emerald-200 shadow-md shadow-emerald-50/40 ring-1 ring-emerald-100' 
+            : 'border-gray-200 hover:border-emerald-200 hover:shadow-sm hover:shadow-gray-50',
+          isDone && 'opacity-75 bg-gray-50/30',
           className
         )}
       >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-5">
-          <div className="flex items-center gap-3 flex-1">
-            <span className="px-2.5 py-1.5 text-xs font-mono bg-gray-100 text-gray-700 rounded-lg border border-gray-200 shrink-0 font-medium">
-              Week {week.weekNumber}
-            </span>
-            <h4 className="text-lg font-bold text-gray-900">{week.name}</h4>
-          </div>
+        {/* Header Section */}
+        <div className="px-5 py-4 border-b border-gray-100">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <h4 className="text-base font-bold text-gray-900 leading-snug">
+                  <span className="mr-2 inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium bg-gray-100 text-gray-600 rounded align-middle relative -top-0.5">
+                    Week {week.weekNumber}
+                  </span>
+                  {week.name}
+                </h4>
+                <span className={cn(
+                  "px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border",
+                  statusStyle.bg, statusStyle.color, statusStyle.border
+                )}>
+                  {statusStyle.label}
+                </span>
+              </div>
+              
+              {week.theme && (
+                <p className="text-xs text-gray-500 italic mt-1 ml-1">
+                  "{week.theme}"
+                </p>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2">
             {onEdit && (
               <button
                 onClick={() => setIsEditModalOpen(true)}
-                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                 title="Edit week"
               >
-                <Edit2 className="h-4 w-4" />
+                <Edit2 className="h-3.5 w-3.5" />
               </button>
             )}
-
-            <span
-              className={cn(
-                'px-3 py-1.5 text-xs font-semibold rounded-lg border',
-                STATUS_STYLES[week.status]
-              )}
-            >
-              {STATUS_LABELS[week.status]}
-            </span>
           </div>
         </div>
 
-        {/* Theme Banner */}
-        {week.theme && (
-          <div className="mb-5 p-3 bg-gradient-to-r from-gray-50 to-transparent rounded-lg border border-gray-100">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Theme</span>
-              <span className="text-sm font-medium text-gray-800 italic">{week.theme}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Goals & Reflection Questions - Two Column Layout */}
-        {((week.goals && week.goals.length > 0) || (week.reflectionQuestions && week.reflectionQuestions.length > 0)) && (
-          <div className="grid grid-cols-2 gap-6 mb-5">
-            {/* Goals Section */}
-            {week.goals && week.goals.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Goals</h5>
+        <div className="p-5 space-y-5">
+          {/* Goals & Reflection Grid */}
+          {((week.goals && week.goals.length > 0) || (week.reflectionQuestions && week.reflectionQuestions.length > 0)) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+              {/* Goals */}
+              {week.goals && week.goals.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-emerald-700">
+                    <Target className="w-3.5 h-3.5" />
+                    <h5 className="text-[10px] font-bold uppercase tracking-wider">Goals</h5>
+                  </div>
+                  <ul className="space-y-1.5 pl-1">
+                    {week.goals.map((goal, index) => (
+                      <li key={index} className="flex items-start gap-2 text-xs text-gray-700">
+                        <span className="w-1 h-1 rounded-full bg-emerald-400 mt-1.5 shrink-0" />
+                        <span className="leading-relaxed">{goal}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-1.5 pl-7">
-                  {week.goals.map((goal, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="text-emerald-500 font-bold shrink-0 mt-0.5">•</span>
-                      <span className="leading-snug break-words">{goal}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+              )}
 
-            {/* Reflection Questions Section */}
-            {week.reflectionQuestions && week.reflectionQuestions.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Reflection Questions</h5>
+              {/* Reflection Questions */}
+              {week.reflectionQuestions && week.reflectionQuestions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5 text-purple-700">
+                    <HelpCircle className="w-3.5 h-3.5" />
+                    <h5 className="text-[10px] font-bold uppercase tracking-wider">Reflections</h5>
+                  </div>
+                  <ul className="space-y-1.5 pl-1">
+                    {week.reflectionQuestions.map((question, index) => (
+                      <li key={index} className="flex items-start gap-2 text-xs text-gray-600 italic">
+                        <span className="w-1 h-1 rounded-full bg-purple-400 mt-1.5 shrink-0" />
+                        <span className="leading-relaxed">{question}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-2 pl-7">
-                  {week.reflectionQuestions.map((question, index) => (
-                    <li key={index} className="flex items-start gap-2 text-sm text-gray-600 italic">
-                      <span className="text-purple-500 font-bold shrink-0 mt-0.5">?</span>
-                      <span className="leading-snug break-words">{question}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Todos & Deliverables */}
-        <div className="flex flex-col gap-6">
-          {/* Todos */}
-          {week.todos.length > 0 && (
-            <div className="bg-gray-50/50 rounded-lg p-4 border border-gray-100">
-              <h5 className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center justify-between">
-                <span>Todos</span>
-                <span className="text-gray-500 font-normal">
-                  {completedTodos}/{totalTodos}
-                </span>
-              </h5>
-              <ul className="space-y-2">
-                {(showAllTodos ? week.todos : week.todos.slice(0, 5)).map((todo) => (
-                  <li key={todo.id} className="text-sm text-gray-700 flex items-start gap-2">
-                    <button
-                      type="button"
-                      disabled={!onTodoStatusChange}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        if (onTodoStatusChange) {
-                          const nextStatus = todo.status === 'done' ? 'not_started' : 'done'
-                          onTodoStatusChange(todo.id, nextStatus)
-                        }
-                      }}
-                      className={cn(
-                        "mt-0.5 shrink-0 transition-colors",
-                        onTodoStatusChange ? "cursor-pointer" : "cursor-not-allowed opacity-50"
-                      )}
-                    >
-                      {todo.status === 'done' ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Circle className="h-4 w-4 text-gray-400 hover:text-emerald-600" />
-                      )}
-                    </button>
-                    <span className={cn(
-                      'leading-snug flex-1 break-words',
-                      todo.status === 'done' && 'line-through text-gray-400'
-                    )}>
-                      {todo.name || todo.title}
-                    </span>
-                    {todo.templateId && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleTemplateClick(todo.name || todo.title, todo.templateId!)
-                        }}
-                        className="shrink-0 p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
-                        title="View template"
-                      >
-                        <FileText className="h-4 w-4" />
-                      </button>
-                    )}
-                  </li>
-                ))}
-                {week.todos.length > 5 && (
-                  <li className="pl-6">
-                    <button
-                      type="button"
-                      onClick={() => setShowAllTodos(!showAllTodos)}
-                      className="text-xs text-emerald-600 hover:text-emerald-700 font-medium transition-colors"
-                    >
-                      {showAllTodos ? 'Show less' : `+${week.todos.length - 5} more`}
-                    </button>
-                  </li>
-                )}
-              </ul>
+              )}
             </div>
           )}
 
+          {/* Todos Section */}
+          <div className="bg-gray-50/50 rounded-lg border border-gray-100 overflow-hidden">
+            <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+              <h5 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                <Layout className="w-3 h-3" />
+                Todos
+              </h5>
+              <div className="flex items-center gap-2">
+                <div className="h-1 w-12 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-medium text-gray-500">
+                  {completedTodos}/{totalTodos}
+                </span>
+              </div>
+            </div>
+
+            <div className="divide-y divide-gray-100">
+              {week.todos.length === 0 ? (
+                <div className="p-6 text-center text-xs text-gray-400 italic">
+                  No todos planned for this week
+                </div>
+              ) : (
+                <>
+                  {(showAllTodos ? week.todos : week.todos.slice(0, 5)).map((todo) => (
+                    <div 
+                      key={todo.id} 
+                      className={cn(
+                        "group/todo px-3 py-2 flex items-start gap-2.5 transition-colors hover:bg-white",
+                        todo.status === 'done' && "bg-gray-50/50"
+                      )}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          if (onTodoStatusChange) {
+                            const nextStatus = todo.status === 'done' ? 'not_started' : 'done'
+                            onTodoStatusChange(todo.id, nextStatus)
+                          }
+                        }}
+                        disabled={!onTodoStatusChange}
+                        className={cn(
+                          "mt-0.5 shrink-0 transition-all duration-200",
+                          !onTodoStatusChange && "cursor-not-allowed opacity-50"
+                        )}
+                      >
+                        {todo.status === 'done' ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 fill-emerald-50" />
+                        ) : (
+                          <Circle className="h-4 w-4 text-gray-300 group-hover/todo:text-emerald-400" />
+                        )}
+                      </button>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline gap-2">
+                          <p className={cn(
+                            "text-xs leading-snug transition-all",
+                            todo.status === 'done' ? "text-gray-400 line-through decoration-gray-300" : "text-gray-700"
+                          )}>
+                            {todo.name || todo.title}
+                          </p>
+                          {todo.typeId && (
+                            <span className="shrink-0 px-1 py-0.5 text-[9px] font-medium bg-blue-50 text-blue-600 rounded border border-blue-100 uppercase tracking-wide">
+                              {todo.typeId}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {todo.templateId && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleTemplateClick(todo.name || todo.title, todo.templateId!)
+                          }}
+                          className="shrink-0 p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all opacity-0 group-hover/todo:opacity-100"
+                          title="View template"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+
+                  {week.todos.length > 5 && (
+                    <button
+                      onClick={() => setShowAllTodos(!showAllTodos)}
+                      className="w-full px-3 py-1.5 text-[10px] font-medium text-gray-500 hover:text-emerald-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+                    >
+                      {showAllTodos ? (
+                        <>Show less <ChevronUp className="w-3 h-3" /></>
+                      ) : (
+                        <>Show {week.todos.length - 5} more <ChevronDown className="w-3 h-3" /></>
+                      )}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
+
+        {/* Edit Modal */}
+        {onEdit && (
+          <WeekEditModal
+            week={week}
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            onSave={onEdit}
+            onDelete={onDelete}
+          />
+        )}
+
+        {/* Template Modal */}
+        {selectedTemplate && (
+          <TemplateModal
+            isOpen={templateModalOpen}
+            onClose={() => {
+              setTemplateModalOpen(false)
+              setSelectedTemplate(null)
+            }}
+            title={selectedTemplate.title}
+            markdown={selectedTemplate.markdown}
+          />
+        )}
       </div>
-
-      {/* Edit Modal */}
-      {onEdit && (
-        <WeekEditModal
-          week={week}
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onSave={onEdit}
-          onDelete={onDelete}
-        />
-      )}
-
-      {/* Template Modal */}
-      {selectedTemplate && (
-        <TemplateModal
-          isOpen={templateModalOpen}
-          onClose={() => {
-            setTemplateModalOpen(false)
-            setSelectedTemplate(null)
-          }}
-          title={selectedTemplate.title}
-          markdown={selectedTemplate.markdown}
-        />
-      )}
     </>
   )
 }
