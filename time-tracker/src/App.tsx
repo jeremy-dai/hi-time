@@ -41,9 +41,33 @@ function App() {
   })
   const [isNavigating, setIsNavigating] = useState(false)
   const [currentDateState, setCurrentDateState] = useState<Date>(() => {
+    // Get user's timezone from localStorage settings (loaded synchronously)
+    let timezone = 'Asia/Shanghai' // Default
+    try {
+      const savedSettings = localStorage.getItem('user-settings')
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings)
+        if (parsed.timezone) {
+          timezone = parsed.timezone
+        }
+      }
+    } catch {
+      // Ignore parsing errors, use default
+    }
+
+    // Get current date in user's timezone
     const now = new Date()
-    // Convert to UTC date at noon to avoid day boundary issues
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12))
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    const localDateStr = formatter.format(now) // Returns YYYY-MM-DD
+    const [year, month, day] = localDateStr.split('-').map(Number)
+
+    // Create UTC date at noon for this local date
+    return new Date(Date.UTC(year, month - 1, day, 12))
   })
   const currentWeekKey = useMemo(() => formatWeekKey(currentDateState), [currentDateState])
   const [weekStore, setWeekStore] = useState<Record<string, TimeBlock[][]>>({})
