@@ -205,7 +205,7 @@ export function PlanSettings({ data }: PlanSettingsProps) {
           <textarea
             value={jsonInput}
             onChange={(e) => setJsonInput(e.target.value)}
-            placeholder='{"plan": {"id": "my-plan", "name": "My Plan", "anchor": {"start_date": "2026-01-01"}}, "cycles": [...], "trackers": [...]}'
+            placeholder='{"plan": {"id": "my-plan", "name": "My Plan", "anchor_date": "2026-01-01", "timezone": "Asia/Shanghai"}, "work_types": [...], "cycles": [...]}'
             className="w-full h-48 px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
           />
         </div>
@@ -237,55 +237,62 @@ export function PlanSettings({ data }: PlanSettingsProps) {
         <pre className="text-xs bg-white p-4 rounded-lg border border-gray-200 overflow-x-auto">
 {`{
   "plan": {
-    "id": "plan-id",
-    "name": "Plan Name",
-    "description": "Optional description",
+    "id": "2026-q1",
+    "name": "Q1 2026 Plan",
+    "description": "Focus on product and content growth",
     "anchor_date": "2026-01-01",
     "timezone": "Asia/Shanghai"
   },
   "work_types": [
     {
-      "id": "tech",
-      "name": "Engineering",
-      "color": "blue",
-      "kpi_target": { "unit": "hours", "weekly_value": 20 }
+      "name": "小红书",
+      "description": "Social media content creation"
+    },
+    {
+      "name": "Client Work",
+      "description": "Consulting projects"
     }
   ],
   "cycles": [
     {
       "id": "cycle-1",
-      "name": "Cycle 1 Name",
-      "theme": "Theme description",
-      "status": "not_started",
+      "name": "Foundation",
+      "theme": "Build and ship",
+      "status": "in_progress",
       "weeks": [
         {
-          "week_number": 1,
-          "name": "Week 1 Name",
-          "theme": "Week theme",
-          "status": "not_started",
-          "goals": ["Goal 1", "Goal 2"],
+          "theme": "Setup Week",
+          "goals": [
+            "Complete infrastructure setup",
+            "Ship first prototype"
+          ],
           "todos": [
             {
-              "id": "w1-t1",
-              "title": "Task name",
-              "type_id": "tech",
-              "priority": "high",
-              "estimate": 4,
-              "status": "not_started"
+              "id": "todo-1",
+              "text": "Set up database schema",
+              "type": "Client Work",
+              "status": "completed",
+              "priority": "high"
+            },
+            {
+              "id": "todo-2",
+              "text": "Write weekly reflection",
+              "status": "pending",
+              "priority": "medium",
+              "template_id": "weekly_log"
             }
           ],
-          "deliverables": [
-            {
-              "id": "w1-d1",
-              "title": "Deliverable name",
-              "type_id": "tech",
-              "status": "not_started"
-            }
+          "reflection_questions": [
+            "What blocked me this week?",
+            "What will I focus on next week?"
           ]
         }
       ]
     }
-  ]
+  ],
+  "templates": {
+    "weekly_log": "## Highlights\\n- \\n\\n## Lowlights\\n- "
+  }
 }`}
         </pre>
       </div>
