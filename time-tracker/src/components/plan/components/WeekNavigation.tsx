@@ -1,7 +1,6 @@
 import { cn } from '../../../utils/classNames'
 import type { PlanCycle, PlanWeek } from '../../../hooks/useQuarterlyPlan'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
 
 interface WeekNavigationProps {
   cycles: PlanCycle[]

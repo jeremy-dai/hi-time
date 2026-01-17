@@ -34,7 +34,7 @@ const STATUS_CONFIG: Record<PlanWeek['status'], { label: string, color: string, 
   not_started: { label: 'Todo', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
 }
 
-export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
+export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
   const isDone = week.status === 'completed'
   const isCurrent = week.status === 'current'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)

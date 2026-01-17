@@ -210,7 +210,7 @@ function transformPlanData(planData: PlanJSON): {
     let minWeek = Infinity
     let maxWeek = -Infinity
 
-    for (const week of cycle.weeks) {
+    for (const week of cycle.weeks || []) {
       // V3: week_number is ALWAYS calculated from position (ignores any week_number in JSON)
       // This allows weeks to be reordered/inserted/deleted with automatic renumbering
       const weekNumber = globalWeekIndex + 1
@@ -342,7 +342,7 @@ function transformPlanData(planData: PlanJSON): {
         baseline: 0,
         target: total, // Total number of todos for this work type
         current: completed, // Number of completed todos
-        color: wt.color
+        color: (wt as any).color
       }
     })
   } else {
@@ -501,7 +501,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
     // Remove week_number from all weeks - it's always calculated from position
     for (const cycle of normalized.cycles) {
       if (cycle.weeks) {
-        for (const week of cycle.weeks) {
+        for (const week of cycle.weeks || []) {
           delete week.week_number
         }
       }
@@ -557,7 +557,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week) {
         week.status = status
         break
@@ -573,7 +573,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week) {
         if (details.name !== undefined) week.name = details.name
         if (details.theme !== undefined) week.theme = details.theme
@@ -590,7 +590,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week && week.todos) {
         const todo = week.todos.find(t => t.id === todoId)
         if (todo) {
@@ -609,7 +609,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week && week.deliverables) {
         const deliverable = week.deliverables.find(d => d.id === deliverableId)
         if (deliverable) {
@@ -719,7 +719,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week && week.todos) {
         const todo = week.todos.find(t => t.id === todoId)
         if (todo) {
@@ -743,7 +743,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week && week.deliverables) {
         const deliverable = week.deliverables.find(d => d.id === deliverableId)
         if (deliverable) {
@@ -765,7 +765,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week) {
         if (!week.todos) week.todos = []
         const newTodo = {
@@ -791,7 +791,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week && week.todos) {
         week.todos = week.todos.filter(t => t.id !== todoId)
         break
@@ -807,7 +807,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week) {
         if (!week.deliverables) week.deliverables = []
         const newDeliverable = {
@@ -831,7 +831,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week && week.deliverables) {
         week.deliverables = week.deliverables.filter(d => d.id !== deliverableId)
         break
@@ -853,7 +853,7 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const week = cycle.weeks.find(w => w.week_number === weekNumber)
+      const week = cycle.weeks?.find(w => w.week_number === weekNumber)
       if (week) {
         if (updates.name !== undefined) week.name = updates.name
         if (updates.theme !== undefined) week.theme = updates.theme
@@ -939,13 +939,16 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
         if (insertIndex !== -1) {
           // Insert after the found position
+          if (!cycle.weeks) cycle.weeks = []
           cycle.weeks.splice(insertIndex + 1, 0, newWeek)
         } else {
           // If position not found in this cycle, append to end
+          if (!cycle.weeks) cycle.weeks = []
           cycle.weeks.push(newWeek)
         }
       } else {
         // No position specified, append to end of cycle
+        if (!cycle.weeks) cycle.weeks = []
         cycle.weeks.push(newWeek)
       }
     }
@@ -959,8 +962,8 @@ export function useQuarterlyPlan(): UseQuarterlyPlanReturn {
 
     const newPlanData = { ...planData }
     for (const cycle of newPlanData.cycles) {
-      const weekIndex = cycle.weeks.findIndex(w => w.week_number === weekNumber)
-      if (weekIndex !== -1) {
+      const weekIndex = cycle.weeks?.findIndex(w => w.week_number === weekNumber) ?? -1
+      if (weekIndex !== -1 && cycle.weeks) {
         cycle.weeks.splice(weekIndex, 1)
         break
       }

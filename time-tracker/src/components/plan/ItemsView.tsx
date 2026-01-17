@@ -101,7 +101,7 @@ export function ItemsView({ data }: ItemsViewProps) {
 
             {/* Items List */}
             <div className="divide-y divide-gray-100">
-              {items.map((item, itemIndex) => {
+              {items.map((item: typeof allItems[0], itemIndex: number) => {
                 // Find the cycle and item index within that cycle
                 const cycle = planData.cycles.find(c => c.id === item.cycleId)
                 const actualItemIndex = cycle?.items?.findIndex(i =>
