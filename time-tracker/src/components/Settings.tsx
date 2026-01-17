@@ -95,6 +95,14 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
   useEffect(() => {
     // Loading is handled by the hook
     if (settings !== null && !hasMigratedRef.current) {
+      // Safety check: if subcategories is missing, don't attempt migration
+      // The hook should have caught this, but defense in depth
+      if (!settings.subcategories) {
+        console.warn('[Settings] Received settings without subcategories, waiting for database load');
+        setLoading(false);
+        return;
+      }
+
       // Migrate old string format to new object format
       let needsMigration = false
       const migratedSubcategories: Record<string, SubcategoryDef[]> = {}
@@ -358,7 +366,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
 
               <div className="space-y-4">
                 {CATEGORY_KEYS.filter(k => k !== '').map(cat => {
-                  const savedSubs = settings?.subcategories[cat] || []
+                  const savedSubs = settings?.subcategories?.[cat] || []
                   const hasSubcategories = savedSubs.length > 0
 
                   return (

@@ -167,6 +167,16 @@ export function useLocalStorageSync<T>(
           const age = Date.now() - cached.timestamp;
 
           if (age < STALENESS_THRESHOLD) {
+            // Validate data structure for user-settings
+            if (storageKey === 'user-settings') {
+              const settings = cached.data as any;
+              if (!settings.subcategories) {
+                console.warn('[useLocalStorageSync] ⚠️ Corrupted localStorage: missing subcategories, discarding');
+                localStorage.removeItem(storageKey);
+                return; // Let database load handle it
+              }
+            }
+
              // Show local data immediately (instant load!)
              setDataState(cached.data);
              lastSyncedDataRef.current = JSON.stringify(cached.data);
@@ -174,6 +184,8 @@ export function useLocalStorageSync<T>(
           }
         } catch (err) {
           console.error('Failed to parse localStorage data:', err);
+          // Clear corrupted data
+          localStorage.removeItem(storageKey);
         }
       }
     };
