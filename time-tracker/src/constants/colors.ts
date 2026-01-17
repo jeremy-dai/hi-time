@@ -19,13 +19,14 @@ export const GHOST_CATEGORY_COLORS_HEX = {
 } as const
 
 // Subcategory shade variations (for border-left in Handsontable and Settings inputs)
+// Strong contrast between adjacent shades for clear visual distinction in cell borders
 export const SUBCATEGORY_SHADES_HEX = {
-  'R': ['#d0e8db', '#b5d9c8', '#9acab5', '#7fbba2', '#64ab8e'],  // Mint green shades (5 progressive shades)
-  'W': ['#fcefd5', '#f9e5c1', '#f6dbad', '#f3d199', '#f0c785'],  // Golden shades (5 progressive shades)
-  'G': ['#cce3f0', '#b5d3e8', '#9ec3e0', '#87b3d8', '#70a3d0'],  // Sky blue shades (5 progressive shades)
-  'P': ['#ecc5c8', '#d9a5a8', '#c68d90', '#b37578', '#a05d60'],  // Dusty rose shades (5 progressive shades)
-  'M': ['#ddd5e8', '#c5b8d4', '#ad9bc0', '#957eac', '#7d6198'],  // Dusty lavender shades (5 progressive shades)
-  '': ['#e5e7eb', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563']    // Gray shades (5 progressive shades)
+  'R': ['#e8f5ee', '#c8e4d5', '#9acab5', '#72b599', '#4a9f7d'],  // Mint green: very light → light → medium → medium-dark → dark
+  'W': ['#fffaf0', '#feedcc', '#f4d6a3', '#edc172', '#e5ab41'],  // Golden: cream → light → medium → medium-dark → amber
+  'G': ['#e0ecf5', '#bdd9ed', '#94c0df', '#6ba7d1', '#4590c4'],  // Sky blue: very light → light → medium → medium-dark → deep blue
+  'P': ['#f5dfe0', '#e8bfc1', '#d59398', '#c26a70', '#af4248'],  // Dusty rose: very light → light → medium → medium-dark → deep rose
+  'M': ['#ebe5f1', '#d5c8e0', '#b9a5c8', '#9d82b0', '#815f98'],  // Dusty lavender: very light → light → medium → medium-dark → deep purple
+  '': ['#eff0f1', '#d8dadd', '#b4b8be', '#8a909a', '#606876']    // Gray: very light → light → medium → medium-dark → charcoal
 } as const
 
 // Tailwind CSS classes for React components
@@ -66,10 +67,10 @@ export const CATEGORY_GRADIENTS = {
 } as const
 
 export const CATEGORY_SUB_LEFT = {
-  R: ['border-l-[#d0e8db]', 'border-l-[#b5d9c8]', 'border-l-[#9acab5]', 'border-l-[#7fbba2]', 'border-l-[#64ab8e]'],
-  W: ['border-l-[#fcefd5]', 'border-l-[#f9e5c1]', 'border-l-[#f6dbad]', 'border-l-[#f3d199]', 'border-l-[#f0c785]'],
-  G: ['border-l-[#cce3f0]', 'border-l-[#b5d3e8]', 'border-l-[#9ec3e0]', 'border-l-[#87b3d8]', 'border-l-[#70a3d0]'],
-  P: ['border-l-[#ecc5c8]', 'border-l-[#d9a5a8]', 'border-l-[#c68d90]', 'border-l-[#b37578]', 'border-l-[#a05d60]'],
-  M: ['border-l-[#ddd5e8]', 'border-l-[#c5b8d4]', 'border-l-[#ad9bc0]', 'border-l-[#957eac]', 'border-l-[#7d6198]'],
-  '': ['border-l-gray-300', 'border-l-gray-400', 'border-l-gray-500', 'border-l-gray-600', 'border-l-gray-700']
+  R: ['border-l-[#e8f5ee]', 'border-l-[#c8e4d5]', 'border-l-[#9acab5]', 'border-l-[#72b599]', 'border-l-[#4a9f7d]'],
+  W: ['border-l-[#fffaf0]', 'border-l-[#feedcc]', 'border-l-[#f4d6a3]', 'border-l-[#edc172]', 'border-l-[#e5ab41]'],
+  G: ['border-l-[#e0ecf5]', 'border-l-[#bdd9ed]', 'border-l-[#94c0df]', 'border-l-[#6ba7d1]', 'border-l-[#4590c4]'],
+  P: ['border-l-[#f5dfe0]', 'border-l-[#e8bfc1]', 'border-l-[#d59398]', 'border-l-[#c26a70]', 'border-l-[#af4248]'],
+  M: ['border-l-[#ebe5f1]', 'border-l-[#d5c8e0]', 'border-l-[#b9a5c8]', 'border-l-[#9d82b0]', 'border-l-[#815f98]'],
+  '': ['border-l-[#eff0f1]', 'border-l-[#d8dadd]', 'border-l-[#b4b8be]', 'border-l-[#8a909a]', 'border-l-[#606876]']
 } as const
