@@ -385,12 +385,34 @@ export function Learning() {
             <BookOpen className="w-6 h-6 text-emerald-600" />
             <h1 className="text-2xl font-bold text-gray-900">Learning</h1>
           </div>
-          <SyncStatusIndicator
-            status={syncStatus}
-            lastSynced={lastSynced}
-            hasUnsavedChanges={false}
-            compact={true}
-          />
+          <div className="flex items-center gap-4">
+            {/* Tag Filter (shown when on Documents tab and has tags) */}
+            {activeTab === 'documents' && tagOptions.length > 1 && (
+              <div className="flex items-center gap-2">
+                <Tag size={16} className="text-gray-400" />
+                <div className="relative">
+                  <select
+                    value={selectedTagFilter}
+                    onChange={(e) => setSelectedTagFilter(e.target.value)}
+                    className="appearance-none rounded-xl pl-3 pr-8 py-1.5 border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-gray-700 cursor-pointer transition-colors"
+                  >
+                    {tagOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            )}
+            <SyncStatusIndicator
+              status={syncStatus}
+              lastSynced={lastSynced}
+              hasUnsavedChanges={false}
+              compact={true}
+            />
+          </div>
         </div>
 
         {/* Tabs */}
@@ -415,27 +437,6 @@ export function Learning() {
                 </div>
               ) : (
                 <>
-                  {/* Tag Filter Dropdown */}
-                  {tagOptions.length > 1 && (
-                    <div className="mb-6 flex items-center gap-3">
-                      <Tag size={18} className="text-gray-400" />
-                      <div className="relative">
-                        <select
-                          value={selectedTagFilter}
-                          onChange={(e) => setSelectedTagFilter(e.target.value)}
-                          className="appearance-none rounded-xl pl-4 pr-10 py-2 border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-gray-700 cursor-pointer transition-colors"
-                        >
-                          {tagOptions.map(option => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                      </div>
-                    </div>
-                  )}
-
                   {/* Filtered Documents */}
                   {filteredDocuments.length === 0 ? (
                     <div className="text-center py-12">

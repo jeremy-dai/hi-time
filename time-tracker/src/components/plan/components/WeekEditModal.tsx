@@ -324,7 +324,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete }: WeekE
         isOpen={true}
         onClose={() => setViewingDeliverable(null)}
         title={viewingDeliverable.name}
-        size="large"
+        maxWidth="xl"
       >
         <div className="bg-gray-50 rounded-xl p-6 max-h-[60vh] overflow-y-auto">
           <MarkdownRenderer content={viewingDeliverable.content} />
