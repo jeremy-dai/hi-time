@@ -28,9 +28,9 @@ export function QuarterlyPlan() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Sub-navigation */}
-      <div className="bg-white border-b border-gray-200 px-8">
-        <div className="max-w-7xl mx-auto">
+      {/* Compact Modern Sub-navigation */}
+      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6">
           <nav className="flex gap-1">
             {TABS.map((tab) => {
               const Icon = tab.icon
@@ -40,14 +40,17 @@ export function QuarterlyPlan() {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px',
+                    'relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200',
                     isActive
-                      ? 'text-emerald-600 border-emerald-600'
-                      : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-gray-300'
+                      ? 'text-emerald-600'
+                      : 'text-gray-600 hover:text-gray-900'
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  {tab.label}
+                  <span>{tab.label}</span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full" />
+                  )}
                 </button>
               )
             })}
@@ -60,7 +63,7 @@ export function QuarterlyPlan() {
         {activeTab === 'timeline' ? (
           <Timeline data={planData} />
         ) : (
-          <div className="flex-1 overflow-y-auto px-8 py-6">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="max-w-7xl mx-auto">
               {activeTab === 'mission' && <MissionControl data={planData} />}
               {activeTab === 'settings' && <PlanSettings data={planData} />}

@@ -342,30 +342,29 @@ export function MissionControl({ data }: MissionControlProps) {
     : []
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Header */}
+    <div className="flex flex-col gap-6">
+      {/* Compact Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Mission Control</h1>
-          <p className="text-gray-600">
-            {planName || 'Tracking the trajectory to your goals.'}
-          </p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold text-gray-900">
+            {planName || 'Mission Control'}
+          </h1>
+          <SyncStatusIndicator
+            status={syncStatus}
+            lastSynced={lastSynced}
+            hasUnsavedChanges={hasUnsavedChanges}
+            onSyncNow={syncNow}
+            compact={true}
+          />
         </div>
-        <SyncStatusIndicator
-          status={syncStatus}
-          lastSynced={lastSynced}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onSyncNow={syncNow}
-          compact={false}
-        />
       </div>
 
       {/* Cycle and KPIs Section */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {/* Current Cycle */}
         {currentCycle && (
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Cycle</h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-2">Current Cycle</h2>
             <CycleCard
               cycle={currentCycle}
               cycleIndex={currentCycleIndex}
@@ -377,12 +376,12 @@ export function MissionControl({ data }: MissionControlProps) {
 
         {/* KPIs */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Key Performance Indicators
+          <h2 className="text-base font-semibold text-gray-900 mb-2">
+            KPIs
             {currentCycle && <span className="text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}
           </h2>
           {cycleTrackers.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
               {cycleTrackers.map(tracker => (
                 <KPICard
                   key={tracker.id}
@@ -393,7 +392,7 @@ export function MissionControl({ data }: MissionControlProps) {
               ))}
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 text-center text-sm text-gray-500">
               No KPIs defined
             </div>
           )}
@@ -401,7 +400,7 @@ export function MissionControl({ data }: MissionControlProps) {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-8 md:grid-cols-2 items-stretch">
+      <div className="grid gap-6 md:grid-cols-2 items-stretch">
         {/* Left Column: Daily Shipping */}
         <WeeklyShipping />
 
@@ -433,9 +432,9 @@ export function MissionControl({ data }: MissionControlProps) {
 
       {/* Upcoming Trajectory (Full Width) */}
       {upcomingWeeks.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Upcoming Trajectory</h3>
-          <div className="relative pl-4 space-y-6">
+        <div className="space-y-3">
+          <h3 className="text-base font-semibold text-gray-900">Upcoming Trajectory</h3>
+          <div className="relative pl-4 space-y-4">
             {/* Connector line */}
             <div className="absolute left-4 top-2 bottom-4 w-0.5 bg-gray-200" />
             

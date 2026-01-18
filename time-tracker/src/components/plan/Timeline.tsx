@@ -147,29 +147,26 @@ export function Timeline({ data }: TimelineProps) {
         ref={scrollContainerRef}
         className="flex-1 min-w-0"
       >
-        <div className="max-w-5xl mx-auto p-8 flex flex-col gap-8">
-        {/* Header */}
+        <div className="max-w-5xl mx-auto p-6 flex flex-col gap-6">
+        {/* Compact Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Timeline</h1>
-            <p className="text-gray-600">Detailed weekly breakdown and status tracking.</p>
-          </div>
+          <h1 className="text-xl font-semibold text-gray-900">Timeline</h1>
           <SyncStatusIndicator
             status={syncStatus}
             lastSynced={lastSynced}
             hasUnsavedChanges={hasUnsavedChanges}
             onSyncNow={syncNow}
-            compact={false}
+            compact={true}
           />
         </div>
 
         {/* Timeline by Cycle */}
-        <div className="flex-1 space-y-8">
+        <div className="flex-1 space-y-6">
         {/* Strategic Cycles Overview */}
         {cycles.length > 0 && (
-          <div className="space-y-4">
-             <h2 className="text-xl font-semibold text-gray-900">Strategic Cycles</h2>
-             <div className="space-y-3">
+          <div className="space-y-3">
+             <h2 className="text-base font-semibold text-gray-900">Strategic Cycles</h2>
+             <div className="space-y-2">
               {cycles.map((cycle, index) => (
                 <CycleCard
                   key={cycle.id}
