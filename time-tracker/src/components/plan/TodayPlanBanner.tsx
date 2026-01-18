@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import type { UseQuarterlyPlanReturn } from '../../hooks/useQuarterlyPlan'
-import { Target, ChevronDown, ChevronRight, CheckCircle2, Circle, Sparkles, Calendar } from 'lucide-react'
+import { Target, ChevronDown, ChevronRight, CheckCircle2, Circle, Sparkles, Calendar, FileText } from 'lucide-react'
 import { cn } from '../../utils/classNames'
+import { Modal } from '../shared/Modal'
+import { MarkdownRenderer } from '../shared/MarkdownRenderer'
 
 interface TodayPlanBannerProps {
   planData: UseQuarterlyPlanReturn
@@ -14,6 +16,7 @@ function getCurrentDayOfWeek(): string {
 
 export default function TodayPlanBanner({ planData }: TodayPlanBannerProps) {
   const [isExpanded, setIsExpanded] = useState(true)
+  const [viewingDeliverable, setViewingDeliverable] = useState<{ name: string; content: string } | null>(null)
   const { currentWeek, currentCycle, updateTodoStatus, updateDeliverableStatus } = planData
 
   if (!currentWeek || !currentCycle) {
@@ -187,15 +190,29 @@ export default function TodayPlanBanner({ planData }: TodayPlanBannerProps) {
                         )}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <div
-                          className={cn(
-                            'text-sm',
-                            deliverable.status === 'done'
-                              ? 'text-gray-500 line-through'
-                              : 'text-gray-700'
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              'text-sm',
+                              deliverable.status === 'done'
+                                ? 'text-gray-500 line-through'
+                                : 'text-gray-700'
+                            )}
+                          >
+                            {deliverable.name}
+                          </div>
+                          {deliverable.description && (
+                            <button
+                              onClick={() => setViewingDeliverable({
+                                name: deliverable.name || deliverable.title,
+                                content: deliverable.description || ''
+                              })}
+                              className="p-1 hover:bg-amber-100 rounded transition-colors"
+                              title="View deliverable details"
+                            >
+                              <FileText size={14} className="text-amber-600" />
+                            </button>
                           )}
-                        >
-                          {deliverable.name}
                         </div>
                         {deliverable.resumeValue && deliverable.resumeValue >= 3 && (
                           <span className="text-xs text-amber-600 font-medium">
@@ -211,6 +228,20 @@ export default function TodayPlanBanner({ planData }: TodayPlanBannerProps) {
           </div>
         )}
       </div>
+
+      {/* Deliverable Markdown Viewer Modal */}
+      {viewingDeliverable && (
+        <Modal
+          isOpen={true}
+          onClose={() => setViewingDeliverable(null)}
+          title={viewingDeliverable.name}
+          size="large"
+        >
+          <div className="bg-gray-50 rounded-xl p-6 max-h-[60vh] overflow-y-auto">
+            <MarkdownRenderer content={viewingDeliverable.content} />
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

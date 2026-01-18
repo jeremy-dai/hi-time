@@ -734,3 +734,82 @@ export async function deletePlan(planId: string): Promise<boolean> {
     return false
   }
 }
+
+// ============================================================================
+// Learning Documents API
+// ============================================================================
+
+export async function getLearningDocuments() {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/learning`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<import('./types/time').LearningDocument[]>>(res, '/learning')
+    return data.documents || []
+  } catch (error) {
+    console.error('Failed to fetch learning documents:', error)
+    return []
+  }
+}
+
+export async function getLearningDocument(id: string) {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/learning/${encodeURIComponent(id)}`, {
+      headers,
+    })
+    const data = await handleResponse<ApiResponse<import('./types/time').LearningDocument>>(res, `/learning/${id}`)
+    return data.document || null
+  } catch (error) {
+    console.error(`Failed to fetch learning document ${id}:`, error)
+    return null
+  }
+}
+
+export async function createLearningDocument(input: import('./types/time').LearningDocumentCreateInput) {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/learning`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(input),
+    })
+    const data = await handleResponse<ApiResponse<import('./types/time').LearningDocument>>(res, '/learning')
+    return data.document || null
+  } catch (error) {
+    console.error('Failed to create learning document:', error)
+    return null
+  }
+}
+
+export async function updateLearningDocument(id: string, updates: import('./types/time').LearningDocumentUpdateInput) {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/learning/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify(updates),
+    })
+    const data = await handleResponse<ApiResponse<import('./types/time').LearningDocument>>(res, `/learning/${id}`)
+    return data.document || null
+  } catch (error) {
+    console.error(`Failed to update learning document ${id}:`, error)
+    return null
+  }
+}
+
+export async function deleteLearningDocument(id: string): Promise<boolean> {
+  try {
+    const headers = await authHeaders()
+    const res = await fetch(`${API_BASE}/learning/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers,
+    })
+    await handleResponse<ApiResponse<unknown>>(res, `/learning/${id}`)
+    return true
+  } catch (error) {
+    console.error(`Failed to delete learning document ${id}:`, error)
+    return false
+  }
+}

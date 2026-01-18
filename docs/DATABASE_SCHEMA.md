@@ -211,6 +211,47 @@ CREATE INDEX IF NOT EXISTS idx_data_snapshots_created_at ON data_snapshots(creat
 - ✅ Frontend hook implemented ([`useHistory`](../time-tracker/src/hooks/useHistory.ts))
 - ✅ History Modal with sync status indicator
 
+### `learning_documents` 🆕
+Stores markdown learning documents with tagging and organization. **Migration available** at [database/migrations/03_learning_documents.sql](../database/migrations/03_learning_documents.sql).
+
+```sql
+CREATE TABLE IF NOT EXISTS learning_documents (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id text NOT NULL,
+  title text NOT NULL,
+  content text NOT NULL DEFAULT '',
+  description text,
+  tags text[] DEFAULT '{}',
+  position integer DEFAULT 0,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  updated_at timestamptz DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_learning_documents_user_id ON learning_documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_learning_documents_user_position ON learning_documents(user_id, position);
+CREATE INDEX IF NOT EXISTS idx_learning_documents_tags ON learning_documents USING GIN(tags);
+```
+
+**Fields:**
+- `title` (text, required): Document title
+- `content` (text, required): Markdown content of the document
+- `description` (text, optional): Short description or summary
+- `tags` (text[], optional): Array of tags for categorization and filtering
+- `position` (integer, default 0): Sort order position (lower = earlier in list)
+
+**Implementation Details:**
+- Uses **Pattern 2 (Debounced Sync)**: Database is source of truth, 5-second debounce for frontend updates
+- Supports markdown rendering with syntax highlighting and rich formatting
+- Tag-based organization for easy filtering and categorization
+- Custom sort order via position field
+- Edit mode with live preview
+
+**Current Status:**
+- ✅ Database migration created
+- ⏳ Backend API endpoints (in progress)
+- ⏳ Frontend hook (planned)
+- ⏳ Learning tab UI with markdown viewer and editor (planned)
+
 ## Security (Row Level Security)
 
 Enable RLS to ensure users can only access their own data.
@@ -226,6 +267,7 @@ alter table week_reviews enable row level security;
 alter table daily_shipping enable row level security;
 alter table quarterly_plans enable row level security; -- 🆕
 alter table data_snapshots enable row level security; -- 🆕
+alter table learning_documents enable row level security; -- 🆕
 
 -- Policies
 create policy "Users can only access their own weeks"
@@ -262,6 +304,12 @@ with check ((select auth.uid())::text = user_id);
 -- 🆕 Snapshots policy
 create policy "Users can only access their own snapshots"
 on data_snapshots for all
+using ((select auth.uid())::text = user_id)
+with check ((select auth.uid())::text = user_id);
+
+-- 🆕 Learning documents policy
+create policy "Users can only access their own learning documents"
+on learning_documents for all
 using ((select auth.uid())::text = user_id)
 with check ((select auth.uid())::text = user_id);
 ```

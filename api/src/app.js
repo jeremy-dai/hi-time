@@ -1081,4 +1081,214 @@ app.delete('/api/plans/:planId', async (req, res) => {
   }
 });
 
+// ============================================================================
+// Learning Documents Endpoints
+// ============================================================================
+
+// GET /api/learning - Get all learning documents for the authenticated user
+app.get('/api/learning', async (req, res) => {
+  try {
+    // RLS automatically filters by authenticated user
+    const { data, error } = await req.supabase
+      .from('learning_documents')
+      .select('*')
+      .order('position', { ascending: true })
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching learning documents:', error);
+      return res.status(500).json({ error: 'Failed to fetch learning documents' });
+    }
+
+    // Convert database format to frontend format
+    const documents = (data || []).map(doc => ({
+      id: doc.id,
+      userId: doc.user_id,
+      title: doc.title,
+      content: doc.content,
+      description: doc.description,
+      tags: doc.tags || [],
+      position: doc.position,
+      createdAt: new Date(doc.created_at).getTime(),
+      updatedAt: new Date(doc.updated_at).getTime(),
+    }));
+
+    res.json({ documents });
+  } catch (error) {
+    console.error('Error in GET /api/learning:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/learning/:id - Get a specific learning document
+app.get('/api/learning/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Document ID is required' });
+  }
+
+  try {
+    // RLS automatically filters by authenticated user
+    const { data, error } = await req.supabase
+      .from('learning_documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "Row not found"
+      console.error('Error fetching learning document:', error);
+      return res.status(500).json({ error: 'Failed to fetch learning document' });
+    }
+
+    if (!data) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+
+    res.json({
+      document: {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        content: data.content,
+        description: data.description,
+        tags: data.tags || [],
+        position: data.position,
+        createdAt: new Date(data.created_at).getTime(),
+        updatedAt: new Date(data.updated_at).getTime(),
+      }
+    });
+  } catch (error) {
+    console.error('Error in GET /api/learning/:id:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/learning - Create a new learning document
+app.post('/api/learning', async (req, res) => {
+  const { title, content, description, tags, position } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+
+  try {
+    // RLS requires user_id to match authenticated user
+    const { data, error } = await req.supabase
+      .from('learning_documents')
+      .insert({
+        user_id: req.user.id,
+        title,
+        content: content || '',
+        description: description || null,
+        tags: tags || [],
+        position: position !== undefined ? position : 0,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating learning document:', error);
+      return res.status(500).json({ error: 'Failed to create learning document' });
+    }
+
+    res.json({
+      document: {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        content: data.content,
+        description: data.description,
+        tags: data.tags || [],
+        position: data.position,
+        createdAt: new Date(data.created_at).getTime(),
+        updatedAt: new Date(data.updated_at).getTime(),
+      }
+    });
+  } catch (error) {
+    console.error('Error in POST /api/learning:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/learning/:id - Update a learning document
+app.put('/api/learning/:id', async (req, res) => {
+  const { id } = req.params;
+  const { title, content, description, tags, position } = req.body;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Document ID is required' });
+  }
+
+  try {
+    // Build update object with only provided fields
+    const updates = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (title !== undefined) updates.title = title;
+    if (content !== undefined) updates.content = content;
+    if (description !== undefined) updates.description = description;
+    if (tags !== undefined) updates.tags = tags;
+    if (position !== undefined) updates.position = position;
+
+    // RLS automatically ensures user can only update their own documents
+    const { data, error } = await req.supabase
+      .from('learning_documents')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating learning document:', error);
+      return res.status(500).json({ error: 'Failed to update learning document' });
+    }
+
+    res.json({
+      document: {
+        id: data.id,
+        userId: data.user_id,
+        title: data.title,
+        content: data.content,
+        description: data.description,
+        tags: data.tags || [],
+        position: data.position,
+        createdAt: new Date(data.created_at).getTime(),
+        updatedAt: new Date(data.updated_at).getTime(),
+      }
+    });
+  } catch (error) {
+    console.error('Error in PUT /api/learning/:id:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/learning/:id - Delete a learning document
+app.delete('/api/learning/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: 'Document ID is required' });
+  }
+
+  try {
+    // RLS automatically ensures user can only delete their own documents
+    const { error } = await req.supabase
+      .from('learning_documents')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting learning document:', error);
+      return res.status(500).json({ error: 'Failed to delete learning document' });
+    }
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error in DELETE /api/learning/:id:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default app;

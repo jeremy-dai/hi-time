@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard'
 import { Settings } from './components/Settings'
 import Memories from './components/Memories'
 import WeeklyReview from './components/WeeklyReview'
+import { Learning } from './components/Learning'
 import { QuarterlyPlan } from './components/plan/QuarterlyPlan'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
@@ -28,11 +29,11 @@ function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
   // Initialize activeTab from localStorage, default to 'timesheet' if not found
-  const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'>(() => {
+  const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'learning' | 'settings'>(() => {
     try {
       const saved = localStorage.getItem('active-tab')
-      if (saved && ['timesheet', 'trends', 'annual', 'memories', 'review', 'today', 'settings'].includes(saved)) {
-        return saved as 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'
+      if (saved && ['timesheet', 'trends', 'annual', 'memories', 'review', 'today', 'learning', 'settings'].includes(saved)) {
+        return saved as 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'learning' | 'settings'
       }
     } catch (err) {
       console.error('Failed to load active tab from localStorage:', err)
@@ -696,6 +697,13 @@ function App() {
       <div className={activeTab === 'today' ? 'block h-full' : 'hidden'}>
         <div className="animate-in fade-in duration-200 h-full">
           <QuarterlyPlan />
+        </div>
+      </div>
+
+      {/* Learning */}
+      <div className={activeTab === 'learning' ? 'block' : 'hidden'}>
+        <div className="animate-in fade-in duration-200">
+          <Learning />
         </div>
       </div>
 

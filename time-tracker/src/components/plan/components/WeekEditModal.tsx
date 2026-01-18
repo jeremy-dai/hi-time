@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import type { PlanWeek } from '../../../hooks/useQuarterlyPlan'
 import { Modal } from '../../shared/Modal'
-import { CheckCircle2, Circle, Plus, Trash2 } from 'lucide-react'
+import { CheckCircle2, Circle, Plus, Trash2, FileText } from 'lucide-react'
 import { cn } from '../../../utils/classNames'
+import { MarkdownRenderer } from '../../shared/MarkdownRenderer'
 
 interface WeekEditModalProps {
   week: PlanWeek
@@ -26,6 +27,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete }: WeekE
   const [editDeliverables, setEditDeliverables] = useState(week.deliverables)
   const [newTodoTitle, setNewTodoTitle] = useState('')
   const [newDeliverableTitle, setNewDeliverableTitle] = useState('')
+  const [viewingDeliverable, setViewingDeliverable] = useState<{ name: string; content: string } | null>(null)
 
   // Reset form when week changes
   useEffect(() => {
@@ -110,6 +112,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete }: WeekE
   }
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
       onClose={handleCancel}
@@ -238,6 +241,18 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete }: WeekE
                   onChange={(e) => updateDeliverable(del.id, e.target.value)}
                   className="flex-1 border border-gray-200 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
+                {del.description && (
+                  <button
+                    onClick={() => setViewingDeliverable({
+                      name: del.name || del.title,
+                      content: del.description || ''
+                    })}
+                    className="p-1 text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                    title="View deliverable details"
+                  >
+                    <FileText className="h-4 w-4" />
+                  </button>
+                )}
                 <button
                   onClick={() => deleteDeliverable(del.id)}
                   className="p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -302,5 +317,20 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete }: WeekE
         </div>
       </div>
     </Modal>
+
+    {/* Deliverable Markdown Viewer Modal */}
+    {viewingDeliverable && (
+      <Modal
+        isOpen={true}
+        onClose={() => setViewingDeliverable(null)}
+        title={viewingDeliverable.name}
+        size="large"
+      >
+        <div className="bg-gray-50 rounded-xl p-6 max-h-[60vh] overflow-y-auto">
+          <MarkdownRenderer content={viewingDeliverable.content} />
+        </div>
+      </Modal>
+    )}
+  </>
   )
 }

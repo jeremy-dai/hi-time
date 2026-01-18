@@ -1,11 +1,11 @@
-import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, BookHeart, FileText, Package } from 'lucide-react'
+import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, BookHeart, FileText, Package, BookOpen } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 import { cn } from '../utils/classNames'
 import { getISOWeekYear } from '../utils/date'
 
 interface SidebarProps {
-  active: 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings'
-  onNavigate: (tab: 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'settings') => void
+  active: 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'learning' | 'settings'
+  onNavigate: (tab: 'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'learning' | 'settings') => void
   userEmail?: string
   onLogout: () => void
   currentDate?: Date
@@ -173,6 +173,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           label="Review"
           active={active === 'review'}
           onClick={() => onNavigate('review')}
+        />
+        <SidebarItem
+          icon={<BookOpen size={20} />}
+          label="Learning"
+          active={active === 'learning'}
+          onClick={() => onNavigate('learning')}
         />
         <div className="mt-8 text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">System</div>
         <SidebarItem

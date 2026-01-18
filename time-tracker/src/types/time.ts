@@ -75,3 +75,35 @@ export interface AnnualReview {
 // Quarterly Plan Types - See PLAN_FORMAT.md for full specification
 // Types are now defined in hooks/useQuarterlyPlan.ts and api.ts
 // ============================================
+
+// ============================================
+// Learning Document Types
+// ============================================
+
+export interface LearningDocument {
+  id: string
+  userId: string
+  title: string
+  content: string
+  description?: string | null
+  tags: string[]
+  position: number
+  createdAt: number // Unix timestamp in milliseconds
+  updatedAt: number // Unix timestamp in milliseconds
+}
+
+export interface LearningDocumentCreateInput {
+  title: string
+  content?: string
+  description?: string
+  tags?: string[]
+  position?: number
+}
+
+export interface LearningDocumentUpdateInput {
+  title?: string
+  content?: string
+  description?: string | null
+  tags?: string[]
+  position?: number
+}
