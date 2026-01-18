@@ -151,6 +151,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           onClick={() => onNavigate('timesheet')}
         />
         <SidebarItem
+          icon={<BookHeart size={20} />}
+          label="Memories"
+          active={active === 'memories'}
+          onClick={() => onNavigate('memories')}
+        />
+        <SidebarItem
           icon={<TrendingUp size={20} />}
           label="Trends"
           active={active === 'trends'}
@@ -161,12 +167,6 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           label="Annual"
           active={active === 'annual'}
           onClick={() => onNavigate('annual')}
-        />
-        <SidebarItem
-          icon={<BookHeart size={20} />}
-          label="Memories"
-          active={active === 'memories'}
-          onClick={() => onNavigate('memories')}
         />
         <SidebarItem
           icon={<FileText size={20} />}

@@ -1,6 +1,7 @@
 import { cn } from '../../utils/classNames'
 import type { YTDStats } from '../../utils/analytics'
-import { Flame, TrendingUp, Calendar } from 'lucide-react'
+import { Flame, TrendingUp, Calendar, Info } from 'lucide-react'
+import Tooltip from '../shared/Tooltip'
 
 interface AnnualProductivityStreakProps {
   streakMetrics: YTDStats['streakMetrics']
@@ -43,8 +44,11 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
           <div className="text-3xl font-bold text-orange-600 mb-0.5">
             {currentStreak}
           </div>
-          <div className="text-xs font-medium text-orange-900 mb-1.5">
-            Current Streak
+          <div className="flex items-center justify-center gap-1 text-xs font-medium text-orange-900 mb-1.5">
+            <span>Current Streak</span>
+            <Tooltip content="Consecutive days with any productive work (W hours > 0)">
+              <Info className="w-3 h-3 text-orange-600 cursor-help" />
+            </Tooltip>
           </div>
           <div className="text-[10px] text-orange-700 font-medium">
             {currentStreak === 1 ? 'day' : 'days'}
@@ -63,8 +67,11 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
           <div className="text-3xl font-bold text-purple-600 mb-0.5">
             {longestStreak}
           </div>
-          <div className="text-xs font-medium text-purple-900 mb-1.5">
-            Longest Streak
+          <div className="flex items-center justify-center gap-1 text-xs font-medium text-purple-900 mb-1.5">
+            <span>Longest Streak</span>
+            <Tooltip content="The longest consecutive productive streak you've achieved this year">
+              <Info className="w-3 h-3 text-purple-600 cursor-help" />
+            </Tooltip>
           </div>
           <div className="text-[10px] text-purple-700 font-medium">
             this year
@@ -95,8 +102,11 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
               {productivePercentage.toFixed(0)}%
             </div>
 
-            <div className="text-xs font-medium text-emerald-900 mb-1.5">
-              Productive Days
+            <div className="flex items-center justify-center gap-1 text-xs font-medium text-emerald-900 mb-1.5">
+              <span>Productive Days</span>
+              <Tooltip content="Percentage of days with any productive work completed">
+                <Info className="w-3 h-3 text-emerald-600 cursor-help" />
+              </Tooltip>
             </div>
 
             {/* Compact day count */}

@@ -22,14 +22,17 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
       }
     }
 
-    // Initial measurement
-    updateDimensions()
+    // Delay initial measurement to ensure layout is complete
+    const timeoutId = setTimeout(updateDimensions, 0)
 
     // Use ResizeObserver for responsive updates
     const resizeObserver = new ResizeObserver(updateDimensions)
     resizeObserver.observe(containerRef.current)
 
-    return () => resizeObserver.disconnect()
+    return () => {
+      clearTimeout(timeoutId)
+      resizeObserver.disconnect()
+    }
   }, [])
 
   const chartData = useMemo(() => {

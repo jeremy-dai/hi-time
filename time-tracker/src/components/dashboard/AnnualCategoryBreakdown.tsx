@@ -50,14 +50,11 @@ export default function AnnualCategoryBreakdown({ ytdStats }: AnnualCategoryBrea
               </div>
               {/* Stats */}
               <div className="flex items-center gap-2 text-xs shrink-0">
-                <span className="font-semibold text-gray-900 w-12 text-right whitespace-nowrap">
-                  {totalCategoryHours.toFixed(0)}h
-                </span>
                 <span className="font-medium text-gray-500 w-12 text-right whitespace-nowrap">
                   {percentage.toFixed(1)}%
                 </span>
                 <span className="text-xs text-gray-500 w-20 text-right whitespace-nowrap">
-                  {avgHours.toFixed(1)}h/wk
+                  <span className="font-semibold">{avgHours.toFixed(1)}</span>h/wk
                 </span>
               </div>
             </div>

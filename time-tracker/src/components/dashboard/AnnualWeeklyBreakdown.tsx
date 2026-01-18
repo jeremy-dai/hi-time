@@ -27,14 +27,17 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
       }
     }
 
-    // Initial measurement
-    updateDimensions()
+    // Delay initial measurement to ensure layout is complete
+    const timeoutId = setTimeout(updateDimensions, 0)
 
     // Use ResizeObserver for responsive updates
     const resizeObserver = new ResizeObserver(updateDimensions)
     resizeObserver.observe(containerRef.current)
 
-    return () => resizeObserver.disconnect()
+    return () => {
+      clearTimeout(timeoutId)
+      resizeObserver.disconnect()
+    }
   }, [])
 
   const chartData = useMemo(() => {
@@ -150,7 +153,7 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
         </div>
       ) : (
         <div className="overflow-x-auto overflow-y-visible">
-          <div ref={containerRef} style={{ minWidth: chartWidth, height: 400 }}>
+          <div ref={containerRef} style={{ width: '100%', minWidth: chartWidth, height: 400 }}>
             {dimensions.width > 0 && dimensions.height > 0 && (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
