@@ -181,6 +181,10 @@ export function useLocalStorageSync<T>(
              setDataState(cached.data);
              lastSyncedDataRef.current = JSON.stringify(cached.data);
              console.log('[useLocalStorageSync] ⚡ Instant load from localStorage');
+          } else {
+            // Data is stale - remove it so checkForUpdates() will load from database
+            console.log('[useLocalStorageSync] ⏰ Stale localStorage data, removing to load fresh from database');
+            localStorage.removeItem(storageKey);
           }
         } catch (err) {
           console.error('Failed to parse localStorage data:', err);
