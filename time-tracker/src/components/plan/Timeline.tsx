@@ -5,7 +5,7 @@ import { WeekAddModal } from './components/WeekAddModal'
 import { CycleCard } from './components/CycleCard'
 import { WeekNavigation } from './components/WeekNavigation'
 import { SyncStatusIndicator } from '../SyncStatusIndicator'
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
 interface TimelineProps {
@@ -57,11 +57,15 @@ export function Timeline({ data }: TimelineProps) {
 
   // Week refs for scrolling
   const weekRefs = useRef<Map<number, HTMLDivElement>>(new Map())
+  const cycleRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [activeWeekNumber, setActiveWeekNumber] = useState<number | undefined>()
 
-  // Track visible week on scroll (using viewport as root since parent handles scroll)
+  // Track visible week on scroll (using scroll container as root)
   useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
     const observer = new IntersectionObserver(
       (entries) => {
         // Find the most visible week
@@ -83,8 +87,8 @@ export function Timeline({ data }: TimelineProps) {
         }
       },
       {
-        root: null, // Use viewport since layout is not strictly constrained in height
-        rootMargin: '-100px 0px -100px 0px', // Offset for header
+        root: container,
+        rootMargin: '-50px 0px -50px 0px',
         threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
       }
     )
@@ -97,19 +101,33 @@ export function Timeline({ data }: TimelineProps) {
     return () => observer.disconnect()
   }, [allWeeks])
 
-  // Handle navigation click
+  // Handle navigation click - scroll within container
   const handleWeekClick = (weekNumber: number) => {
     const element = weekRefs.current.get(weekNumber)
-    if (element) {
-      const headerOffset = 100
-      const elementPosition = element.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.scrollY - headerOffset
-      
-      window.scrollTo({
+    const container = scrollContainerRef.current
+    if (element && container) {
+      const headerOffset = 24
+      const containerRect = container.getBoundingClientRect()
+      const elementRect = element.getBoundingClientRect()
+      const offsetPosition = elementRect.top - containerRect.top + container.scrollTop - headerOffset
+
+      container.scrollTo({
         top: offsetPosition,
         behavior: 'smooth'
       })
       setActiveWeekNumber(weekNumber)
+    }
+  }
+
+  const handleCycleClick = (cycleId: string) => {
+    const element = cycleRefs.current.get(cycleId)
+    const container = scrollContainerRef.current
+    if (element && container) {
+      const headerOffset = 24
+      const containerRect = container.getBoundingClientRect()
+      const elementRect = element.getBoundingClientRect()
+      const offsetPosition = elementRect.top - containerRect.top + container.scrollTop - headerOffset
+      container.scrollTo({ top: offsetPosition, behavior: 'smooth' })
     }
   }
 
@@ -126,10 +144,10 @@ export function Timeline({ data }: TimelineProps) {
   }
 
   return (
-    <div className="flex bg-gray-50 min-h-[calc(100vh-8rem)]">
-      {/* Week Navigation Sidebar */}
+    <div className="bg-gray-50 h-[calc(100vh-6rem)] flex overflow-hidden">
+      {/* Left Sidebar - Fixed height, scrolls independently */}
       <div className={cn(
-        "shrink-0 sticky top-0 h-screen overflow-y-auto border-r border-gray-200 bg-gray-50/50 transition-all duration-300 z-20",
+        "h-full overflow-y-auto border-r border-gray-200 bg-gray-50/95 transition-all duration-300 shrink-0",
         isSidebarCollapsed ? "w-16" : "w-64"
       )}>
         <WeekNavigation
@@ -137,15 +155,16 @@ export function Timeline({ data }: TimelineProps) {
           allWeeks={allWeeks}
           activeWeekNumber={activeWeekNumber}
           onWeekClick={handleWeekClick}
+          onCycleClick={handleCycleClick}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
       </div>
 
-      {/* Main Content */}
-      <div 
+      {/* Main Content - Scrolls independently */}
+      <div
         ref={scrollContainerRef}
-        className="flex-1 min-w-0"
+        className="flex-1 min-w-0 overflow-y-auto"
       >
         <div className="max-w-5xl mx-auto p-6 flex flex-col gap-6">
         {/* Compact Header */}
@@ -162,25 +181,6 @@ export function Timeline({ data }: TimelineProps) {
 
         {/* Timeline by Cycle */}
         <div className="flex-1 space-y-6">
-        {/* Strategic Cycles Overview */}
-        {cycles.length > 0 && (
-          <div className="space-y-3">
-             <h2 className="text-base font-semibold text-gray-900">Strategic Cycles</h2>
-             <div className="space-y-2">
-              {cycles.map((cycle, index) => (
-                <CycleCard
-                  key={cycle.id}
-                  cycle={cycle}
-                  cycleIndex={index + 1}
-                  onStatusChange={(status) => updateCycleDetails(cycle.id, { status })}
-                  onEdit={(details) => updateCycleDetails(cycle.id, details)}
-                  className="w-full"
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
         {cycles.length === 0 ? (
           <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
             No cycles defined. Import a plan to get started.
@@ -190,55 +190,37 @@ export function Timeline({ data }: TimelineProps) {
             const cycleWeeks = allWeeks
               .filter(w => w.cycleId === cycle.id)
               .sort((a, b) => a.weekNumber - b.weekNumber)
-            
+
             const isExpanded = expandedCycles.has(cycle.id)
             const isLast = index === cycles.length - 1
 
             return (
               <div key={cycle.id} className="relative">
-                {/* Connector Line between Cycles */}
-                {!isLast && (
-                  <div className="absolute left-6 top-16 bottom-0 w-0.5 bg-gray-200 -z-10" />
-                )}
-
-                {/* Cycle Header */}
-                <button
+                {/* Cycle Card with expand/collapse toggle */}
+                <div
+                  ref={(el) => {
+                    if (el) {
+                      cycleRefs.current.set(cycle.id, el)
+                    } else {
+                      cycleRefs.current.delete(cycle.id)
+                    }
+                  }}
+                  data-cycle-id={cycle.id}
+                  className="cursor-pointer"
                   onClick={() => toggleCycle(cycle.id)}
-                  className="w-full flex items-center gap-4 sticky top-0 bg-gray-50/95 backdrop-blur z-10 py-4 group text-left"
                 >
-                  <div className={cn(
-                    "flex items-center justify-center w-12 h-12 rounded-xl border-2 transition-colors shrink-0",
-                    cycle.status === 'in_progress' ? "bg-emerald-50 border-emerald-500 text-emerald-600" :
-                    cycle.status === 'completed' ? "bg-green-50 border-green-200 text-green-600" :
-                    "bg-white border-gray-200 text-gray-400"
-                  )}>
-                    {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-xl font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
-                        {cycle.name}
-                      </h2>
-                      <span className={cn(
-                        "px-2 py-0.5 text-xs font-medium rounded-full",
-                        cycle.status === 'in_progress' ? 'bg-emerald-100 text-emerald-700' :
-                        cycle.status === 'completed' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-600'
-                      )}>
-                        {cycle.status === 'in_progress' ? 'Active' :
-                         cycle.status === 'completed' ? 'Done' : 'Upcoming'}
-                      </span>
-                    </div>
-                    {cycle.theme && (
-                      <p className="text-sm text-gray-500 mt-0.5">{cycle.theme}</p>
-                    )}
-                  </div>
-                </button>
+                  <CycleCard
+                    cycle={cycle}
+                    cycleIndex={index + 1}
+                    onStatusChange={(status) => updateCycleDetails(cycle.id, { status })}
+                    onEdit={(details) => updateCycleDetails(cycle.id, details)}
+                    isExpanded={isExpanded}
+                  />
+                </div>
 
-                {/* Weeks in Cycle */}
+                {/* Weeks in Cycle (collapsible) */}
                 {isExpanded && (
-                  <div className="space-y-0 pl-6 pb-8">
+                  <div className="space-y-0 pl-6 pb-8 mt-4">
                     {/* Add Week at Start */}
                     <div className="relative pl-8 group">
                       <button
@@ -310,6 +292,9 @@ export function Timeline({ data }: TimelineProps) {
                     ))}
                   </div>
                 )}
+
+                {/* Separator between cycles */}
+                {!isLast && <div className="border-t border-gray-200 my-8" />}
               </div>
             )
           })

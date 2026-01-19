@@ -4,9 +4,9 @@ import { useDailyShipping } from '../../hooks/useDailyShipping'
 import { KPICard } from './components/KPICard'
 import { ActiveMissionCard } from './components/ActiveMissionCard'
 import { CycleCard } from './components/CycleCard'
+import { SyncStatusIndicator } from '../SyncStatusIndicator'
 import { Package, CheckCircle2, Circle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../utils/classNames'
-import { SyncStatusIndicator } from '../SyncStatusIndicator'
 
 interface MissionControlProps {
   data: UseQuarterlyPlanReturn
@@ -135,12 +135,14 @@ function WeeklyShipping() {
     ' - ' + weekRange.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
   return (
-    <div className="bg-gradient-to-br from-white to-emerald-50 rounded-xl border border-emerald-200 p-4 h-full flex flex-col">
+    <div className="bg-linear-to-br from-white via-emerald-50/30 to-white rounded-xl border border-emerald-200 shadow-lg shadow-emerald-100/20 p-5 h-full flex flex-col">
       {/* Header with week navigation */}
-      <div className="flex items-center justify-between mb-4 min-h-[28px]">
+      <div className="flex items-center justify-between mb-5 min-h-[28px]">
         <div className="flex items-center gap-2">
-          <Package className="h-5 w-5 text-emerald-600" />
-          <h3 className="font-semibold text-gray-900">Daily Shipping</h3>
+          <div className="p-2 bg-linear-to-br from-emerald-100 to-emerald-50 rounded-lg shadow-sm">
+            <Package className="h-5 w-5 text-emerald-600" />
+          </div>
+          <h3 className="font-bold text-gray-900 text-lg">Daily Shipping</h3>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -275,7 +277,6 @@ function WeeklyShipping() {
 export function MissionControl({ data }: MissionControlProps) {
   const {
     planData,
-    planName,
     trackers,
     updateTrackerValue,
     allWeeks,
@@ -287,11 +288,7 @@ export function MissionControl({ data }: MissionControlProps) {
     updateDeliverableStatus,
     updateCycleDetails,
     updateWeekComprehensive,
-    deleteWeek,
-    syncStatus,
-    lastSynced,
-    hasUnsavedChanges,
-    syncNow
+    deleteWeek
   } = data
 
   const areTrackersComputed = !!planData?.work_types
@@ -343,28 +340,15 @@ export function MissionControl({ data }: MissionControlProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-gray-900">
-            {planName || 'Mission Control'}
-          </h1>
-          <SyncStatusIndicator
-            status={syncStatus}
-            lastSynced={lastSynced}
-            hasUnsavedChanges={hasUnsavedChanges}
-            onSyncNow={syncNow}
-            compact={true}
-          />
-        </div>
-      </div>
-
       {/* Cycle and KPIs Section */}
-      <div className="space-y-3">
+      <div className="space-y-6">
         {/* Current Cycle */}
         {currentCycle && (
           <div>
-            <h2 className="text-base font-semibold text-gray-900 mb-2">Current Cycle</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-6 w-1 bg-linear-to-b from-emerald-500 to-teal-600 rounded-full" />
+              <h2 className="text-lg font-bold text-gray-900">Current Cycle</h2>
+            </div>
             <CycleCard
               cycle={currentCycle}
               cycleIndex={currentCycleIndex}
@@ -376,12 +360,15 @@ export function MissionControl({ data }: MissionControlProps) {
 
         {/* KPIs */}
         <div>
-          <h2 className="text-base font-semibold text-gray-900 mb-2">
-            KPIs
-            {currentCycle && <span className="text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}
-          </h2>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-6 w-1 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full" />
+            <h2 className="text-lg font-bold text-gray-900">
+              Key Performance Indicators
+              {currentCycle && <span className="text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}
+            </h2>
+          </div>
           {cycleTrackers.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {cycleTrackers.map(tracker => (
                 <KPICard
                   key={tracker.id}
@@ -392,8 +379,8 @@ export function MissionControl({ data }: MissionControlProps) {
               ))}
             </div>
           ) : (
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-6 text-center text-sm text-gray-500">
-              No KPIs defined
+            <div className="bg-linear-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-8 text-center">
+              <p className="text-sm text-gray-500">No KPIs defined for this cycle</p>
             </div>
           )}
         </div>
@@ -432,29 +419,35 @@ export function MissionControl({ data }: MissionControlProps) {
 
       {/* Upcoming Trajectory (Full Width) */}
       {upcomingWeeks.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-base font-semibold text-gray-900">Upcoming Trajectory</h3>
-          <div className="relative pl-4 space-y-4">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-1 bg-linear-to-b from-purple-500 to-indigo-600 rounded-full" />
+            <h3 className="text-lg font-bold text-gray-900">Upcoming Trajectory</h3>
+          </div>
+          <div className="relative pl-6 space-y-4">
             {/* Connector line */}
-            <div className="absolute left-4 top-2 bottom-4 w-0.5 bg-gray-200" />
-            
-            {upcomingWeeks.map((w) => (
-              <div key={w.weekNumber} className="relative pl-8">
-                {/* Node */}
-                <div className="absolute left-[-5px] top-1.5 w-3 h-3 rounded-full border-2 border-white bg-emerald-200 ring-4 ring-gray-50" />
+            <div className="absolute left-6 top-2 bottom-4 w-0.5 bg-linear-to-b from-purple-200 via-indigo-200 to-transparent" />
 
-                <div className="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-300 transition-colors">
+            {upcomingWeeks.map((w) => (
+              <div key={w.weekNumber} className="relative pl-8 group">
+                {/* Node */}
+                <div className="absolute left-[-4px] top-2 w-4 h-4 rounded-full border-2 border-white bg-linear-to-br from-purple-400 to-indigo-500 shadow-md shadow-purple-200 ring-2 ring-purple-50 transition-all group-hover:scale-125" />
+
+                <div className="bg-linear-to-br from-white to-purple-50/20 rounded-xl border border-purple-100 p-4 hover:border-purple-300 hover:shadow-md hover:shadow-purple-100/50 transition-all">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono font-medium text-emerald-600">
-                      Week {w.weekNumber}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {w.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 bg-linear-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        Week {w.weekNumber}
+                      </span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-500 font-medium">
+                        {w.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
                   </div>
-                  <h4 className="font-medium text-gray-900 mb-1">{w.theme || w.name}</h4>
+                  <h4 className="font-semibold text-gray-900 mb-1">{w.theme || w.name}</h4>
                   {w.goals && w.goals.length > 0 && (
-                    <p className="text-sm text-gray-500">{w.goals.join(' · ')}</p>
+                    <p className="text-sm text-gray-600">{w.goals.join(' · ')}</p>
                   )}
                 </div>
               </div>

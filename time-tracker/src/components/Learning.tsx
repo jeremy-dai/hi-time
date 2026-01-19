@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react'
-import { BookOpen, FileText, Settings as SettingsIcon, Plus, Trash2, Edit, Save, X, Tag, Upload, ChevronDown } from 'lucide-react'
+import { BookOpen, FileText, Settings as SettingsIcon, Plus, Trash2, Edit, Save, X, Tag, Upload } from 'lucide-react'
 import { useLearningDocuments } from '../hooks/useLearningDocuments'
 import type { LearningDocument } from '../types/time'
 import Card from './shared/Card'
@@ -377,48 +377,85 @@ export function Learning() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <Card>
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <BookOpen className="w-6 h-6 text-emerald-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Learning</h1>
+    <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
+      {/* Left Sidebar - Tags Navigation */}
+      {activeTab === 'documents' && tagOptions.length > 1 && (
+        <div className="w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
+          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+            Tags
           </div>
-          <div className="flex items-center gap-4">
-            {/* Tag Filter (shown when on Documents tab and has tags) */}
-            {activeTab === 'documents' && tagOptions.length > 1 && (
-              <div className="flex items-center gap-2">
-                <Tag size={16} className="text-gray-400" />
+
+          {tagOptions.map((option) => {
+            const isActive = selectedTagFilter === option.value
+            const isAll = option.value === 'all'
+            const count = option.label.match(/\((\d+)\)/)?.[1] || '0'
+
+            return (
+              <button
+                key={option.value}
+                onClick={() => setSelectedTagFilter(option.value)}
+                className={`relative p-3 rounded-xl transition-all flex flex-col items-center gap-2 ${
+                  isActive
+                    ? "bg-emerald-500 text-white shadow-lg"
+                    : "bg-gray-50 hover:bg-gray-100 text-gray-600"
+                }`}
+              >
                 <div className="relative">
-                  <select
-                    value={selectedTagFilter}
-                    onChange={(e) => setSelectedTagFilter(e.target.value)}
-                    className="appearance-none rounded-xl pl-3 pr-8 py-1.5 border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-medium text-gray-700 cursor-pointer transition-colors"
-                  >
-                    {tagOptions.map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  {isAll ? (
+                    <FileText className="w-7 h-7" strokeWidth={2.5} />
+                  ) : (
+                    <Tag className="w-7 h-7" strokeWidth={2.5} />
+                  )}
+                  {/* Count badge for individual tags */}
+                  {!isAll && (
+                    <div className={`absolute -right-2 -top-2 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center ${
+                      isActive ? "bg-white text-gray-900" : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {count}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-            <SyncStatusIndicator
-              status={syncStatus}
-              lastSynced={lastSynced}
-              hasUnsavedChanges={false}
-              compact={true}
-            />
-          </div>
+                <span className={`text-xs font-medium text-center leading-tight line-clamp-2 ${
+                  isActive ? "text-white" : "text-gray-700"
+                }`}>
+                  {option.value === 'all' ? 'All' : option.value}
+                </span>
+                {/* Show count for "All" below the label */}
+                {isAll && (
+                  <span className={`text-xs ${
+                    isActive ? "text-emerald-100" : "text-gray-400"
+                  }`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
+      )}
 
-        {/* Tabs */}
-        <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-5xl mx-auto p-6 pb-12">
+          <Card>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-6 h-6 text-emerald-600" />
+                <h1 className="text-2xl font-bold text-gray-900">Learning</h1>
+              </div>
+              <SyncStatusIndicator
+                status={syncStatus}
+                lastSynced={lastSynced}
+                hasUnsavedChanges={false}
+                compact={true}
+              />
+            </div>
 
-        <div className="mt-6">
+            {/* Tabs */}
+            <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+
+            <div className="mt-6">
           {/* Documents Tab */}
           {activeTab === 'documents' && (
             <div>
@@ -598,8 +635,10 @@ export function Learning() {
               )}
             </div>
           )}
+            </div>
+          </Card>
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

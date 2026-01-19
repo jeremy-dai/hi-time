@@ -7,11 +7,12 @@ interface WeekNavigationProps {
   allWeeks: PlanWeek[]
   activeWeekNumber?: number
   onWeekClick: (weekNumber: number) => void
+  onCycleClick?: (cycleId: string) => void
   isCollapsed: boolean
   onToggleCollapse: () => void
 }
 
-export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick, isCollapsed, onToggleCollapse }: WeekNavigationProps) {
+export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick, onCycleClick, isCollapsed, onToggleCollapse }: WeekNavigationProps) {
   if (isCollapsed) {
     return (
       <div className="flex items-center justify-center py-4">
@@ -27,7 +28,7 @@ export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick
   }
 
   return (
-    <div className="min-h-0 h-full">
+    <div className="flex flex-col h-full">
       <div className="sticky top-0 bg-gray-50/95 backdrop-blur z-10 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
           Timeline
@@ -55,7 +56,10 @@ export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick
             return (
               <div key={cycle.id} className="mb-6">
                 {/* Cycle Header */}
-                <div className="px-4 mb-2">
+                <button
+                  onClick={() => onCycleClick?.(cycle.id)}
+                  className="w-full text-left px-4 mb-2 hover:bg-gray-100 rounded transition-colors"
+                >
                   <div className="flex items-center gap-2 mb-1">
                     <div className={cn(
                       "w-2 h-2 rounded-full",
@@ -72,7 +76,7 @@ export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick
                       {cycle.theme}
                     </p>
                   )}
-                </div>
+                </button>
 
                 {/* Week List */}
                 <div className="space-y-0.5">

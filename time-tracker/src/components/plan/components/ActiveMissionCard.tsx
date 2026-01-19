@@ -46,20 +46,44 @@ export function ActiveMissionCard({
 
   return (
     <div className={cn("flex flex-col gap-4 h-full", className)}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-emerald-100 rounded-lg">
-            <Target className="h-5 w-5 text-emerald-600" />
+      {/* Enhanced Header */}
+      <div className="relative bg-linear-to-br from-emerald-500 via-teal-500 to-emerald-600 rounded-xl p-5 shadow-lg shadow-emerald-200/50 overflow-hidden">
+        {/* Decorative background */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg shadow-lg ring-1 ring-white/30">
+              <Target className="h-6 w-6 text-white drop-shadow" />
+            </div>
+            <div>
+              <h3 className="font-black text-white text-xl leading-tight drop-shadow-sm">Active Mission</h3>
+              <p className="text-emerald-50 text-sm font-semibold mt-1">Week {week.weekNumber}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-bold text-gray-900 leading-none">Active Mission</h3>
-            <p className="text-xs text-gray-500 mt-1 font-medium">Week {week.weekNumber}</p>
+
+          {/* Progress Badge */}
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg ring-1 ring-white/30">
+              <div className="text-3xl font-black text-white drop-shadow-sm">{progressPct}%</div>
+            </div>
+            <span className="text-xs text-emerald-50 font-bold uppercase tracking-wider">Complete</span>
           </div>
         </div>
-        <div className="text-right flex items-center gap-3 bg-white px-3 py-1.5 rounded-lg border border-gray-100 shadow-sm">
-          <div className="text-xl font-bold text-emerald-600">{progressPct}%</div>
-          <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Complete</div>
+
+        {/* Mini Progress Bar */}
+        <div className="relative mt-4">
+          <div className="h-2 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden shadow-inner">
+            <div
+              className="h-full bg-linear-to-r from-white via-emerald-100 to-white rounded-full transition-all duration-500 shadow-sm"
+              style={{ width: `${progressPct}%` }}
+            >
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
+            </div>
+          </div>
         </div>
       </div>
 

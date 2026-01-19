@@ -68,34 +68,57 @@ export function KPICard({ tracker, className, onUpdate, compact = false }: KPICa
   return (
     <div
       className={cn(
-        'bg-white rounded-xl border border-gray-200 transition-all',
-        compact ? 'p-3' : 'p-4',
-        !isEditing && 'hover:border-emerald-300',
-        isEditing && `ring-2 border-transparent ${ringColorClass}`,
+        'group relative bg-linear-to-br from-white to-gray-50/50 rounded-xl border transition-all duration-300',
+        compact ? 'p-4' : 'p-5',
+        !isEditing && 'border-gray-200 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50',
+        isEditing && `ring-2 border-transparent shadow-lg ${ringColorClass}`,
         className
       )}
     >
+      {/* Icon decoration - top right */}
+      <div className={cn(
+        "absolute top-3 right-3 opacity-5 group-hover:opacity-10 transition-opacity",
+        compact ? "h-16 w-16" : "h-20 w-20"
+      )}>
+        <Icon className="h-full w-full" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <span className={cn("font-medium text-gray-600 truncate", compact ? "text-xs" : "text-sm")}>{tracker.name}</span>
-        <div className="flex items-center gap-2">
-          {onUpdate && !isEditing && (
-            <button
-              onClick={() => {
-                setEditValue(tracker.current)
-                setIsEditing(true)
-              }}
-              className="p-1 text-gray-400 hover:text-emerald-600 rounded transition-colors"
-            >
-              <Edit2 className={cn(compact ? "h-2.5 w-2.5" : "h-3 w-3")} />
-            </button>
-          )}
-          <Icon className={cn(iconColorClass, compact ? "h-3 w-3" : "h-4 w-4")} />
+      <div className="relative flex items-start justify-between mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className={cn(
+              "p-1.5 rounded-lg bg-linear-to-br transition-colors",
+              iconColorClass.includes('blue') ? 'from-blue-100 to-blue-50' :
+              iconColorClass.includes('purple') ? 'from-purple-100 to-purple-50' :
+              iconColorClass.includes('yellow') ? 'from-yellow-100 to-yellow-50' :
+              iconColorClass.includes('green') && !iconColorClass.includes('emerald') ? 'from-green-100 to-green-50' :
+              iconColorClass.includes('red') ? 'from-red-100 to-red-50' :
+              iconColorClass.includes('indigo') ? 'from-indigo-100 to-indigo-50' :
+              'from-emerald-100 to-emerald-50'
+            )}>
+              <Icon className={cn(iconColorClass, compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+            </div>
+            {onUpdate && !isEditing && (
+              <button
+                onClick={() => {
+                  setEditValue(tracker.current)
+                  setIsEditing(true)
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-all"
+              >
+                <Edit2 className={cn(compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
+              </button>
+            )}
+          </div>
+          <h4 className={cn("font-semibold text-gray-700 leading-tight", compact ? "text-xs" : "text-sm")}>
+            {tracker.name}
+          </h4>
         </div>
       </div>
 
       {/* Value */}
-      <div className={cn("mb-2", compact ? "mb-1" : "mb-3")}>
+      <div className={cn("relative", compact ? "mb-2" : "mb-3")}>
         {isEditing ? (
           <div className="flex items-center gap-2">
             <input
@@ -105,38 +128,41 @@ export function KPICard({ tracker, className, onUpdate, compact = false }: KPICa
               onChange={(e) => setEditValue(e.target.value)}
               onKeyDown={handleKeyDown}
               className={cn(
-                "w-full px-2 text-gray-900 bg-gray-50 border border-gray-200 rounded focus:outline-none",
-                compact ? "py-0.5 text-sm" : "py-1 text-lg font-bold"
+                "w-full px-3 text-gray-900 bg-white border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500",
+                compact ? "py-1.5 text-base font-bold" : "py-2 text-xl font-bold"
               )}
             />
             <button
               onClick={handleSave}
-              className="p-1 bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200"
+              className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 shadow-sm transition-colors"
             >
-              <Check size={compact ? 12 : 16} />
+              <Check size={compact ? 14 : 16} />
             </button>
             <button
               onClick={handleCancel}
-              className="p-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200"
+              className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
             >
-              <X size={compact ? 12 : 16} />
+              <X size={compact ? 14 : 16} />
             </button>
           </div>
         ) : (
           isNumeric ? (
-            <div className="flex items-baseline">
-              <span className={cn("font-bold text-gray-900", compact ? "text-xl" : "text-2xl")}>{tracker.current}</span>
+            <div className="flex items-baseline gap-1">
+              <span className={cn("font-black bg-linear-to-br from-gray-900 to-gray-700 bg-clip-text text-transparent", compact ? "text-3xl" : "text-4xl")}>
+                {tracker.current}
+              </span>
+              <span className={cn("font-bold text-gray-400", compact ? "text-base" : "text-lg")}>
+                / {tracker.target}
+              </span>
               {tracker.unit && <span className="text-xs text-gray-500 ml-1">{tracker.unit}</span>}
-              <span className="text-xs text-gray-500 ml-1">/ {tracker.target}</span>
             </div>
           ) : (
-            <div className="space-y-1">
-              <div className="text-sm text-gray-600">
-                <span className="font-medium">Current: </span>
-                <span className="text-gray-900">{tracker.current}</span>
+            <div className="space-y-1.5">
+              <div className="text-sm font-medium text-gray-900">
+                {tracker.current}
               </div>
               <div className="text-xs text-gray-500">
-                Target: {tracker.target}
+                Target: <span className="font-semibold text-gray-600">{tracker.target}</span>
               </div>
             </div>
           )
@@ -145,11 +171,27 @@ export function KPICard({ tracker, className, onUpdate, compact = false }: KPICa
 
       {/* Progress bar (only for numeric) */}
       {isNumeric && (
-        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className={cn("h-full rounded-full transition-all duration-300", barColorClass)}
-            style={{ width: `${progress}%` }}
-          />
+        <div className="relative">
+          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+            <div
+              className={cn(
+                "h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden",
+                barColorClass
+              )}
+              style={{ width: `${progress}%` }}
+            >
+              {/* Shine effect */}
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+            </div>
+          </div>
+          {/* Percentage label */}
+          <div className={cn(
+            "absolute -top-5 right-0 text-xs font-bold transition-opacity",
+            progress > 0 ? "opacity-100" : "opacity-0",
+            iconColorClass
+          )}>
+            {Math.round(progress)}%
+          </div>
         </div>
       )}
     </div>

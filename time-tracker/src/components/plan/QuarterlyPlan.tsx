@@ -3,15 +3,17 @@ import { useQuarterlyPlan } from '../../hooks/useQuarterlyPlan'
 import { MissionControl } from './MissionControl'
 import { Timeline } from './Timeline'
 import { PlanSettings } from './PlanSettings'
-import { LayoutDashboard, Calendar, Settings } from 'lucide-react'
-import { cn } from '../../utils/classNames'
+import { LayoutDashboard, Calendar, Settings, Target } from 'lucide-react'
+import { Tabs } from '../shared/Tabs'
+import Card from '../shared/Card'
+import { SyncStatusIndicator } from '../SyncStatusIndicator'
 
 type PlanTab = 'mission' | 'timeline' | 'settings'
 
-const TABS: { id: PlanTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'mission', label: 'Mission Control', icon: LayoutDashboard },
-  { id: 'timeline', label: 'Timeline', icon: Calendar },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const TABS = [
+  { id: 'mission', label: 'Mission Control', icon: <LayoutDashboard size={16} /> },
+  { id: 'timeline', label: 'Timeline', icon: <Calendar size={16} /> },
+  { id: 'settings', label: 'Settings', icon: <Settings size={16} /> },
 ]
 
 export function QuarterlyPlan() {
@@ -27,49 +29,39 @@ export function QuarterlyPlan() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Compact Modern Sub-navigation */}
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6">
-          <nav className="flex gap-1">
-            {TABS.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    'relative flex items-center gap-2 px-3 py-2.5 text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'text-emerald-600'
-                      : 'text-gray-600 hover:text-gray-900'
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 rounded-full" />
-                  )}
-                </button>
-              )
-            })}
-          </nav>
-        </div>
-      </div>
+    <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
+      {/* Main Content */}
+      <div className="flex-1 overflow-auto">
+        <div className="max-w-5xl mx-auto p-6 pb-12">
+          <Card>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Target className="w-6 h-6 text-emerald-600" />
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {planData.planName || 'Quarterly Plan'}
+                </h1>
+              </div>
+              <SyncStatusIndicator
+                status={planData.syncStatus}
+                lastSynced={planData.lastSynced}
+                hasUnsavedChanges={planData.hasUnsavedChanges}
+                onSyncNow={planData.syncNow}
+                compact={true}
+              />
+            </div>
 
-      {/* Content */}
-      <div className="flex-1 min-h-0 flex flex-col bg-gray-50">
-        {activeTab === 'timeline' ? (
-          <Timeline data={planData} />
-        ) : (
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="max-w-7xl mx-auto">
+            {/* Tabs */}
+            <Tabs tabs={TABS} activeTab={activeTab} onChange={(id) => setActiveTab(id as PlanTab)} />
+
+            {/* Tab Content */}
+            <div className="mt-6">
               {activeTab === 'mission' && <MissionControl data={planData} />}
+              {activeTab === 'timeline' && <Timeline data={planData} />}
               {activeTab === 'settings' && <PlanSettings data={planData} />}
             </div>
-          </div>
-        )}
+          </Card>
+        </div>
       </div>
     </div>
   )
