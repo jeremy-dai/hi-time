@@ -1,21 +1,59 @@
-import { useState, useRef, useEffect } from 'react'
-import type { PlanTracker } from '../../../hooks/useQuarterlyPlan'
-import { Target, Edit2, Check, X } from 'lucide-react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import type { PlanTracker, PlanWeek } from '../../../hooks/useQuarterlyPlan'
+import { Target, Edit2, Check, X, CheckCircle2, Circle, Clock, AlertCircle, ChevronRight } from 'lucide-react'
 import { cn } from '../../../utils/classNames'
+import { Modal } from '../../shared/Modal'
 
 interface KPICardProps {
   tracker: PlanTracker
   className?: string
   onUpdate?: (value: string | number) => void
   compact?: boolean
+  weeks?: PlanWeek[]
 }
 
-export function KPICard({ tracker, className, onUpdate, compact = false }: KPICardProps) {
+export function KPICard({ tracker, className, onUpdate, compact = false, weeks }: KPICardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(tracker.current)
+  const [showDetailModal, setShowDetailModal] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  
+
   const Icon = Target
+
+  // Get tasks for this tracker grouped by week
+  const tasksByWeek = useMemo(() => {
+    if (!weeks) return []
+
+    const grouped: Array<{
+      weekNumber: number
+      weekName: string
+      tasks: Array<{
+        id: string
+        title: string
+        status: string
+      }>
+    }> = []
+
+    for (const week of weeks) {
+      const matchingTasks = week.todos.filter(todo => todo.typeId === tracker.id)
+      if (matchingTasks.length > 0) {
+        grouped.push({
+          weekNumber: week.weekNumber,
+          weekName: week.name || week.theme || `Week ${week.weekNumber}`,
+          tasks: matchingTasks.map(t => ({
+            id: t.id,
+            title: t.title || t.name || '',
+            status: t.status || 'not_started'
+          }))
+        })
+      }
+    }
+
+    return grouped
+  }, [weeks, tracker.id])
+
+  const hasDetails = tasksByWeek.length > 0
+  const isClickable = hasDetails && !isEditing
 
   // Calculate progress percentage for numeric values
   const baseline = typeof tracker.baseline === 'number' ? tracker.baseline : 0
@@ -65,13 +103,48 @@ export function KPICard({ tracker, className, onUpdate, compact = false }: KPICa
     if (e.key === 'Escape') handleCancel()
   }
 
+  const handleCardClick = () => {
+    if (isClickable) {
+      setShowDetailModal(true)
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'done':
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />
+      case 'in_progress':
+        return <Clock className="h-4 w-4 text-blue-600" />
+      case 'blocked':
+        return <AlertCircle className="h-4 w-4 text-red-600" />
+      default:
+        return <Circle className="h-4 w-4 text-gray-400" />
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'done':
+        return 'Done'
+      case 'in_progress':
+        return 'In Progress'
+      case 'blocked':
+        return 'Blocked'
+      default:
+        return 'Not Started'
+    }
+  }
+
   return (
+    <>
     <div
+      onClick={handleCardClick}
       className={cn(
         'group relative bg-linear-to-br from-white to-gray-50/50 rounded-xl border transition-all duration-300',
         compact ? 'p-4' : 'p-5',
         !isEditing && 'border-gray-200 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50',
         isEditing && `ring-2 border-transparent shadow-lg ${ringColorClass}`,
+        isClickable && 'cursor-pointer',
         className
       )}
     >
@@ -194,6 +267,66 @@ export function KPICard({ tracker, className, onUpdate, compact = false }: KPICa
           </div>
         </div>
       )}
+
+      {/* Click indicator for cards with details */}
+      {hasDetails && !isEditing && (
+        <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          <ChevronRight className="h-4 w-4 text-gray-400" />
+        </div>
+      )}
     </div>
+
+    {/* Detail Modal */}
+    <Modal
+      isOpen={showDetailModal}
+      onClose={() => setShowDetailModal(false)}
+      title={tracker.name}
+      description={`${tracker.current} / ${tracker.target} tasks completed`}
+      icon={<Target className={iconColorClass} />}
+      maxWidth="lg"
+    >
+      <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+        {tasksByWeek.map(({ weekNumber, weekName, tasks }) => (
+          <div key={weekNumber} className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                  Week {weekNumber}
+                </span>
+                <span className="text-sm font-medium text-gray-700">{weekName}</span>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-100">
+              {tasks.map(task => (
+                <div key={task.id} className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
+                  {getStatusIcon(task.status)}
+                  <span className={cn(
+                    "flex-1 text-sm",
+                    task.status === 'done' && "text-gray-500 line-through"
+                  )}>
+                    {task.title}
+                  </span>
+                  <span className={cn(
+                    "text-xs px-2 py-0.5 rounded-full",
+                    task.status === 'done' && "bg-green-100 text-green-700",
+                    task.status === 'in_progress' && "bg-blue-100 text-blue-700",
+                    task.status === 'blocked' && "bg-red-100 text-red-700",
+                    task.status === 'not_started' && "bg-gray-100 text-gray-600"
+                  )}>
+                    {getStatusLabel(task.status)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {tasksByWeek.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No tasks found for this tracker.
+          </div>
+        )}
+      </div>
+    </Modal>
+    </>
   )
 }

@@ -125,7 +125,15 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mb-3">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">Week {cycle.startWeek} - {cycle.endWeek}</span>
+            <span className="text-xs font-medium">
+              Week {cycle.startWeek} - {cycle.endWeek}
+              {cycle.weeks.length > 0 && (
+                <>
+                  <span className="mx-1.5">•</span>
+                  {cycle.weeks[0].startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {cycle.weeks[cycle.weeks.length - 1].endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </>
+              )}
+            </span>
           </div>
           {cycle.theme && (
             <div className="flex items-center gap-2">

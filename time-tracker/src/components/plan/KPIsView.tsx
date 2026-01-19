@@ -13,7 +13,8 @@ export function KPIsView({ data }: KPIsViewProps) {
     syncStatus,
     lastSynced,
     hasUnsavedChanges,
-    syncNow
+    syncNow,
+    allWeeks
   } = data
 
   return (
@@ -47,6 +48,7 @@ export function KPIsView({ data }: KPIsViewProps) {
                   tracker={tracker}
                   onUpdate={(value) => updateTrackerValue(tracker.id, value)}
                   compact={true}
+                  weeks={allWeeks}
                 />
               </div>
             ))}

@@ -5,16 +5,10 @@ import { CheckCircle2, Circle, Edit2, FileText, Target, HelpCircle, Layout, Chev
 import { WeekEditModal } from './WeekEditModal'
 import { TemplateModal } from './TemplateModal'
 
-interface WorkType {
-  name: string
-  description?: string
-  color?: string
-}
-
 interface WeekCardProps {
   week: PlanWeek
   templates?: Record<string, string>
-  workTypes?: WorkType[]
+  workTypes?: Array<{ name: string; description?: string }>
   onTodoStatusChange?: (todoId: string, status: 'not_started' | 'in_progress' | 'blocked' | 'done') => void
   onEdit?: (updates: {
     name?: string
@@ -34,7 +28,7 @@ const STATUS_CONFIG: Record<PlanWeek['status'], { label: string, color: string, 
   not_started: { label: 'Todo', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
 }
 
-export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
+export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
   const isDone = week.status === 'completed'
   const isCurrent = week.status === 'current'
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -89,6 +83,11 @@ export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete
                   {statusStyle.label}
                 </span>
               </div>
+
+              {/* Date range */}
+              <p className="text-xs text-gray-500 mt-1 ml-1">
+                {week.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {week.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
               
               {week.theme && (
                 <p className="text-xs text-gray-500 italic mt-1 ml-1">
@@ -265,6 +264,8 @@ export function WeekCard({ week, templates, onTodoStatusChange, onEdit, onDelete
             onClose={() => setIsEditModalOpen(false)}
             onSave={onEdit}
             onDelete={onDelete}
+            workTypes={workTypes}
+            templates={templates}
           />
         )}
 

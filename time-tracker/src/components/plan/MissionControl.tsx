@@ -375,6 +375,7 @@ export function MissionControl({ data }: MissionControlProps) {
                   tracker={tracker}
                   onUpdate={areTrackersComputed ? undefined : (value) => updateTrackerValue(tracker.id, value)}
                   compact={true}
+                  weeks={currentCycle?.weeks}
                 />
               ))}
             </div>
