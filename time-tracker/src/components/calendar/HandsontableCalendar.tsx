@@ -84,6 +84,39 @@ export function HandsontableCalendar({
   } | null>(null)
   const previousTimeCellRef = useRef<HTMLElement | null>(null)
   const rowPositionsCache = useRef<{ positions: number[], heights: number[] } | null>(null)
+  
+  const calendarScrollRef = useRef<HTMLDivElement>(null)
+  const summaryScrollRef = useRef<HTMLDivElement>(null)
+
+  // Sync scrolling between calendar and summary
+  const handleScroll = (source: 'calendar' | 'summary') => {
+    const calendar = calendarScrollRef.current
+    const summary = summaryScrollRef.current
+    if (!calendar || !summary) return
+
+    if (source === 'calendar') {
+      summary.scrollLeft = calendar.scrollLeft
+    } else {
+      calendar.scrollLeft = summary.scrollLeft
+    }
+  }
+
+  // Auto-scroll to current day on mobile load
+  useEffect(() => {
+    const scrollToCurrentDay = () => {
+      if (window.innerWidth < 815 && calendarScrollRef.current) {
+        const currentDayIndex = new Date().getDay()
+        // 45px is time column width, 110px is day column width
+        // Center the current day if possible
+        const targetScroll = 45 + (currentDayIndex * 110) - (window.innerWidth / 2) + 55
+        calendarScrollRef.current.scrollLeft = Math.max(0, targetScroll)
+      }
+    }
+
+    // Small delay to ensure rendering
+    const timer = setTimeout(scrollToCurrentDay, 100)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Cache row positions when table renders/updates
   useEffect(() => {
@@ -967,7 +1000,12 @@ export function HandsontableCalendar({
   return (
     <div className="flex flex-col h-full">
       {/* Handsontable */}
-      <div className="flex-1 relative">
+      <div 
+        ref={calendarScrollRef}
+        className="flex-1 relative overflow-x-auto"
+        onScroll={() => handleScroll('calendar')}
+      >
+        <div className="min-w-[815px] h-full relative">
         {/* Current time indicator */}
         {currentTimePosition !== null && (
           <div
@@ -1092,6 +1130,7 @@ export function HandsontableCalendar({
           stretchH="all"
           rowHeights={ROW_HEIGHT}
         />
+        </div>
       </div>
 
       {/* Custom Tooltip */}
@@ -1116,8 +1155,12 @@ export function HandsontableCalendar({
         className="mt-1 pt-2 pb-2 pr-4 rounded-xl border border-gray-200 bg-white shadow-sm"
         onMouseLeave={() => setTooltipState(null)}
       >
-        <div className="overflow-x-auto">
-          <table className="text-xs" style={{ tableLayout: 'auto', width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+        <div 
+          className="overflow-x-auto"
+          ref={summaryScrollRef}
+          onScroll={() => handleScroll('summary')}
+        >
+          <table className="text-xs min-w-[815px]" style={{ tableLayout: 'auto', width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
             <colgroup>
               <col style={{ width: '45px' }} />
               <col style={{ width: '110px' }} />
@@ -1316,9 +1359,9 @@ export function HandsontableCalendar({
               left: contextMenu.x,
               zIndex: 50
             }}
-            className="bg-white border rounded-xl shadow-lg p-2 text-sm min-w-[180px]"
+            className="bg-white border rounded-xl shadow-lg p-2 text-sm min-w-[200px]"
           >
-            <div className="px-2 py-1 font-medium text-gray-900">
+            <div className="px-3 py-2 font-medium text-gray-900">
               Change category
             </div>
             <div className="flex flex-col p-1">
@@ -1331,14 +1374,14 @@ export function HandsontableCalendar({
                 return (
                   <div key={category} className="relative group">
                     <button
-                      className="px-2 py-1 w-full text-left rounded hover:bg-gray-100 flex items-center gap-2"
+                      className="px-3 py-2.5 w-full text-left rounded-lg hover:bg-gray-100 flex items-center gap-3"
                       onClick={() => handleCategorySelect(category)}
                     >
                       <span
                         className="w-4 h-4 rounded flex-shrink-0"
                         style={{ backgroundColor: colors.bg }}
                       />
-                      <span className="flex-1">{label}</span>
+                      <span className="flex-1 font-medium">{label}</span>
                       {normalizedSubs.length > 0 && <span className="text-gray-400">{contextMenu.submenuOnLeft ? '‹' : '›'}</span>}
                     </button>
 
@@ -1347,7 +1390,7 @@ export function HandsontableCalendar({
                       <div
                         className={`absolute ${contextMenu.submenuOnLeft ? 'right-full -mr-px' : 'left-full -ml-px'} top-0 bg-white border rounded-xl shadow-lg p-2 min-w-[200px] max-w-[250px] hidden group-hover:block z-50`}
                       >
-                        <div className="px-2 py-1 font-medium text-gray-900 text-xs">
+                        <div className="px-3 py-2 font-medium text-gray-900 text-xs uppercase tracking-wider">
                           Subcategory
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1357,7 +1400,7 @@ export function HandsontableCalendar({
                             return (
                               <button
                                 key={sub.index}
-                                className="px-2 py-1 rounded text-left hover:bg-gray-100 flex items-center gap-2 text-sm"
+                                className="px-3 py-2.5 rounded-lg text-left hover:bg-gray-100 flex items-center gap-3 text-sm"
                                 onClick={() => handleCategorySelect(category, sub.name, sub.index)}
                               >
                                 <span

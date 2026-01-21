@@ -35,7 +35,7 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
           return (
             <div key={cat} className="flex items-center gap-2 min-w-0">
               {/* Label */}
-              <div className="w-24 flex-shrink-0 text-xs font-medium text-gray-600 truncate">
+              <div className="w-16 sm:w-24 flex-shrink-0 text-xs font-medium text-gray-600 truncate">
                 {CATEGORY_LABELS[cat]}
               </div>
               {/* Bar */}
@@ -56,7 +56,7 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
                 <span className="font-medium text-gray-500 w-12 text-right whitespace-nowrap">
                   {percentage.toFixed(1)}%
                 </span>
-                <span className={cn('text-xs w-20 text-right whitespace-nowrap', delta > 0.5 ? 'text-green-600' : delta < -0.5 ? 'text-red-600' : 'text-gray-500')}>
+                <span className={cn('hidden sm:block text-xs w-20 text-right whitespace-nowrap', delta > 0.5 ? 'text-green-600' : delta < -0.5 ? 'text-red-600' : 'text-gray-500')}>
                   {delta > 0 ? '+' : ''}{delta.toFixed(1)}h vs avg
                 </span>
               </div>

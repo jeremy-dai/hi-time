@@ -167,11 +167,11 @@ export default function AnnualDashboard({
     <div className="space-y-6">
       {/* Analysis Period Banner with Year Selector and Buttons */}
       <div className={cn(
-        'rounded-xl p-4 flex items-center justify-between',
+        'rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
         'bg-emerald-50 text-emerald-900'
       )}>
         <div className="flex items-center space-x-3">
-          <CalendarRange className="w-5 h-5 text-emerald-600" />
+          <CalendarRange className="w-5 h-5 text-emerald-600 shrink-0" />
           <div>
             <h3 className="font-semibold text-sm">
               Analysis Period: {dateRangeLabel}
@@ -182,7 +182,7 @@ export default function AnnualDashboard({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
           {/* Year Navigator */}
           <YearNavigator
             year={year}
@@ -214,7 +214,7 @@ export default function AnnualDashboard({
               📊 Overview
             </h2>
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <SkeletonLoader variant="card" height="300px" />
                 <SkeletonLoader variant="card" height="300px" />
               </div>
@@ -238,7 +238,7 @@ export default function AnnualDashboard({
 
             <div className="space-y-6">
               {/* Category Breakdown and Productivity Streak - Side by Side */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <AnnualCategoryBreakdown ytdStats={ytdStats} />
                 <AnnualProductivityStreak streakMetrics={ytdStats.streakMetrics} />
               </div>

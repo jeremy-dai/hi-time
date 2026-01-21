@@ -53,22 +53,23 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
         </div>
       )}
 
-      <div className="flex flex-row items-center justify-between gap-4">
+      <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-4">
       {/* Left: Theme Input */}
-      <div className="flex-1 min-w-0 max-w-xl">
+      <div className="order-2 md:order-1 flex-1 min-w-0 w-full md:w-auto md:max-w-xl">
         {onChangeWeekTheme && (
           <input
             type="text"
             value={weekTheme || ''}
             onChange={(e) => onChangeWeekTheme(e.target.value)}
             placeholder="welcome to new york! it's been waiting for you"
-            className="w-full text-base font-semibold bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-gray-900 placeholder-gray-300"
+            className="w-full text-base font-semibold bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-gray-900 placeholder-gray-300 text-center md:text-left"
           />
         )}
       </div>
 
       {/* Right: Date Navigation + Sync Status + Start Time */}
-      <div className="flex items-center gap-3 shrink-0">
+      <div className="order-1 md:order-2 w-full md:w-auto flex items-center justify-between md:justify-end gap-3 shrink-0">
+        <div className="flex items-center gap-2 md:gap-3">
         {syncStatus && (
           <SyncStatusIndicator
             status={syncStatus}
@@ -91,14 +92,16 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
             </svg>
           </button>
         )}
+        </div>
 
+        <div className="flex items-center gap-3">
         <div className={cn(
           'flex items-center gap-1 p-1 rounded-full shadow-sm',
           'bg-white border border-gray-200'
         )}>
           <button
             className={cn(
-              'w-8 h-8 flex items-center justify-center rounded-full transition-colors',
+              'w-10 h-10 flex items-center justify-center rounded-full transition-colors',
               'text-gray-500 hover:bg-gray-100'
             )}
             onClick={() => onChangeDate(addWeeks(currentDate, -1))}
@@ -135,7 +138,7 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
 
           <button
             className={cn(
-              'w-8 h-8 flex items-center justify-center rounded-full transition-colors',
+              'w-10 h-10 flex items-center justify-center rounded-full transition-colors',
               'text-gray-500 hover:bg-gray-100'
             )}
             onClick={() => onChangeDate(addWeeks(currentDate, 1))}
@@ -148,7 +151,7 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
 
           <button
             className={cn(
-              'px-4 py-1.5 rounded-full text-sm font-bold transition-all ml-1',
+              'px-4 py-2 rounded-full text-sm font-bold transition-all ml-1',
               'bg-[hsl(var(--color-brand-primary))] text-black hover:brightness-110 shadow-sm'
             )}
             onClick={() => onChangeDate(new Date())}
@@ -158,7 +161,7 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
         </div>
 
         {onChangeStartingHour && (
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="hidden sm:flex flex-col items-center gap-0.5">
             <span className="text-[10px] text-gray-400 font-medium">Start</span>
             <select
               value={startingHour}
@@ -173,6 +176,7 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
             </select>
           </div>
         )}
+        </div>
       </div>
     </div>
     </div>

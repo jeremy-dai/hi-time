@@ -511,8 +511,8 @@ export default function WeeklyReview() {
 
   return (
     <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
-      {/* Vertical Season Navigation */}
-      <div className="w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
+      {/* Vertical Season Navigation - Hidden on mobile */}
+      <div className="hidden md:flex w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
         <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
           Seasons
         </div>
@@ -584,7 +584,7 @@ export default function WeeklyReview() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-5xl mx-auto p-6 pb-12">
+        <div className="max-w-5xl mx-auto p-3 sm:p-6 pb-12">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-start justify-between mb-6">
@@ -630,6 +630,62 @@ export default function WeeklyReview() {
                 onSyncNow={hasUnsavedChanges ? syncNow : annualHasUnsavedChanges ? annualSyncNow : undefined}
                 compact={true}
               />
+            </div>
+
+            {/* Mobile Horizontal Season Navigation */}
+            <div className="md:hidden mt-4 flex overflow-x-auto gap-2 pb-2 -mx-2 px-2 scrollbar-hide">
+              {/* Annual Review Tab */}
+              {showAnnualReview && (
+                <button
+                  onClick={() => scrollToSeason('Annual')}
+                  className={cn(
+                    "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2",
+                    activeSeason === 'Annual'
+                      ? "bg-purple-500 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  )}
+                >
+                  <Sparkles className="w-4 h-4" strokeWidth={2.5} />
+                  <span>Annual</span>
+                  {annualReview?.review && (
+                    <div className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      activeSeason === 'Annual' ? "bg-white" : "bg-purple-500"
+                    )} />
+                  )}
+                </button>
+              )}
+
+              {/* Season Tabs */}
+              {activeSeasons.map((season) => {
+                const style = getSeasonStyle(season)
+                const SeasonIcon = style.icon
+                const weeks = seasonData[season]
+                const reviewCount = weeks.filter(w => reviews[w]?.review).length
+                const isActive = activeSeason === season
+
+                return (
+                  <button
+                    key={season}
+                    onClick={() => scrollToSeason(season)}
+                    className={cn(
+                      "flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2",
+                      isActive
+                        ? cn(style.tabBg, "text-white shadow-md")
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    )}
+                  >
+                    <SeasonIcon className="w-4 h-4" strokeWidth={2.5} />
+                    <span>{season}</span>
+                    <span className={cn(
+                      "px-1.5 py-0.5 rounded-full text-xs font-bold",
+                      isActive ? "bg-white/20 text-white" : cn(style.badgeBg, style.badgeText)
+                    )}>
+                      {reviewCount}
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 

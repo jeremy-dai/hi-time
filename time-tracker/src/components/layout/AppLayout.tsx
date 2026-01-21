@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { Menu, X } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
 interface AppLayoutProps {
@@ -8,15 +9,62 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ sidebar, header, children }: AppLayoutProps) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   return (
     <div className={cn(
       'min-h-screen transition-colors duration-300',
       'bg-gray-50 text-gray-900'
     )}>
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)}
+          className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label="Open menu"
+        >
+          <Menu size={24} />
+        </button>
+        <div className="font-bold text-lg text-gray-900">Hi-Time</div>
+        <div className="w-10" /> {/* Spacer for balance */}
+      </div>
+
       <div className="max-w-[1920px] mx-auto p-2 md:p-4 flex flex-col md:flex-row gap-4">
-        <aside className="w-full md:w-[200px] md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
+        
+        {/* Mobile Sidebar Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 md:hidden animate-in fade-in duration-200"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Mobile Sidebar Drawer */}
+        <aside className={cn(
+          "fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out md:hidden flex flex-col",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}>
+           <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
+             <span className="font-bold text-lg">Menu</span>
+             <button 
+               onClick={() => setIsMobileMenuOpen(false)}
+               className="p-2 -mr-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+               aria-label="Close menu"
+             >
+               <X size={20} />
+             </button>
+           </div>
+           <div className="flex-1 overflow-y-auto p-4" onClick={() => setIsMobileMenuOpen(false)}>
+              {sidebar}
+           </div>
+        </aside>
+
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:block w-[200px] md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
           {sidebar}
         </aside>
+        
         <div className="flex-1 min-w-0 flex flex-col h-full">
           {header && (
             <div className={cn(

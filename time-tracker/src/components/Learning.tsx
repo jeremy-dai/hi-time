@@ -380,7 +380,7 @@ export function Learning() {
     <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
       {/* Left Sidebar - Tags Navigation */}
       {activeTab === 'documents' && tagOptions.length > 1 && (
-        <div className="w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
+        <div className="hidden md:flex w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
           <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
             Tags
           </div>
@@ -459,6 +459,25 @@ export function Learning() {
           {/* Documents Tab */}
           {activeTab === 'documents' && (
             <div>
+              {/* Mobile Tag Filter */}
+              {tagOptions.length > 1 && (
+                <div className="md:hidden flex overflow-x-auto gap-2 mb-6 pb-2 -mx-2 px-2 scrollbar-hide">
+                  {tagOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setSelectedTagFilter(option.value)}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+                        selectedTagFilter === option.value
+                          ? "bg-emerald-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {isLoading ? (
                 <SkeletonLoader variant="card" height="400px" />
               ) : documents.length === 0 ? (

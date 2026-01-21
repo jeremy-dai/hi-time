@@ -114,11 +114,11 @@ export default function CurrentWeekDashboard({
     <div className="space-y-6">
       {/* Analysis Period Banner with Export Button */}
       <div className={cn(
-        'rounded-xl p-4 flex items-center justify-between',
+        'rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
         'bg-emerald-50 text-emerald-900'
       )}>
         <div className="flex items-center space-x-3">
-          <CalendarRange className="w-5 h-5 text-emerald-600" />
+          <CalendarRange className="w-5 h-5 text-emerald-600 shrink-0" />
           <div>
             <h3 className="font-semibold text-sm">
               Analysis Period: {dateRangeLabel}
@@ -128,7 +128,7 @@ export default function CurrentWeekDashboard({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
           <ExportInfo reportType="trends" />
           <ExportButton
             analysis={enhancedAnalysis}
@@ -148,7 +148,7 @@ export default function CurrentWeekDashboard({
 
         <div className="space-y-6">
           {/* Category Summary and Weekly Work Goal - Side by Side */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <KPICards
               latestWeekStats={currentStats}
               fourWeekAverage={fourWeekAverage as any}
@@ -169,7 +169,7 @@ export default function CurrentWeekDashboard({
 
         <div className="space-y-6">
           {/* 4-Week Trend and Average Daily Breakdown - Side by Side */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* 4-Week Trend Chart - Shows progression over time */}
             <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
 
@@ -183,7 +183,7 @@ export default function CurrentWeekDashboard({
           </div>
 
           {/* Weekly Rhythm Heatmap and Time Slot Patterns - Side by Side */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
             <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
           </div>
