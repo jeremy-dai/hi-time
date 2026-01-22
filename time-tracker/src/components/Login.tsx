@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { useToast } from './shared/ToastContext'
+import { toast } from 'sonner'
 
 export function Login() {
-  const { showToast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -22,7 +21,7 @@ export function Login() {
           password,
         })
         if (error) throw error
-        showToast('Account created! Please log in.', 'success')
+        toast.success('Account created! Please log in.')
         setIsSignUp(false)
         setEmail('')
         setPassword('')

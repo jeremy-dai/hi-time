@@ -18,9 +18,8 @@ import { useAuth } from './hooks/useAuth'
 import { useLocalStorageSync } from './hooks/useLocalStorageSync'
 import { useHistory } from './hooks/useHistory'
 import { HistoryModal } from './components/shared/HistoryModal'
-import { ToastProvider } from './components/shared/ToastContext'
-import { ToastContainer } from './components/shared/Toast'
 import { Modal } from './components/shared/Modal'
+import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
@@ -575,16 +574,16 @@ function App() {
   // Show login if not authenticated
   if (!isAuthenticated) {
     return (
-      <ToastProvider>
-        <ToastContainer />
+      <>
         <Login />
-      </ToastProvider>
+        <Toaster />
+      </>
     )
   }
 
   return (
-    <ToastProvider>
-      <ToastContainer />
+    <>
+      <Toaster />
       <AppLayout
       sidebar={
         <Sidebar
@@ -769,7 +768,7 @@ function App() {
         onDeleteSnapshot={deleteSnapshot}
         onClearHistory={clearHistory}
       />
-    </ToastProvider>
+    </>
   )
 }
 

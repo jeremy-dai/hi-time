@@ -6,7 +6,7 @@ import Card from './shared/Card'
 import { useLocalStorageSync } from '../hooks/useLocalStorageSync'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { normalizeSubcategories } from '../utils/subcategoryHelpers'
-import { useToast } from './shared/ToastContext'
+import { toast } from 'sonner'
 import { IconButton } from './shared/IconButton'
 import { ClearableInput } from './shared/ClearableInput'
 import { SkeletonLoader } from './shared/SkeletonLoader'
@@ -59,7 +59,6 @@ const TABS = [
 ]
 
 export function Settings({ onSettingsSaved }: SettingsProps) {
-  const { showToast } = useToast()
   const [loading, setLoading] = useState(true)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [activeTab, setActiveTab] = useState('categories')
@@ -180,7 +179,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
   async function handleBulkExport() {
     const validation = validateExportRange()
     if (!validation.valid) {
-      showToast(validation.error!, 'warning')
+      toast.warning(validation.error!)
       return
     }
 
@@ -195,10 +194,10 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       a.click()
 
       const weekDiff = calculateWeekDiff(exportStartWeek, exportEndWeek)
-      showToast(`Successfully exported ${weekDiff} weeks of data!`, 'success')
+      toast.success(`Successfully exported ${weekDiff} weeks of data!`)
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'Export failed'
-      showToast(`Export failed: ${errorMsg}`, 'error')
+      toast.error(`Export failed: ${errorMsg}`)
     } finally {
       setExporting(false)
     }
@@ -273,7 +272,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
 
     // Check for duplicates
     if (settings.timeDividers?.includes(newTime)) {
-      showToast('This time divider already exists', 'warning')
+      toast.warning('This time divider already exists')
       return
     }
 
@@ -288,7 +287,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
     // Check if the new value is a duplicate (excluding the current index)
     const isDuplicate = currentDividers.some((time, i) => i !== index && time === value)
     if (isDuplicate) {
-      showToast('This time divider already exists', 'warning')
+      toast.warning('This time divider already exists')
       return
     }
 
@@ -308,7 +307,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       ...settings,
       subcategories: {}
     })
-    showToast('All subcategories cleared', 'success')
+    toast.success('All subcategories cleared')
     setShowClearConfirm(false)
   }
 

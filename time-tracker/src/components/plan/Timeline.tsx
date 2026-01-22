@@ -4,7 +4,6 @@ import { WeekCard } from './components/WeekCard'
 import { WeekAddModal } from './components/WeekAddModal'
 import { CycleCard } from './components/CycleCard'
 import { WeekNavigation } from './components/WeekNavigation'
-import { SyncStatusIndicator } from '../SyncStatusIndicator'
 import { Plus } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
@@ -20,11 +19,7 @@ export function Timeline({ data }: TimelineProps) {
     updateCycleDetails,
     updateWeekComprehensive,
     deleteWeek,
-    addWeek,
-    syncStatus,
-    lastSynced,
-    hasUnsavedChanges,
-    syncNow
+    addWeek
   } = data
 
   // State for expanded cycles
@@ -145,9 +140,9 @@ export function Timeline({ data }: TimelineProps) {
 
   return (
     <div className="bg-gray-50 h-[calc(100vh-6rem)] flex overflow-hidden">
-      {/* Left Sidebar - Fixed height, scrolls independently */}
+      {/* Left Sidebar - Hidden on mobile, fixed height on desktop */}
       <div className={cn(
-        "h-full overflow-y-auto border-r border-gray-200 bg-gray-50/95 transition-all duration-300 shrink-0",
+        "h-full overflow-y-auto border-r border-gray-200 bg-gray-50/95 transition-all duration-300 shrink-0 hidden md:block",
         isSidebarCollapsed ? "w-16" : "w-64"
       )}>
         <WeekNavigation
@@ -168,16 +163,7 @@ export function Timeline({ data }: TimelineProps) {
       >
         <div className="max-w-5xl mx-auto p-6 flex flex-col gap-6">
         {/* Compact Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">Timeline</h1>
-          <SyncStatusIndicator
-            status={syncStatus}
-            lastSynced={lastSynced}
-            hasUnsavedChanges={hasUnsavedChanges}
-            onSyncNow={syncNow}
-            compact={true}
-          />
-        </div>
+        <h1 className="text-xl font-semibold text-gray-900">Timeline</h1>
 
         {/* Timeline by Cycle */}
         <div className="flex-1 space-y-6">

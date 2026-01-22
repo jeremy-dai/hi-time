@@ -7,7 +7,7 @@ import { Tabs } from './shared/Tabs'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Modal } from './shared/Modal'
-import { useToast } from './shared/ToastContext'
+import { toast } from 'sonner'
 import { MarkdownRenderer } from './shared/MarkdownRenderer'
 
 const TABS = [
@@ -35,9 +35,8 @@ function DocumentView({ doc, onUpdate, onDelete }: {
   const [editDescription, setEditDescription] = useState(doc.description || '')
   const [editTags, setEditTags] = useState((doc.tags || []).join(', '))
   const [isDeleting, setIsDeleting] = useState(false)
-  const { showToast } = useToast()
 
-  const handleSave = async () => {
+  const handleUpdate = async () => {
     const tagsArray = editTags.split(',').map(t => t.trim()).filter(Boolean)
     const success = await onUpdate(doc.id, {
       title: editTitle,
@@ -48,18 +47,18 @@ function DocumentView({ doc, onUpdate, onDelete }: {
 
     if (success) {
       setIsEditing(false)
-      showToast('Document saved successfully', 'success')
+      toast.success('Document saved successfully')
     } else {
-      showToast('Failed to save document', 'error')
+      toast.error('Failed to save document')
     }
   }
 
   const handleDelete = async () => {
     const success = await onDelete(doc.id)
     if (success) {
-      showToast('Document deleted', 'success')
+      toast.success('Document deleted')
     } else {
-      showToast('Failed to delete document', 'error')
+      toast.error('Failed to delete document')
     }
     setIsDeleting(false)
   }
@@ -87,7 +86,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
           {isEditing ? (
             <>
               <button
-                onClick={handleSave}
+                onClick={handleUpdate}
                 className="rounded-xl px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
               >
                 <Save size={14} />
@@ -229,7 +228,6 @@ export function Learning() {
   const [newContent, setNewContent] = useState('')
   const [newDescription, setNewDescription] = useState('')
   const [newTags, setNewTags] = useState('')
-  const { showToast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Extract unique tags and create filter options
@@ -263,7 +261,7 @@ export function Learning() {
 
   const handleCreate = async () => {
     if (!newTitle.trim()) {
-      showToast('Please enter a title', 'warning')
+      toast.warning('Please enter a title')
       return
     }
 
@@ -276,7 +274,7 @@ export function Learning() {
     })
 
     if (doc) {
-      showToast('Document created successfully', 'success')
+      toast.success('Document created successfully')
       setIsCreating(false)
       setNewTitle('')
       setNewContent('')
@@ -284,7 +282,7 @@ export function Learning() {
       setNewTags('')
       setActiveTab('documents')
     } else {
-      showToast('Failed to create document', 'error')
+      toast.error('Failed to create document')
     }
   }
 
@@ -300,7 +298,7 @@ export function Learning() {
       f => !f.name.endsWith('.md') && !f.name.endsWith('.markdown')
     )
     if (nonMarkdownFiles.length > 0) {
-      showToast(`Please upload only .md or .markdown files. Skipped: ${nonMarkdownFiles.map(f => f.name).join(', ')}`, 'warning')
+      toast.warning(`Please upload only .md or .markdown files. Skipped: ${nonMarkdownFiles.map(f => f.name).join(', ')}`)
     }
 
     const markdownFiles = fileArray.filter(
@@ -322,16 +320,16 @@ export function Learning() {
         setNewTitle(fileName)
         setNewContent(content)
         setIsCreating(true)
-        showToast(`Loaded "${fileName}"`, 'success')
+        toast.success(`Loaded "${fileName}"`)
       }
       reader.onerror = () => {
-        showToast('Failed to read file', 'error')
+        toast.error('Failed to read file')
       }
       reader.readAsText(file)
     }
     // Multiple files - create all directly
     else {
-      showToast(`Uploading ${markdownFiles.length} documents...`, 'info')
+      toast.info(`Uploading ${markdownFiles.length} documents...`)
 
       let successCount = 0
       let failCount = 0
@@ -364,11 +362,11 @@ export function Learning() {
       }
 
       if (successCount > 0) {
-        showToast(`Successfully uploaded ${successCount} document${successCount > 1 ? 's' : ''}`, 'success')
+        toast.success(`Successfully uploaded ${successCount} document${successCount > 1 ? 's' : ''}`)
         setActiveTab('documents')
       }
       if (failCount > 0) {
-        showToast(`Failed to upload ${failCount} document${failCount > 1 ? 's' : ''}`, 'error')
+        toast.error(`Failed to upload ${failCount} document${failCount > 1 ? 's' : ''}`)
       }
     }
 

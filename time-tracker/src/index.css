@@ -19,6 +19,25 @@
   --color-accent-success: 160 84% 50%;    /* Emerald for success */
   --color-accent-warning: 45 93% 65%;     /* Soft amber for warnings */
   --color-accent-error: 0 65% 65%;        /* Soft red for errors */
+
+  /* shadcn/ui semantic variables */
+  --color-primary: 160 84% 39%;          /* emerald-600 */
+  --color-primary-foreground: 0 0% 100%;
+  --color-secondary: 240 5% 96%;
+  --color-secondary-foreground: 240 6% 10%;
+  --color-muted: 240 5% 96%;
+  --color-muted-foreground: 240 4% 46%;
+  --color-accent: 84 81% 69%;            /* brand-primary */
+  --color-accent-foreground: 84 81% 20%;
+  --color-destructive: 0 84% 60%;
+  --color-destructive-foreground: 0 0% 100%;
+  --color-card: 0 0% 100%;
+  --color-card-foreground: 240 10% 10%;
+  --color-popover: 0 0% 100%;
+  --color-popover-foreground: 240 10% 10%;
+  --color-input: 240 6% 90%;
+  --color-ring: 160 84% 39%;             /* emerald-600 */
+  --radius: 0.75rem;                     /* matches rounded-xl */
 }
 
 :root {
