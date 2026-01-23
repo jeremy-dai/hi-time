@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DailyBreakdown } from '../../types/insights'
 import { CATEGORY_COLORS_HEX } from '../../constants/colors'
@@ -9,31 +9,6 @@ interface WeeklyBreakdownChartProps {
 }
 
 export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-
-  useEffect(() => {
-    if (!containerRef.current) return
-
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect()
-        setDimensions({ width, height })
-      }
-    }
-
-    // Delay initial measurement to ensure layout is complete
-    const timeoutId = setTimeout(updateDimensions, 0)
-
-    // Use ResizeObserver for responsive updates
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    resizeObserver.observe(containerRef.current)
-
-    return () => {
-      clearTimeout(timeoutId)
-      resizeObserver.disconnect()
-    }
-  }, [])
 
   const data = useMemo(() => {
     const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -67,10 +42,10 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
   }, [dailyPattern])
 
   return (
-    <div ref={containerRef} style={{ width: '100%', height: 320, minWidth: 300 }}>
-      {dimensions.width > 0 && dimensions.height > 0 && (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+    <div className="flex justify-center w-full">
+      <div style={{ width: '100%', maxWidth: '600px', minWidth: 200 }}>
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={data} barSize={50}>
           <XAxis
             dataKey="day"
             stroke="#6b7280"
@@ -101,7 +76,7 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
           ))}
           </BarChart>
         </ResponsiveContainer>
-      )}
+      </div>
     </div>
   )
 }

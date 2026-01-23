@@ -361,7 +361,6 @@ export function MissionControl({ data }: MissionControlProps) {
         {/* KPIs */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <div className="h-6 w-1 bg-linear-to-b from-blue-500 to-indigo-600 rounded-full" />
             <h2 className="text-lg font-bold text-gray-900">
               Key Performance Indicators
               {currentCycle && <span className="text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}

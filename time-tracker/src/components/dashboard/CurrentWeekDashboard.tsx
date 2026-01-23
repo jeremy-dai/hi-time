@@ -162,31 +162,25 @@ export default function CurrentWeekDashboard({
       </div>
 
       {/* TRENDS & DETAILED ANALYSIS SECTION */}
-      <div>
-        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-          📈 Trends & Detailed Analysis
-        </h2>
+      <div className="space-y-6">
+        {/* 4-Week Trend and Average Daily Breakdown - Side by Side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          {/* 4-Week Trend Chart - Shows progression over time */}
+          <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
 
-        <div className="space-y-6">
-          {/* 4-Week Trend and Average Daily Breakdown - Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {/* 4-Week Trend Chart - Shows progression over time */}
-            <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
-
-            {/* Average Daily Breakdown - Pattern across week */}
-            <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
-              <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
-                Average Daily Breakdown (4 Weeks)
-              </div>
-              <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
+          {/* Average Daily Breakdown - Pattern across week */}
+          <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
+            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
+              Average Daily Breakdown (4 Weeks)
             </div>
+            <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
           </div>
+        </div>
 
-          {/* Weekly Rhythm Heatmap and Time Slot Patterns - Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
-            <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
-          </div>
+        {/* Weekly Rhythm Heatmap and Time Slot Patterns - Side by Side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
+          <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
         </div>
       </div>
     </div>

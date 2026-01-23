@@ -144,22 +144,23 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
           No activity data available
         </div>
       ) : (
-        <div className="w-full overflow-x-auto">
-          {/* Month labels */}
-          <div className="relative mb-2" style={{ paddingLeft: '48px', height: '20px' }}>
-            {gridData.monthLabels.map(({ weekIndex, label }) => (
-              <span
-                key={`${weekIndex}-${label}`}
-                className="absolute text-xs font-medium text-gray-700"
-                style={{ left: `${48 + weekIndex * 16}px` }}
-              >
-                {label}
-              </span>
-            ))}
-          </div>
+        <div className="w-full">
+          <div className="overflow-x-auto">
+            {/* Month labels */}
+            <div className="relative mb-2" style={{ paddingLeft: '48px', height: '20px' }}>
+              {gridData.monthLabels.map(({ weekIndex, label }) => (
+                <span
+                  key={`${weekIndex}-${label}`}
+                  className="absolute text-xs font-medium text-gray-700"
+                  style={{ left: `${48 + weekIndex * 16}px` }}
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
 
-          {/* GitHub-style grid */}
-          <div className="flex gap-1">
+            {/* GitHub-style grid */}
+            <div className="flex gap-1">
             {/* Day labels */}
             <div className="flex flex-col gap-1 pr-2">
               {dayLabels.map((label, index) => (
@@ -228,17 +229,18 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="mt-6 flex items-center gap-2 text-xs text-gray-600">
-            <span>Less</span>
-            <div className="flex gap-1">
-              <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
-              <div className="w-3 h-3 rounded-sm bg-yellow-200" />
-              <div className="w-3 h-3 rounded-sm bg-yellow-300" />
-              <div className="w-3 h-3 rounded-sm bg-yellow-400" />
-              <div className="w-3 h-3 rounded-sm bg-yellow-500" />
+            {/* Legend */}
+            <div className="mt-6 flex items-center gap-2 text-xs text-gray-600">
+              <span>Less</span>
+              <div className="flex gap-1">
+                <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
+                <div className="w-3 h-3 rounded-sm bg-yellow-200" />
+                <div className="w-3 h-3 rounded-sm bg-yellow-300" />
+                <div className="w-3 h-3 rounded-sm bg-yellow-400" />
+                <div className="w-3 h-3 rounded-sm bg-yellow-500" />
+              </div>
+              <span>More</span>
             </div>
-            <span>More</span>
           </div>
         </div>
       )}

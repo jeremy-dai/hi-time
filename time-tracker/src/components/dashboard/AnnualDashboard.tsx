@@ -221,12 +221,7 @@ export default function AnnualDashboard({
               <SkeletonLoader variant="card" height="400px" />
             </div>
           </div>
-          <div>
-            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-              📈 Trends & Detailed Analysis
-            </h2>
-            <SkeletonLoader variant="card" height="500px" />
-          </div>
+          <SkeletonLoader variant="card" height="500px" />
         </div>
       ) : (
         <>
@@ -248,21 +243,12 @@ export default function AnnualDashboard({
             </div>
           </div>
 
-          {/* TRENDS & DETAILED ANALYSIS SECTION */}
-          <div>
-            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-              📈 Trends & Detailed Analysis
-            </h2>
-
-            <div className="space-y-6">
-              {/* Weekly Breakdown Chart */}
-              <AnnualWeeklyBreakdown
-                ytdStats={ytdStats}
-                weekThemes={weekThemes}
-                onUpdateTheme={onUpdateWeekTheme}
-              />
-            </div>
-          </div>
+          {/* Weekly Breakdown Chart */}
+          <AnnualWeeklyBreakdown
+            ytdStats={ytdStats}
+            weekThemes={weekThemes}
+            onUpdateTheme={onUpdateWeekTheme}
+          />
         </>
       )}
     </div>

@@ -645,7 +645,7 @@ function App() {
       </div>
 
       {/* Trends Dashboard */}
-      <div className={activeTab === 'trends' ? 'block' : 'hidden'}>
+      {activeTab === 'trends' && (
         <div className="animate-in fade-in duration-200">
           <Dashboard
             weekData={currentWeekData}
@@ -659,10 +659,10 @@ function App() {
             viewMode="trends"
           />
         </div>
-      </div>
+      )}
 
       {/* Annual Dashboard */}
-      <div className={activeTab === 'annual' ? 'block' : 'hidden'}>
+      {activeTab === 'annual' && (
         <div className="animate-in fade-in duration-200">
           <Dashboard
             weekData={currentWeekData}
@@ -676,7 +676,7 @@ function App() {
             viewMode="annual"
           />
         </div>
-      </div>
+      )}
 
       {/* Memories */}
       <div className={activeTab === 'memories' ? 'block' : 'hidden'}>

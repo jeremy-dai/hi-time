@@ -83,7 +83,8 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
         </p>
       </div>
 
-      <div className="w-full overflow-x-auto">
+      <div className="flex justify-center w-full">
+        <div className="max-w-2xl w-full overflow-x-auto">
         {/* Header Row - Days */}
         <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 mb-2">
           <div /> {/* Empty corner */}
@@ -167,10 +168,9 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
             })}
           </div>
         ))}
-      </div>
 
-      {/* Legend */}
-      <div className="mt-4 flex items-center justify-center gap-3">
+        {/* Legend */}
+        <div className="mt-4 flex items-center justify-center gap-3">
         <span className={cn('text-xs', 'text-gray-600')}>
           0
         </span>
@@ -184,6 +184,8 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
         <span className={cn('text-xs', 'text-gray-600')}>
           2+ hours/week
         </span>
+        </div>
+      </div>
       </div>
     </div>
   )

@@ -45,44 +45,39 @@ export function ActiveMissionCard({
   const progressPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
 
   return (
-    <div className={cn("flex flex-col gap-4 h-full", className)}>
-      {/* Enhanced Header */}
-      <div className="relative bg-linear-to-br from-emerald-500 via-teal-500 to-emerald-600 rounded-xl p-5 shadow-lg shadow-emerald-200/50 overflow-hidden">
-        {/* Decorative background */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-40 h-40 bg-white rounded-full blur-3xl" />
-        </div>
+    <div className={cn("flex flex-col gap-3 h-full", className)}>
+      {/* Refined Header */}
+      <div className="relative bg-white rounded-xl border border-gray-200 p-6 shadow-sm overflow-hidden">
+        {/* Subtle decorative accent */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-emerald-400 to-teal-500 opacity-60" />
 
-        <div className="relative flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-white/20 backdrop-blur-sm rounded-lg shadow-lg ring-1 ring-white/30">
-              <Target className="h-6 w-6 text-white drop-shadow" />
+        <div className="relative flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <div className="p-2.5 bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200/80 shadow-sm shrink-0">
+              <Target className="h-5 w-5 text-gray-700" />
             </div>
-            <div>
-              <h3 className="font-black text-white text-xl leading-tight drop-shadow-sm">Active Mission</h3>
-              <p className="text-emerald-50 text-sm font-semibold mt-1">Week {week.weekNumber}</p>
+            <div className="min-w-0">
+              <h3 className="font-bold text-gray-900 text-lg leading-tight">Active Mission</h3>
+              <p className="text-gray-500 text-sm font-medium mt-0.5">Week {week.weekNumber}</p>
             </div>
           </div>
 
-          {/* Progress Badge */}
-          <div className="flex flex-col items-end gap-1">
-            <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg ring-1 ring-white/30">
-              <div className="text-3xl font-black text-white drop-shadow-sm">{progressPct}%</div>
+          {/* Compact Progress Badge */}
+          <div className="flex flex-col items-end gap-0.5 shrink-0">
+            <div className="bg-linear-to-br from-gray-50 to-gray-100 border border-gray-200 px-3 py-1.5 rounded-lg">
+              <div className="text-2xl font-bold text-gray-900 leading-none">{progressPct}%</div>
             </div>
-            <span className="text-xs text-emerald-50 font-bold uppercase tracking-wider">Complete</span>
+            <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Complete</span>
           </div>
         </div>
 
-        {/* Mini Progress Bar */}
-        <div className="relative mt-4">
-          <div className="h-2 bg-white/20 backdrop-blur-sm rounded-full overflow-hidden shadow-inner">
+        {/* Refined Progress Bar */}
+        <div className="relative mt-5">
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-linear-to-r from-white via-emerald-100 to-white rounded-full transition-all duration-500 shadow-sm"
+              className="h-full bg-linear-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
               style={{ width: `${progressPct}%` }}
-            >
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
-            </div>
+            />
           </div>
         </div>
       </div>

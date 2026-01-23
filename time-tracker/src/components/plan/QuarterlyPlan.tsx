@@ -32,7 +32,7 @@ export function QuarterlyPlan() {
     <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-5xl mx-auto p-3 sm:p-6 pb-12">
+        <div className="p-3 sm:p-6 pb-12">
           <Card className="p-4 sm:p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">

@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from 'react'
 import type { TimeSlotPattern } from '../../types/insights'
 import { CATEGORY_KEYS } from '../../types/time'
 import { cn } from '../../utils/classNames'
@@ -11,28 +10,6 @@ interface TimeSlotAnalysisProps {
 }
 
 export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-
-  useEffect(() => {
-    if (!containerRef.current) return
-
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const { width, height } = containerRef.current.getBoundingClientRect()
-        setDimensions({ width, height })
-      }
-    }
-
-    // Initial measurement
-    updateDimensions()
-
-    // Use ResizeObserver for responsive updates
-    const resizeObserver = new ResizeObserver(updateDimensions)
-    resizeObserver.observe(containerRef.current)
-
-    return () => resizeObserver.disconnect()
-  }, [])
 
   if (timeSlotData.length === 0) {
     return (
@@ -125,52 +102,52 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
         </div>
       )}
 
-      <div ref={containerRef} className="h-[300px] w-full min-w-[300px]">
-        {dimensions.width > 0 && dimensions.height > 0 && (
-          <ResponsiveContainer width="100%" height="100%">
+      <div className="flex justify-center w-full">
+        <div className="w-full max-w-2xl" style={{ minWidth: 200 }}>
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart
             data={chartData}
             margin={{ top: 10, right: 0, left: -10, bottom: 5 }}
           >
-            <XAxis
-              dataKey="time"
-              hide={true}
-            />
-            <YAxis
-              width={25}
-              tick={{ fontSize: 11 }}
-              stroke="#9ca3af"
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                border: '1px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '12px'
-              }}
-              formatter={(value: number | undefined) => value !== undefined ? `${value.toFixed(1)} hrs` : ''}
-            />
-            {categories.map((category) => {
-              // Find the category key for this label
-              const categoryKey = Object.entries(CATEGORY_LABELS).find(
-                ([, label]) => label === category
-              )?.[0] as keyof typeof CATEGORY_COLORS_HEX | undefined
+          <XAxis
+            dataKey="time"
+            hide={true}
+          />
+          <YAxis
+            width={25}
+            tick={{ fontSize: 11 }}
+            stroke="#9ca3af"
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '12px'
+            }}
+            formatter={(value: number | undefined) => value !== undefined ? `${value.toFixed(1)} hrs` : ''}
+          />
+          {categories.map((category) => {
+            // Find the category key for this label
+            const categoryKey = Object.entries(CATEGORY_LABELS).find(
+              ([, label]) => label === category
+            )?.[0] as keyof typeof CATEGORY_COLORS_HEX | undefined
 
-              const color = categoryKey ? CATEGORY_COLORS_HEX[categoryKey]?.bg : '#9ca3af'
+            const color = categoryKey ? CATEGORY_COLORS_HEX[categoryKey]?.bg : '#9ca3af'
 
-              return (
-                <Bar
-                  key={category}
-                  dataKey={category}
-                  stackId="a"
-                  fill={color}
-                  radius={[4, 4, 0, 0]}
-                />
-              )
-            })}
-            </BarChart>
-          </ResponsiveContainer>
-        )}
+            return (
+              <Bar
+                key={category}
+                dataKey={category}
+                stackId="a"
+                fill={color}
+                radius={[4, 4, 0, 0]}
+              />
+            )
+          })}
+          </BarChart>
+        </ResponsiveContainer>
+        </div>
       </div>
     </div>
   )

@@ -287,8 +287,8 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
     >
       <div className="space-y-4 max-h-[60vh] overflow-y-auto">
         {tasksByWeek.map(({ weekNumber, weekName, tasks }) => (
-          <div key={weekNumber} className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+          <div key={weekNumber} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+            <div className="bg-gray-100 px-4 py-2 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
                   Week {weekNumber}
@@ -296,9 +296,9 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
                 <span className="text-sm font-medium text-gray-700">{weekName}</span>
               </div>
             </div>
-            <div className="divide-y divide-gray-100">
+            <div className="bg-white divide-y divide-gray-100">
               {tasks.map(task => (
-                <div key={task.id} className="px-4 py-3 flex items-center gap-3 hover:bg-gray-50">
+                <div key={task.id} className="bg-white px-4 py-3 flex items-center gap-3 hover:bg-gray-50 transition-colors">
                   {getStatusIcon(task.status)}
                   <span className={cn(
                     "flex-1 text-sm",
@@ -307,7 +307,7 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
                     {task.title}
                   </span>
                   <span className={cn(
-                    "text-xs px-2 py-0.5 rounded-full",
+                    "text-xs px-2 py-0.5 rounded-full font-medium",
                     task.status === 'done' && "bg-green-100 text-green-700",
                     task.status === 'in_progress' && "bg-blue-100 text-blue-700",
                     task.status === 'blocked' && "bg-red-100 text-red-700",
