@@ -1,27 +1,13 @@
-import { useState, useRef, useMemo } from 'react'
-import { BookOpen, FileText, Settings as SettingsIcon, Plus, Trash2, Edit, Save, X, Tag, Upload } from 'lucide-react'
+import { useState, useRef, useMemo, useEffect } from 'react'
+import { BookOpen, FileText, Plus, Trash2, Edit, Save, X, Tag, Upload, PanelLeftClose, PanelLeft, Menu } from 'lucide-react'
 import { useLearningDocuments } from '../hooks/useLearningDocuments'
 import type { LearningDocument } from '../types/time'
 import Card from './shared/Card'
-import { Tabs } from './shared/Tabs'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Modal } from './shared/Modal'
 import { toast } from 'sonner'
 import { MarkdownRenderer } from './shared/MarkdownRenderer'
-
-const TABS = [
-  {
-    id: 'documents',
-    label: 'Documents',
-    icon: <FileText size={16} />
-  },
-  {
-    id: 'manage',
-    label: 'Manage',
-    icon: <SettingsIcon size={16} />
-  }
-]
 
 // Document Viewer/Editor Component
 function DocumentView({ doc, onUpdate, onDelete }: {
@@ -211,8 +197,6 @@ function DocumentView({ doc, onUpdate, onDelete }: {
 }
 
 export function Learning() {
-  const [activeTab, setActiveTab] = useState('documents')
-  const [selectedTagFilter, setSelectedTagFilter] = useState<string>('all')
   const {
     documents,
     isLoading,
@@ -223,6 +207,9 @@ export function Learning() {
     deleteDocument
   } = useLearningDocuments()
 
+  const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
@@ -230,34 +217,18 @@ export function Learning() {
   const [newTags, setNewTags] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Extract unique tags and create filter options
-  const { tagOptions, filteredDocuments } = useMemo(() => {
-    // Get all unique tags with counts
-    const tagCounts = new Map<string, number>()
-    documents.forEach(doc => {
-      doc.tags?.forEach(tag => {
-        tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1)
-      })
-    })
+  // Derive selected document
+  const selectedDoc = useMemo(() =>
+    documents.find(d => d.id === selectedDocId) || null,
+    [documents, selectedDocId]
+  )
 
-    // Create options array
-    const options = [
-      { value: 'all', label: `All Documents (${documents.length})` },
-      ...Array.from(tagCounts.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([tag, count]) => ({
-          value: tag,
-          label: `${tag} (${count})`
-        }))
-    ]
-
-    // Filter documents based on selected tag
-    const filtered = selectedTagFilter === 'all'
-      ? documents
-      : documents.filter(doc => doc.tags?.includes(selectedTagFilter))
-
-    return { tagOptions: options, filteredDocuments: filtered }
-  }, [documents, selectedTagFilter])
+  // Auto-select first doc when documents load
+  useEffect(() => {
+    if (documents.length > 0 && !selectedDocId) {
+      setSelectedDocId(documents[0].id)
+    }
+  }, [documents, selectedDocId])
 
   const handleCreate = async () => {
     if (!newTitle.trim()) {
@@ -280,7 +251,7 @@ export function Learning() {
       setNewContent('')
       setNewDescription('')
       setNewTags('')
-      setActiveTab('documents')
+      setSelectedDocId(doc.id)
     } else {
       toast.error('Failed to create document')
     }
@@ -363,7 +334,6 @@ export function Learning() {
 
       if (successCount > 0) {
         toast.success(`Successfully uploaded ${successCount} document${successCount > 1 ? 's' : ''}`)
-        setActiveTab('documents')
       }
       if (failCount > 0) {
         toast.error(`Failed to upload ${failCount} document${failCount > 1 ? 's' : ''}`)
@@ -374,286 +344,282 @@ export function Learning() {
     e.target.value = ''
   }
 
-  return (
-    <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
-      {/* Left Sidebar - Tags Navigation */}
-      {activeTab === 'documents' && tagOptions.length > 1 && (
-        <div className="hidden md:flex w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
-          <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-            Tags
+  // Handle document deletion - select another doc if current is deleted
+  const handleDeleteDoc = async (id: string) => {
+    const success = await deleteDocument(id)
+    if (success && selectedDocId === id) {
+      const remaining = documents.filter(d => d.id !== id)
+      setSelectedDocId(remaining.length > 0 ? remaining[0].id : null)
+    }
+    return success
+  }
+
+  // Format date for display
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+
+    if (diffDays === 0) return 'Today'
+    if (diffDays === 1) return 'Yesterday'
+    if (diffDays < 7) return `${diffDays} days ago`
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  // Sidebar content (shared between desktop and mobile)
+  const sidebarContent = (
+    <div className="flex flex-col h-full">
+      {/* Header with actions */}
+      <div className="p-3 border-b border-gray-200">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsCreating(true)}
+            className="flex-1 rounded-xl px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+          >
+            <Plus size={16} />
+            New
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".md,.markdown"
+            multiple
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-xl p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+            title="Upload markdown files"
+          >
+            <Upload size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Document list */}
+      <div className="flex-1 overflow-y-auto">
+        {documents.length === 0 ? (
+          <div className="p-4 text-center text-gray-500 text-sm">
+            No documents yet
           </div>
-
-          {tagOptions.map((option) => {
-            const isActive = selectedTagFilter === option.value
-            const isAll = option.value === 'all'
-            const count = option.label.match(/\((\d+)\)/)?.[1] || '0'
-
-            return (
+        ) : (
+          <div className="py-2">
+            {documents.map(doc => (
               <button
-                key={option.value}
-                onClick={() => setSelectedTagFilter(option.value)}
-                className={`relative p-3 rounded-xl transition-all flex flex-col items-center gap-2 ${
-                  isActive
-                    ? "bg-emerald-500 text-white shadow-lg"
-                    : "bg-gray-50 hover:bg-gray-100 text-gray-600"
+                key={doc.id}
+                onClick={() => {
+                  setSelectedDocId(doc.id)
+                  setMobileSidebarOpen(false)
+                }}
+                className={`w-full text-left px-3 py-3 border-b border-gray-100 transition-colors ${
+                  selectedDocId === doc.id
+                    ? 'bg-emerald-50 border-l-2 border-l-emerald-600'
+                    : 'hover:bg-gray-50'
                 }`}
               >
-                <div className="relative">
-                  {isAll ? (
-                    <FileText className="w-7 h-7" strokeWidth={2.5} />
-                  ) : (
-                    <Tag className="w-7 h-7" strokeWidth={2.5} />
-                  )}
-                  {/* Count badge for individual tags */}
-                  {!isAll && (
-                    <div className={`absolute -right-2 -top-2 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center ${
-                      isActive ? "bg-white text-gray-900" : "bg-emerald-100 text-emerald-700"
-                    }`}>
-                      {count}
-                    </div>
+                <p className={`font-medium text-sm line-clamp-1 ${
+                  selectedDocId === doc.id ? 'text-emerald-900' : 'text-gray-900'
+                }`}>
+                  {doc.title}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-gray-400">
+                    {formatDate(doc.updatedAt)}
+                  </span>
+                  {doc.tags && doc.tags.length > 0 && (
+                    <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      {doc.tags[0]}
+                    </span>
                   )}
                 </div>
-                <span className={`text-xs font-medium text-center leading-tight line-clamp-2 ${
-                  isActive ? "text-white" : "text-gray-700"
-                }`}>
-                  {option.value === 'all' ? 'All' : option.value}
-                </span>
-                {/* Show count for "All" below the label */}
-                {isAll && (
-                  <span className={`text-xs ${
-                    isActive ? "text-emerald-100" : "text-gray-400"
-                  }`}>
-                    {count}
-                  </span>
-                )}
               </button>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
+      {/* Mobile sidebar overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/30 z-40"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
       )}
+
+      {/* Mobile sidebar drawer */}
+      <div className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ${
+        mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="flex items-center justify-between p-3 border-b border-gray-200">
+          <h2 className="font-semibold text-gray-900">Documents</h2>
+          <button
+            onClick={() => setMobileSidebarOpen(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        {sidebarContent}
+      </div>
+
+      {/* Desktop sidebar */}
+      <div className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+        sidebarCollapsed ? 'w-12' : 'w-72'
+      }`}>
+        {/* Collapse toggle */}
+        <div className="p-2 border-b border-gray-200 flex justify-end">
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+          </button>
+        </div>
+
+        {!sidebarCollapsed && sidebarContent}
+      </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-5xl mx-auto p-6 pb-12">
-          <Card>
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <BookOpen className="w-6 h-6 text-emerald-600" />
-                <h1 className="text-2xl font-bold text-gray-900">Learning</h1>
-              </div>
-              <SyncStatusIndicator
-                status={syncStatus}
-                lastSynced={lastSynced}
-                hasUnsavedChanges={false}
-                compact={true}
-              />
+        <div className="max-w-4xl mx-auto p-6 pb-12">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+              >
+                <Menu size={20} />
+              </button>
+              <BookOpen className="w-6 h-6 text-emerald-600" />
+              <h1 className="text-2xl font-bold text-gray-900">Learning</h1>
             </div>
+            <SyncStatusIndicator
+              status={syncStatus}
+              lastSynced={lastSynced}
+              hasUnsavedChanges={false}
+              compact={true}
+            />
+          </div>
 
-            {/* Tabs */}
-            <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
-
-            <div className="mt-6">
-          {/* Documents Tab */}
-          {activeTab === 'documents' && (
-            <div>
-              {/* Mobile Tag Filter */}
-              {tagOptions.length > 1 && (
-                <div className="md:hidden flex overflow-x-auto gap-2 mb-6 pb-2 -mx-2 px-2 scrollbar-hide">
-                  {tagOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      onClick={() => setSelectedTagFilter(option.value)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
-                        selectedTagFilter === option.value
-                          ? "bg-emerald-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
+          {/* Create New Document Form */}
+          {isCreating && (
+            <Card className="mb-6">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
+                <Plus size={20} className="text-emerald-600" />
+                Create New Document
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                  <input
+                    type="text"
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Document title"
+                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    autoFocus
+                  />
                 </div>
-              )}
 
-              {isLoading ? (
-                <SkeletonLoader variant="card" height="400px" />
-              ) : documents.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">No learning documents yet</p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <input
+                    type="text"
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    placeholder="Short description or summary"
+                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+                  <input
+                    type="text"
+                    value={newTags}
+                    onChange={(e) => setNewTags(e.target.value)}
+                    placeholder="learning, programming, notes"
+                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Content (Markdown)</label>
+                  <textarea
+                    value={newContent}
+                    onChange={(e) => setNewContent(e.target.value)}
+                    rows={12}
+                    className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm resize-y"
+                    placeholder="# Your Markdown Here&#10;&#10;Write your notes in **markdown** format."
+                  />
+                </div>
+
+                <div className="flex gap-3">
                   <button
-                    onClick={() => setActiveTab('manage')}
-                    className="rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors"
+                    onClick={handleCreate}
+                    className="flex-1 rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors"
                   >
-                    Create Your First Document
+                    Create Document
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsCreating(false)
+                      setNewTitle('')
+                      setNewContent('')
+                      setNewDescription('')
+                      setNewTags('')
+                    }}
+                    className="rounded-xl px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm transition-colors"
+                  >
+                    Cancel
                   </button>
                 </div>
-              ) : (
-                <>
-                  {/* Filtered Documents */}
-                  {filteredDocuments.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Tag className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No documents with tag "{selectedTagFilter}"</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {filteredDocuments.map(doc => (
-                        <DocumentView
-                          key={doc.id}
-                          doc={doc}
-                          onUpdate={updateDocument}
-                          onDelete={deleteDocument}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Manage Tab */}
-          {activeTab === 'manage' && (
-            <div className="space-y-6">
-              {/* Create New Document */}
-              <div className="border border-gray-200 rounded-xl p-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
-                  <Plus size={20} className="text-emerald-600" />
-                  Create New Document
-                </h3>
-
-                {!isCreating ? (
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => setIsCreating(true)}
-                      className="w-full rounded-xl px-4 py-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium text-sm transition-colors border-2 border-dashed border-emerald-300"
-                    >
-                      + New Learning Document
-                    </button>
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200"></div>
-                      </div>
-                      <div className="relative flex justify-center text-xs">
-                        <span className="px-2 bg-white text-gray-500">or</span>
-                      </div>
-                    </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".md,.markdown"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full rounded-xl px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium text-sm transition-colors border border-gray-200 flex items-center justify-center gap-2"
-                    >
-                      <Upload size={16} />
-                      Upload Markdown Files (.md)
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-                      <input
-                        type="text"
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        placeholder="Document title"
-                        className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                      <input
-                        type="text"
-                        value={newDescription}
-                        onChange={(e) => setNewDescription(e.target.value)}
-                        placeholder="Short description or summary"
-                        className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
-                      <input
-                        type="text"
-                        value={newTags}
-                        onChange={(e) => setNewTags(e.target.value)}
-                        placeholder="learning, programming, notes"
-                        className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Content (Markdown)</label>
-                      <textarea
-                        value={newContent}
-                        onChange={(e) => setNewContent(e.target.value)}
-                        rows={12}
-                        className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm resize-y"
-                        placeholder="# Your Markdown Here&#10;&#10;Write your notes in **markdown** format."
-                      />
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleCreate}
-                        className="flex-1 rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors"
-                      >
-                        Create Document
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsCreating(false)
-                          setNewTitle('')
-                          setNewContent('')
-                          setNewDescription('')
-                          setNewTags('')
-                        }}
-                        className="rounded-xl px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {/* Document List */}
-              {documents.length > 0 && (
-                <div className="border border-gray-200 rounded-xl p-6">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-900">Your Documents ({documents.length})</h3>
-                  <div className="space-y-2">
-                    {documents.map(doc => (
-                      <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-900">{doc.title}</p>
-                          {doc.description && (
-                            <p className="text-sm text-gray-500 mt-0.5">{doc.description}</p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => setActiveTab('documents')}
-                          className="rounded-xl px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-medium transition-colors"
-                        >
-                          View
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            </Card>
           )}
-            </div>
-          </Card>
+
+          {/* Document Content */}
+          {isLoading ? (
+            <Card>
+              <SkeletonLoader variant="card" height="400px" />
+            </Card>
+          ) : documents.length === 0 && !isCreating ? (
+            <Card>
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 mb-4">No learning documents yet</p>
+                <button
+                  onClick={() => setIsCreating(true)}
+                  className="rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors"
+                >
+                  Create Your First Document
+                </button>
+              </div>
+            </Card>
+          ) : selectedDoc && !isCreating ? (
+            <Card>
+              <DocumentView
+                doc={selectedDoc}
+                onUpdate={updateDocument}
+                onDelete={handleDeleteDoc}
+              />
+            </Card>
+          ) : !isCreating ? (
+            <Card>
+              <div className="text-center py-12">
+                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Select a document from the sidebar</p>
+              </div>
+            </Card>
+          ) : null}
         </div>
       </div>
     </div>
