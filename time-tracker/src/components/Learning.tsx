@@ -1,13 +1,14 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
-import { BookOpen, FileText, Plus, Trash2, Edit, Save, X, Tag, Upload, PanelLeftClose, PanelLeft, Menu } from 'lucide-react'
+import { BookOpen, FileText, Plus, Trash2, Edit, Save, X, Tag, Upload } from 'lucide-react'
 import { useLearningDocuments } from '../hooks/useLearningDocuments'
 import type { LearningDocument } from '../types/time'
 import Card from './shared/Card'
-import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Modal } from './shared/Modal'
 import { toast } from 'sonner'
 import { MarkdownRenderer } from './shared/MarkdownRenderer'
+import { PageContainer } from './layout/PageContainer'
+import { PageHeader } from './layout/PageHeader'
 
 // Document Viewer/Editor Component
 function DocumentView({ doc, onUpdate, onDelete }: {
@@ -208,8 +209,6 @@ export function Learning() {
   } = useLearningDocuments()
 
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
@@ -408,10 +407,7 @@ export function Learning() {
             {documents.map(doc => (
               <button
                 key={doc.id}
-                onClick={() => {
-                  setSelectedDocId(doc.id)
-                  setMobileSidebarOpen(false)
-                }}
+                onClick={() => setSelectedDocId(doc.id)}
                 className={`w-full text-left px-3 py-3 border-b border-gray-100 transition-colors ${
                   selectedDocId === doc.id
                     ? 'bg-emerald-50 border-l-2 border-l-emerald-600'
@@ -442,72 +438,23 @@ export function Learning() {
   )
 
   return (
-    <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
-      {/* Mobile sidebar overlay */}
-      {mobileSidebarOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/30 z-40"
-          onClick={() => setMobileSidebarOpen(false)}
+    <PageContainer
+      sidebar={sidebarContent}
+      sidebarWidth="wide"
+      sidebarCollapsible={true}
+      sidebarDefaultCollapsed={false}
+      header={
+        <PageHeader
+          title="Learning"
+          icon={BookOpen}
+          sync={{
+            status: syncStatus,
+            lastSynced,
+            hasUnsavedChanges: false
+          }}
         />
-      )}
-
-      {/* Mobile sidebar drawer */}
-      <div className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ${
-        mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between p-3 border-b border-gray-200">
-          <h2 className="font-semibold text-gray-900">Documents</h2>
-          <button
-            onClick={() => setMobileSidebarOpen(false)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        {sidebarContent}
-      </div>
-
-      {/* Desktop sidebar */}
-      <div className={`hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
-        sidebarCollapsed ? 'w-12' : 'w-72'
-      }`}>
-        {/* Collapse toggle */}
-        <div className="p-2 border-b border-gray-200 flex justify-end">
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
-          </button>
-        </div>
-
-        {!sidebarCollapsed && sidebarContent}
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-4xl mx-auto p-6 pb-12">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              {/* Mobile menu button */}
-              <button
-                onClick={() => setMobileSidebarOpen(true)}
-                className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
-              >
-                <Menu size={20} />
-              </button>
-              <BookOpen className="w-6 h-6 text-emerald-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Learning</h1>
-            </div>
-            <SyncStatusIndicator
-              status={syncStatus}
-              lastSynced={lastSynced}
-              hasUnsavedChanges={false}
-              compact={true}
-            />
-          </div>
+      }
+    >
 
           {/* Create New Document Form */}
           {isCreating && (
@@ -620,8 +567,6 @@ export function Learning() {
               </div>
             </Card>
           ) : null}
-        </div>
-      </div>
-    </div>
+    </PageContainer>
   )
 }

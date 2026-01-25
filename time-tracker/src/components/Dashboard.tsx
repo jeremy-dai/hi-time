@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import type { TimeBlock } from '../types/time'
-import { cn } from '../utils/classNames'
 import { formatWeekKey, addWeeks, getISOWeekYear, startOfISOWeek, endOfISOWeek } from '../utils/date'
 import CurrentWeekDashboard from './dashboard/CurrentWeekDashboard'
 import AnnualDashboard from './dashboard/AnnualDashboard'
+import { PageContainer } from './layout/PageContainer'
 
 interface DashboardProps {
   weekData: TimeBlock[][]
@@ -41,26 +41,60 @@ export default function Dashboard({
     return isoYear
   })
 
-  // Calculate the keys we need for Trends view (last 4 complete weeks)
+  // State for selected week in Trends view (defaults to last complete week)
+  const [selectedWeekKey, setSelectedWeekKey] = useState(lastCompleteWeekKey)
+
+  // Update selectedWeekKey when lastCompleteWeekKey changes (e.g., new week starts)
+  useEffect(() => {
+    setSelectedWeekKey(lastCompleteWeekKey)
+  }, [lastCompleteWeekKey])
+
+  // Calculate the keys we need for Trends view (4 weeks ending with selected week)
   const trendsWeekKeys = useMemo(() => {
+    // Parse selected week to get date
+    const [yearStr, weekStr] = selectedWeekKey.split('-W')
+    const year = parseInt(yearStr)
+    const week = parseInt(weekStr)
+    const jan1 = new Date(Date.UTC(year, 0, 1))
+    const jan1Day = jan1.getUTCDay()
+    const week1Sunday = new Date(jan1)
+    if (jan1Day !== 0) {
+      week1Sunday.setUTCDate(jan1.getUTCDate() - jan1Day)
+    }
+    const selectedWeekDate = new Date(week1Sunday)
+    selectedWeekDate.setUTCDate(week1Sunday.getUTCDate() + (week - 1) * 7)
+
     return [
-      lastCompleteWeekKey,
-      formatWeekKey(addWeeks(lastCompleteWeekDate, -1)),
-      formatWeekKey(addWeeks(lastCompleteWeekDate, -2)),
-      formatWeekKey(addWeeks(lastCompleteWeekDate, -3))
+      selectedWeekKey,
+      formatWeekKey(addWeeks(selectedWeekDate, -1)),
+      formatWeekKey(addWeeks(selectedWeekDate, -2)),
+      formatWeekKey(addWeeks(selectedWeekDate, -3))
     ]
-  }, [lastCompleteWeekKey, lastCompleteWeekDate])
+  }, [selectedWeekKey])
 
   // Calculate date range string for Trends
   const trendsDateRangeLabel = useMemo(() => {
-    const start = startOfISOWeek(addWeeks(lastCompleteWeekDate, -3))
-    const end = endOfISOWeek(lastCompleteWeekDate)
-    
+    // Parse selected week to get date
+    const [yearStr, weekStr] = selectedWeekKey.split('-W')
+    const year = parseInt(yearStr)
+    const week = parseInt(weekStr)
+    const jan1 = new Date(Date.UTC(year, 0, 1))
+    const jan1Day = jan1.getUTCDay()
+    const week1Sunday = new Date(jan1)
+    if (jan1Day !== 0) {
+      week1Sunday.setUTCDate(jan1.getUTCDate() - jan1Day)
+    }
+    const selectedWeekDate = new Date(week1Sunday)
+    selectedWeekDate.setUTCDate(week1Sunday.getUTCDate() + (week - 1) * 7)
+
+    const start = startOfISOWeek(addWeeks(selectedWeekDate, -3))
+    const end = endOfISOWeek(selectedWeekDate)
+
     // Format dates nicely (e.g., "Jan 1 - Jan 28, 2025")
     const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     return `${startStr} - ${endStr}`
-  }, [lastCompleteWeekDate])
+  }, [selectedWeekKey])
 
   // Calculate keys for Annual view (all weeks of selected year up to last complete week)
   const annualWeekKeys = useMemo(() => {
@@ -121,7 +155,7 @@ export default function Dashboard({
   }, [viewMode, trendsWeekKeys, annualWeekKeys, loadWeeksForRange, weeksStore])
 
   return (
-    <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
+    <PageContainer>
       {isLoadingData && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
@@ -134,6 +168,9 @@ export default function Dashboard({
           weeksStore={weeksStore}
           weekKeys={trendsWeekKeys}
           dateRangeLabel={trendsDateRangeLabel}
+          selectedWeekKey={selectedWeekKey}
+          onWeekChange={setSelectedWeekKey}
+          maxWeekKey={lastCompleteWeekKey}
         />
       )}
 
@@ -147,6 +184,6 @@ export default function Dashboard({
           onYearChange={setSelectedYear}
         />
       )}
-    </div>
+    </PageContainer>
   )
 }

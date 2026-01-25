@@ -168,3 +168,28 @@ export const BANNER = {
   warning: `${RADIUS.default} p-4 bg-amber-50 text-amber-900`,
   error: `${RADIUS.default} p-4 bg-red-50 text-red-900`,
 } as const
+
+// Page Layout styles (unified white card layout)
+export const PAGE_LAYOUT = {
+  // Container - all pages use unified white card
+  container: 'bg-white rounded-xl shadow-sm',
+
+  // Padding
+  padding: 'p-3 sm:p-6',
+
+  // Sidebar widths
+  sidebarNarrow: 'w-32',
+  sidebarWide: 'w-72',
+  sidebarCollapsed: 'w-12',
+} as const
+
+// Page Header styles (unified header style)
+export const PAGE_HEADER = {
+  // Title sizes
+  title: 'text-2xl font-bold text-gray-900',
+  titleWithSubtitle: 'text-xl font-bold text-gray-900',
+  subtitle: 'text-gray-500 text-sm',
+
+  // Icon color - unified emerald
+  icon: 'text-emerald-600',
+} as const

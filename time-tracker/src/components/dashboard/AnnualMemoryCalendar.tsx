@@ -98,10 +98,7 @@ export default function AnnualMemoryCalendar({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-1.5 sm:gap-0">
         <div>
-          <div className={cn('text-lg sm:text-xl font-bold', 'text-gray-900 tracking-tight')}>
-            {year} Memories
-          </div>
-          <div className="text-[10px] sm:text-xs text-gray-500 mt-1 font-medium">
+          <div className="text-[10px] sm:text-xs text-gray-500 font-medium">
             {totalMemories} {totalMemories === 1 ? 'memory' : 'memories'} recorded
             <span className="hidden sm:inline text-gray-400"> • Click to edit, Enter to save, Esc to cancel</span>
           </div>

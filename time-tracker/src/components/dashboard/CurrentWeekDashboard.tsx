@@ -16,19 +16,26 @@ import {
   WeeklyWorkGoal,
   WeeklyRhythmHeatmap
 } from '../insights'
+import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
+import WeekNavigator from '../shared/WeekNavigator'
 import { cn } from '../../utils/classNames'
-import { CalendarRange } from 'lucide-react'
 
 interface CurrentWeekDashboardProps {
   weeksStore: Record<string, TimeBlock[][]>
   weekKeys: string[] // The 4 weeks to display [newest, ..., oldest]
   dateRangeLabel: string
+  selectedWeekKey: string
+  onWeekChange: (weekKey: string) => void
+  maxWeekKey: string
 }
 
 export default function CurrentWeekDashboard({
   weeksStore,
   weekKeys,
-  dateRangeLabel
+  dateRangeLabel,
+  selectedWeekKey,
+  onWeekChange,
+  maxWeekKey
 }: CurrentWeekDashboardProps) {
   // Most recent completed week (the first one in the list)
   const displayWeekKey = weekKeys[0]
@@ -112,33 +119,29 @@ export default function CurrentWeekDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Analysis Period Banner with Export Button */}
-      <div className={cn(
-        'rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
-        'bg-emerald-50 text-emerald-900'
-      )}>
-        <div className="flex items-center space-x-3">
-          <CalendarRange className="w-5 h-5 text-emerald-600 shrink-0" />
-          <div>
-            <h3 className="font-semibold text-sm">
-              Analysis Period: {dateRangeLabel}
-            </h3>
-            <p className="text-xs mt-0.5 opacity-90">
-              Latest week: <span className="font-semibold">{displayWeekKey}</span> • 4-week trends
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-          <ExportInfo reportType="trends" />
-          <ExportButton
-            analysis={enhancedAnalysis}
-            weekRange={weekRange}
-            weekReviews={weekReviews}
-            dailyShipping={dailyShipping}
-            memories={memories}
-          />
-        </div>
-      </div>
+      {/* Analysis Period Banner with Week Selector and Export Button */}
+      <AnalysisPeriodBanner
+        dateRangeLabel={dateRangeLabel}
+        subtitle={<>Latest week: <span className="font-semibold">{displayWeekKey}</span> • 4-week trends</>}
+        actions={
+          <>
+            <WeekNavigator
+              selectedWeekKey={selectedWeekKey}
+              onWeekChange={onWeekChange}
+              maxWeekKey={maxWeekKey}
+              variant="emerald"
+            />
+            <ExportInfo reportType="trends" />
+            <ExportButton
+              analysis={enhancedAnalysis}
+              weekRange={weekRange}
+              weekReviews={weekReviews}
+              dailyShipping={dailyShipping}
+              memories={memories}
+            />
+          </>
+        }
+      />
 
       {/* LATEST WEEK SECTION */}
       <div>

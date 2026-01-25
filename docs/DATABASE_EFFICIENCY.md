@@ -59,22 +59,23 @@ const { data, setData, syncStatus, hasNewerVersion, loadNewerVersion } = useLoca
 - [`useWeekReviews`](../time-tracker/src/hooks/useWeekReviews.ts)
 
 **Strategy**:
-- Load from database on mount (database is source of truth)
+- Load from localStorage first for instant UI (if available)
+- Fetch from database in background to sync with latest data
 - Save to localStorage immediately on every change
 - Debounce database sync for 5 seconds after last edit
-- Falls back to localStorage if database unavailable
 
 **Features**:
-- ✅ Database-first loading ensures latest data across devices
+- ✅ Instant load from localStorage cache (zero-latency UI)
+- ✅ Background database sync ensures data freshness across devices
 - ✅ 5-second debounce reduces API calls during active typing
 - ✅ localStorage cache for offline resilience
-- ⚠️ No staleness check: Trusts database as single source of truth
+- ⚠️ No staleness check: Database silently updates cache in background
 
 **Cross-device behavior**:
 - Device A edits offline → changes stay in localStorage
-- Device B opens app → loads from database (doesn't see Device A's changes)
+- Device B opens app → loads from localStorage cache instantly, then syncs with DB in background
 - Device A comes online → debounced sync pushes changes to database
-- Device B refreshes → sees Device A's changes
+- Device B refreshes → sees cached data instantly, then Device A's changes appear after DB sync
 
 **Example Usage**:
 ```typescript
@@ -213,10 +214,11 @@ devices?    device?
 |---------|-----------------|----------------|-----------------|---------------|
 | **Timesheet** | `week-{weekKey}` | `weeks` (JSONB) | ✅ 1 hour | Incremental (30s) |
 | **Week Metadata** | `week-metadata-{weekKey}` | Coupled with `weeks` | ✅ 1 hour | Coupled with timesheet |
+| **Dashboard Week Cache** | `week-data-{weekKey}` | `weeks` (JSONB) | ✅ 1 hour | Read-only cache |
 | **User Settings** | `user-settings` | `user_settings` (JSONB) | ✅ 1 hour | Incremental (30s) |
-| **Year Memories** | `year-memories-{year}` | `year_memories` (JSONB) | ❌ DB first | Debounced (5s) |
-| **Week Reviews** | `week-reviews-{year}` | `week_reviews` (rows) | ❌ DB first | Debounced (5s) |
-| **Annual Review** | `annual-review-{year}` | `week_reviews` (week=0) | ❌ DB first | Debounced (5s) |
+| **Year Memories** | `year-memories-{year}` | `year_memories` (JSONB) | ❌ Cache-first | Debounced (5s) |
+| **Week Reviews** | `week-reviews-{year}` | `week_reviews` (rows) | ❌ Cache-first | Debounced (5s) |
+| **Annual Review** | `annual-review-{year}` | `week_reviews` (week=0) | ❌ Cache-first | Debounced (5s) |
 | **Quarterly Goals** | `quarterly-goals-{year}-Q{quarter}` | `quarterly_goals` + `goal_milestones` | ❌ DB first | Optimistic (instant) |
 | **Daily Shipping** | `daily-shipping-{year}` | `daily_shipping` (rows) | ❌ DB first | Optimistic (instant) |
 | **Session History** | ❌ None | `data_snapshots` (rows) | ❌ DB first | Optimistic (instant) |
@@ -229,9 +231,10 @@ devices?    device?
 - Stale data is ignored, and fresh data is fetched from database
 
 **Why only Pattern 1?**
-- Timesheet and Settings are edited frequently and need multi-device consistency
-- Pattern 2 & 3 always load from database on mount, so they don't need staleness checks
-- Pattern 2 & 3 trust the database as the single source of truth
+- Timesheet and Settings are edited frequently and need multi-device consistency with conflict detection
+- Pattern 2 loads from cache but syncs with DB in background (no staleness threshold, just overwrites cache)
+- Pattern 3 always loads from database on mount, so it doesn't need staleness checks
+- Patterns 2-4 use simpler cache invalidation strategies without staleness detection
 
 **CachedData Format**:
 ```typescript
@@ -340,7 +343,14 @@ Each pattern has its own hook with specialized logic:
 3. **Timestamp Comparison**: Refuses to sync if database timestamp is newer
 4. **User Notification**: Shows "Newer version available" instead of auto-overwriting
 
-### Pattern 2 & 3: Database as Source of Truth
+### Pattern 2: Cache-First with Background Sync
+
+- Loads from localStorage cache immediately (instant UI)
+- Syncs with database in background and silently updates cache
+- No staleness detection (database always overwrites cache)
+- Last-write-wins for concurrent edits
+
+### Pattern 3 & 4: Database as Source of Truth
 
 - No staleness detection needed
 - Always loads fresh data from database on mount
@@ -351,35 +361,42 @@ Each pattern has its own hook with specialized logic:
 
 **Scenario 1: Edit on Device A, then Device B**
 - Pattern 1: Device B sees "Newer version available" if A's changes synced
-- Pattern 2: Device B loads A's changes from database
+- Pattern 2: Device B loads cached data instantly, then A's changes appear after background sync
 - Pattern 3: Device B loads A's changes from database
+- Pattern 4: Device B loads A's changes from database
 
 **Scenario 2: Edit offline on Device A, online on Device B**
 - Pattern 1: Both have unsaved changes, conflict detected on next sync
-- Pattern 2: Device A's changes stay local until online, Device B wins on conflict
+- Pattern 2: Device A's changes stay local until online, Device B wins on conflict (overwrites cache in background)
 - Pattern 3: Device A's changes stay local until online, Device B wins on conflict
+- Pattern 4: Device A's changes stay local until online, Device B wins on conflict
 
 ---
 
 ## Dashboard (Read-Only Pattern)
 
-The Dashboard is **read-only** and uses in-memory caching without persistence.
+The Dashboard is **read-only** and uses both in-memory and localStorage caching for optimal performance.
 
 **Strategy**:
 1. User opens Dashboard → Check in-memory cache (`weekStore`)
-2. Cache miss → Batch fetch missing weeks from database
-3. Update cache → Render charts
+2. Cache miss → Check localStorage cache (with staleness detection)
+3. Fresh cache hit → Load from localStorage instantly
+4. Stale/missing cache → Batch fetch from database
+5. Update both caches → Render charts
 
 **Optimizations**:
 - ✅ Batch API endpoint: `POST /api/weeks/batch` fetches multiple weeks in one query
-- ✅ In-memory cache prevents redundant fetches
+- ✅ In-memory cache prevents redundant fetches during session
+- ✅ localStorage cache with staleness detection (1-hour threshold, same as Pattern 1)
 - ✅ Lazy loading: Only loads data when switching to dashboard views
 - ✅ Progressive loading: Shows loading spinner during fetch
+- ✅ Cache invalidation: Week data updates immediately refresh localStorage cache
 
-**No localStorage**: Dashboard data is not cached locally because:
-- It's read-only (no need for instant save)
-- Batch fetching is fast enough
-- Reduces localStorage quota usage
+**localStorage Caching** (key: `week-data-{weekKey}`):
+- Uses `CachedData` wrapper with timestamp for staleness detection
+- Fresh data (< 1 hour old) loads instantly from cache
+- Stale data triggers API fetch and cache refresh
+- Updated whenever week data is edited (cells, CSV imports, theme changes)
 
 ---
 
@@ -394,11 +411,6 @@ The Dashboard is **read-only** and uses in-memory caching without persistence.
    - When viewing Current Week, prefetch last 4 weeks for Trends
    - When viewing Trends, prefetch Annual data in background
 
-3. **localStorage Caching for Dashboard**:
-   - Cache frequently accessed historical weeks
-   - Use same `CachedData` wrapper with staleness detection
-   - Trade-off: localStorage quota vs faster loads
-
 ---
 
 ## Summary
@@ -407,11 +419,11 @@ The Dashboard is **read-only** and uses in-memory caching without persistence.
 |--------|-------------------------|----------------------|------------------------|---------------------|
 | **Examples** | Timesheet, Settings | Memories, Reviews | Goals, Shipping | Session History |
 | **localStorage** | With timestamp | Plain data | Plain data | None |
-| **Staleness** | ✅ 1 hour | ❌ DB first | ❌ DB first | ❌ DB first |
+| **Staleness** | ✅ 1 hour | ❌ Cache-first | ❌ DB first | ❌ DB first |
 | **Sync timing** | Batched (30s) | Debounced (5s) | Instant | Instant (throttled auto) |
 | **Conflict detection** | ✅ Pre-sync check | ❌ Last-write-wins | ❌ Last-write-wins | ❌ Last-write-wins |
 | **Error recovery** | Shows warning | Logs error | Rollback + retry | Shows error state |
-| **Multi-device** | ✅ Staleness + notification | ✅ DB source of truth | ✅ DB source of truth | ✅ DB source of truth |
+| **Multi-device** | ✅ Staleness + notification | ✅ Cache + DB sync | ✅ DB source of truth | ✅ DB source of truth |
 | **Best for** | Frequent edits, multi-device | Occasional text edits | Discrete actions | Version history/backup |
 
 **Key Takeaway**: Each pattern is optimized for its specific use case. Choose based on how users interact with the data, not just technical preferences.

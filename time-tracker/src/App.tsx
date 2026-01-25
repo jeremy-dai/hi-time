@@ -6,7 +6,7 @@ import { Settings } from './components/Settings'
 import Memories from './components/Memories'
 import WeeklyReview from './components/WeeklyReview'
 import { Learning } from './components/Learning'
-import { QuarterlyPlan } from './components/plan/QuarterlyPlan'
+import { TodayView } from './components/plan/TodayView'
 import Sidebar from './components/Sidebar'
 import { formatWeekKey, calculateLastYearWeek, getCurrentYearWeeks } from './utils/date'
 import { getWeek, getWeeksBatch, putWeek, exportCSV as apiExportCSV, getSettings, type UserSettings } from './api'
@@ -74,6 +74,19 @@ function App() {
   const weekStoreRef = useRef<Record<string, TimeBlock[][]>>({})
   // Staleness threshold for cached metadata (1 hour, consistent with weeksheet data)
   const METADATA_STALENESS_THRESHOLD = 60 * 60 * 1000 // 1 hour
+
+  // Helper to cache week data to localStorage for annual dashboard
+  const cacheWeekData = useCallback((weekKey: string, weekData: TimeBlock[][]) => {
+    try {
+      const cachedWeekData = {
+        data: weekData,
+        timestamp: Date.now()
+      }
+      localStorage.setItem(`week-data-${weekKey}`, JSON.stringify(cachedWeekData))
+    } catch (err) {
+      console.error(`Failed to cache week data for ${weekKey}:`, err)
+    }
+  }, [])
 
   // Initialize metadata synchronously from localStorage for faster loading
   const initialMetadata = useMemo(() => {
@@ -263,22 +276,82 @@ function App() {
         return // All weeks already loaded or being fetched
       }
 
-      // Mark these weeks as being fetched
-      keysToFetch.forEach(key => fetchingWeeks.current.add(key))
+      // First, try to load from localStorage cache
+      const newWeekData: Record<string, TimeBlock[][]> = {}
+      const newMetadata: Record<string, { startingHour: number; theme: string | null }> = {}
+      const keysNeedingFetch: string[] = []
+
+      keysToFetch.forEach(key => {
+        try {
+          const cachedWeekData = localStorage.getItem(`week-data-${key}`)
+          const cachedMetadata = localStorage.getItem(`week-metadata-${key}`)
+
+          if (cachedWeekData && cachedMetadata) {
+            const parsedData = JSON.parse(cachedWeekData)
+            const parsedMetadata = JSON.parse(cachedMetadata)
+
+            // Check if cache is fresh (< 1 hour old, same as metadata staleness threshold)
+            const isFresh = Date.now() - parsedData.timestamp < METADATA_STALENESS_THRESHOLD
+
+            if (isFresh) {
+              // Use cached data
+              newWeekData[key] = parsedData.data
+              newMetadata[key] = parsedMetadata.data
+            } else {
+              // Cache is stale, need to fetch
+              keysNeedingFetch.push(key)
+            }
+          } else {
+            // No cache, need to fetch
+            keysNeedingFetch.push(key)
+          }
+        } catch (err) {
+          console.error(`Failed to load week ${key} from cache:`, err)
+          keysNeedingFetch.push(key)
+        }
+      })
+
+      // Update store with cached data immediately
+      if (Object.keys(newWeekData).length > 0) {
+        const updatedWeeks = { ...weekStoreRef.current, ...newWeekData }
+        const updatedMetadata = { ...weekMetadataStoreRef.current, ...newMetadata }
+
+        weekStoreRef.current = updatedWeeks
+        weekMetadataStoreRef.current = updatedMetadata
+
+        setWeekStore(updatedWeeks)
+        setWeekMetadataStore(updatedMetadata)
+      }
+
+      // If all data was loaded from cache, we're done
+      if (keysNeedingFetch.length === 0) {
+        return
+      }
+
+      // Mark weeks needing fetch as being fetched
+      keysNeedingFetch.forEach(key => fetchingWeeks.current.add(key))
 
       try {
         // Fetch missing weeks in batch
-        const batchResult = await getWeeksBatch(keysToFetch)
+        const batchResult = await getWeeksBatch(keysNeedingFetch)
 
         // Separate weekData and metadata
-        const newWeekData: Record<string, TimeBlock[][]> = {}
-        const newMetadata: Record<string, { startingHour: number; theme: string | null }> = {}
+        const fetchedWeekData: Record<string, TimeBlock[][]> = {}
+        const fetchedMetadata: Record<string, { startingHour: number; theme: string | null }> = {}
 
         Object.entries(batchResult).forEach(([key, metadata]) => {
           if (metadata) {
-            newWeekData[key] = metadata.weekData
+            fetchedWeekData[key] = metadata.weekData
             const weekMetadata = { startingHour: metadata.startingHour, theme: metadata.theme }
-            newMetadata[key] = weekMetadata
+            fetchedMetadata[key] = weekMetadata
+
+            // Cache week data to localStorage with timestamp
+            const cachedWeekData = {
+              data: metadata.weekData,
+              timestamp: Date.now()
+            }
+            localStorage.setItem(`week-data-${key}`, JSON.stringify(cachedWeekData))
+
             // Cache metadata to localStorage with timestamp (for staleness detection)
             const cachedMetadata = {
               data: weekMetadata,
@@ -288,8 +361,17 @@ function App() {
           } else {
             const defaultStartingHour = 8
             const weekMetadata = { startingHour: defaultStartingHour, theme: null }
-            newWeekData[key] = createEmptyWeekData(defaultStartingHour)
-            newMetadata[key] = weekMetadata
+            const emptyWeekData = createEmptyWeekData(defaultStartingHour)
+            fetchedWeekData[key] = emptyWeekData
+            fetchedMetadata[key] = weekMetadata
+
+            // Cache empty week data to localStorage with timestamp
+            const cachedWeekData = {
+              data: emptyWeekData,
+              timestamp: Date.now()
+            }
+            localStorage.setItem(`week-data-${key}`, JSON.stringify(cachedWeekData))
+
             // Cache metadata to localStorage with timestamp
             const cachedMetadata = {
               data: weekMetadata,
@@ -299,8 +381,8 @@ function App() {
           }
         })
 
-        const updatedWeeks = { ...weekStoreRef.current, ...newWeekData }
-        const updatedMetadata = { ...weekMetadataStoreRef.current, ...newMetadata }
+        const updatedWeeks = { ...weekStoreRef.current, ...fetchedWeekData }
+        const updatedMetadata = { ...weekMetadataStoreRef.current, ...fetchedMetadata }
 
         weekStoreRef.current = updatedWeeks
         weekMetadataStoreRef.current = updatedMetadata
@@ -309,7 +391,7 @@ function App() {
         setWeekMetadataStore(updatedMetadata)
       } finally {
         // Remove from fetching set
-        keysToFetch.forEach(key => fetchingWeeks.current.delete(key))
+        keysNeedingFetch.forEach(key => fetchingWeeks.current.delete(key))
       }
     } catch (error) {
       console.error('loadWeeksForRange - ERROR:', error)
@@ -373,6 +455,9 @@ function App() {
         setWeekMetadataStore(updatedMetadata)
         setWeekData(existing.weekData)
 
+        // Cache week data for annual dashboard
+        cacheWeekData(currentWeekKey, existing.weekData)
+
         // Save metadata to localStorage with timestamp if we got it from database
         if (!cachedMetadata) {
           const cachedMetadataWithTimestamp = {
@@ -392,6 +477,9 @@ function App() {
         setWeekStore(weekStoreRef.current)
         setWeekMetadataStore(weekMetadataStoreRef.current)
         setWeekData(empty)
+
+        // Cache week data for annual dashboard
+        cacheWeekData(currentWeekKey, empty)
 
         // Save to localStorage with timestamp and database
         const cachedMetadataWithTimestamp = {
@@ -426,6 +514,7 @@ function App() {
     const updated = { ...weekStoreRef.current, [currentWeekKey]: newWeek }
     weekStoreRef.current = updated
     setWeekStore(updated)
+    cacheWeekData(currentWeekKey, newWeek)
   }
 
   const handleUpdateBlocks = (updates: { day: number, timeIndex: number, block: TimeBlock }[]) => {
@@ -444,6 +533,7 @@ function App() {
     const updated = { ...weekStoreRef.current, [currentWeekKey]: newWeek }
     weekStoreRef.current = updated
     setWeekStore(updated)
+    cacheWeekData(currentWeekKey, newWeek)
   }
 
   const handleImportCSV = (importedData: TimeBlock[][]) => {
@@ -455,6 +545,7 @@ function App() {
     const updated = { ...weekStoreRef.current, [currentWeekKey]: importedData }
     weekStoreRef.current = updated
     setWeekStore(updated)
+    cacheWeekData(currentWeekKey, importedData)
   }
   // keep referenceData state to support future look-back imports
   const handleImportCSVFile = (file: File) => {
@@ -550,11 +641,15 @@ function App() {
         // Update store with loaded data
         weekStoreRef.current = { ...weekStoreRef.current, [weekKey]: weekData }
         setWeekStore(weekStoreRef.current)
+        // Cache week data for annual dashboard
+        cacheWeekData(weekKey, weekData)
       } else {
         // Week doesn't exist yet, create empty week data
         weekData = createEmptyWeekData(updatedMetadata.startingHour)
         weekStoreRef.current = { ...weekStoreRef.current, [weekKey]: weekData }
         setWeekStore(weekStoreRef.current)
+        // Cache week data for annual dashboard
+        cacheWeekData(weekKey, weekData)
       }
     }
 
@@ -695,7 +790,7 @@ function App() {
       {/* Today - Quarterly Plan */}
       <div className={activeTab === 'today' ? 'block h-full' : 'hidden'}>
         <div className="animate-in fade-in duration-200 h-full">
-          <QuarterlyPlan />
+          <TodayView />
         </div>
       </div>
 

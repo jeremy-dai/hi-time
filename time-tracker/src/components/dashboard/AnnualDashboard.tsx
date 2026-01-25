@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { TimeBlock } from '../../types/time'
 import { aggregateYTDData } from '../../utils/analytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
@@ -9,9 +9,10 @@ import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
 import AnnualProductivityStreak from './AnnualProductivityStreak'
 import YearNavigator from '../shared/YearNavigator'
+import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
 import { SkeletonLoader } from '../shared/SkeletonLoader'
 import { ExportInfo } from '../insights'
-import { Download, CalendarRange } from 'lucide-react'
+import { Download, Check } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { generateAnnualReport, downloadAnnualMarkdownReport } from '../../utils/annualMarkdownGenerator'
 import { startOfISOWeek, endOfISOWeek } from '../../utils/date'
@@ -120,45 +121,60 @@ export default function AnnualDashboard({
     return `${startStr} - ${endStr}`
   }, [weekKeys])
 
-  const handleExport = () => {
-    // Convert entries to DailyShipping format
-    const dailyShipping: Record<string, any> = {}
-    Object.entries(dailyShippingEntries).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        const [y, m, d] = key.split('-').map(Number)
-        dailyShipping[key] = {
-          year: y,
-          month: m,
-          day: d,
-          shipped: value,
-          completed: false,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        }
-      } else {
-        const [y, m, d] = key.split('-').map(Number)
-        dailyShipping[key] = {
-          year: y,
-          month: m,
-          day: d,
-          shipped: value.shipped,
-          completed: value.completed,
-          createdAt: Date.now(),
-          updatedAt: Date.now()
-        }
-      }
-    })
+  const [isExporting, setIsExporting] = useState(false)
+  const [exportSuccess, setExportSuccess] = useState(false)
 
-    const content = generateAnnualReport({
-      ytdStats,
-      weekThemes,
-      memories,
-      weeksStore,
-      weekReviews,
-      dailyShipping,
-      year
-    })
-    downloadAnnualMarkdownReport(content, year)
+  const handleExport = () => {
+    setIsExporting(true)
+
+    try {
+      // Convert entries to DailyShipping format
+      const dailyShipping: Record<string, any> = {}
+      Object.entries(dailyShippingEntries).forEach(([key, value]) => {
+        if (typeof value === 'string') {
+          const [y, m, d] = key.split('-').map(Number)
+          dailyShipping[key] = {
+            year: y,
+            month: m,
+            day: d,
+            shipped: value,
+            completed: false,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          }
+        } else {
+          const [y, m, d] = key.split('-').map(Number)
+          dailyShipping[key] = {
+            year: y,
+            month: m,
+            day: d,
+            shipped: value.shipped,
+            completed: value.completed,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          }
+        }
+      })
+
+      const content = generateAnnualReport({
+        ytdStats,
+        weekThemes,
+        memories,
+        weeksStore,
+        weekReviews,
+        dailyShipping,
+        year
+      })
+      downloadAnnualMarkdownReport(content, year)
+
+      // Show success state
+      setExportSuccess(true)
+      setTimeout(() => setExportSuccess(false), 2000)
+    } catch (error) {
+      console.error('Failed to export annual report:', error)
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   const isLoading = isLoadingMemories || isLoadingReviews || isLoadingShipping
@@ -166,45 +182,44 @@ export default function AnnualDashboard({
   return (
     <div className="space-y-6">
       {/* Analysis Period Banner with Year Selector and Buttons */}
-      <div className={cn(
-        'rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
-        'bg-emerald-50 text-emerald-900'
-      )}>
-        <div className="flex items-center space-x-3">
-          <CalendarRange className="w-5 h-5 text-emerald-600 shrink-0" />
-          <div>
-            <h3 className="font-semibold text-sm">
-              Analysis Period: {dateRangeLabel}
-            </h3>
-            <p className="text-xs mt-0.5 opacity-90">
-              {weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center flex-wrap gap-2 w-full md:w-auto justify-end">
-          {/* Year Navigator */}
-          <YearNavigator
-            year={year}
-            onYearChange={onYearChange}
-            variant="emerald"
-          />
-
-          <ExportInfo reportType="annual" />
-          <button
-            onClick={handleExport}
-            className={cn(
-              'flex items-center space-x-1.5 px-4 py-2 rounded-xl font-medium text-sm',
-              'bg-emerald-500 hover:bg-emerald-600 text-white',
-              'shadow-sm hover:shadow-md transition-all',
-              'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2'
-            )}
-          >
-            <Download className="w-4 h-4" />
-            <span>Export</span>
-          </button>
-        </div>
-      </div>
+      <AnalysisPeriodBanner
+        dateRangeLabel={dateRangeLabel}
+        subtitle={<>{weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}</>}
+        actions={
+          <>
+            <YearNavigator
+              year={year}
+              onYearChange={onYearChange}
+              variant="emerald"
+            />
+            <ExportInfo reportType="annual" />
+            <button
+              onClick={handleExport}
+              disabled={isExporting}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all',
+                exportSuccess
+                  ? 'bg-green-500 text-white'
+                  : 'bg-emerald-500 hover:bg-emerald-600 text-white',
+                'shadow-sm hover:shadow-md',
+                'disabled:opacity-50 disabled:cursor-not-allowed'
+              )}
+            >
+              {exportSuccess ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Exported!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  <span>{isExporting ? 'Exporting...' : 'Export Report'}</span>
+                </>
+              )}
+            </button>
+          </>
+        }
+      />
 
       {/* Loading State */}
       {isLoading ? (

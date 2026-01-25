@@ -1,11 +1,12 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useWeekReviews } from '../hooks/useWeekReviews'
 import { useAnnualReview } from '../hooks/useAnnualReview'
-import YearNavigator from './shared/YearNavigator'
 import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Calendar, Circle, Leaf, Sun, CloudRain, Snowflake, Sparkles } from 'lucide-react'
 import { cn } from '../utils/classNames'
+import { PageContainer } from './layout/PageContainer'
+import { PageHeader } from './layout/PageHeader'
 
 // Helper function to get ISO week number
 function getISOWeek(date: Date): number {
@@ -340,7 +341,7 @@ function AnnualReviewSection({ year, review, onUpdate, onDelete, isCurrentYear }
   return (
     <div className="mb-8">
       <div className={cn(
-        "rounded-2xl border-2 overflow-hidden",
+        "rounded-xl border-2 overflow-hidden",
         "bg-linear-to-br from-purple-50 via-blue-50 to-indigo-50",
         isCurrentYear ? "border-purple-300 shadow-lg" : "border-purple-200"
       )}>
@@ -509,13 +510,12 @@ export default function WeeklyReview() {
 
   const isLoading = isLoadingReviews || isLoadingAnnual
 
-  return (
-    <div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
-      {/* Vertical Season Navigation - Hidden on mobile */}
-      <div className="hidden md:flex w-32 flex-shrink-0 bg-white border-r border-gray-200 p-4 flex-col gap-2 sticky top-0 h-screen overflow-y-auto">
-        <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-          Seasons
-        </div>
+  // Sidebar content - vertical season navigation
+  const sidebarContent = (
+    <div className="p-4 flex flex-col gap-2">
+      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+        Seasons
+      </div>
 
         {/* Annual Review Tab */}
         {showAnnualReview && (
@@ -580,56 +580,42 @@ export default function WeeklyReview() {
             </button>
           )
         })}
-      </div>
+    </div>
+  )
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-5xl mx-auto p-3 sm:p-6 pb-12">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-start justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Weekly Reviews</h1>
-                <p className="text-gray-500">Reflect on your journey, week by week</p>
-              </div>
-
-              {/* Year Navigator */}
-              <YearNavigator
-                year={selectedYear}
-                onYearChange={setSelectedYear}
-              />
-            </div>
+  return (
+    <PageContainer
+      sidebar={sidebarContent}
+      sidebarWidth="narrow"
+      header={
+        <PageHeader
+          title="Weekly Reviews"
+          subtitle="Reflect on your journey, week by week"
+          sync={{
+            status: syncStatus,
+            hasUnsavedChanges: hasUnsavedChanges || annualHasUnsavedChanges,
+            onSyncNow: hasUnsavedChanges ? syncNow : annualHasUnsavedChanges ? annualSyncNow : undefined
+          }}
+          yearNav={{
+            year: selectedYear,
+            onYearChange: setSelectedYear
+          }}
+        >
 
             {/* Stats cards */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="grid grid-cols-3 gap-4 mt-4">
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <div className="text-sm text-gray-500 mb-1">Total Weeks</div>
                 <div className="text-2xl font-bold text-gray-900">{stats.totalWeeks}</div>
               </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <div className="text-sm text-gray-500 mb-1">Reviewed</div>
                 <div className="text-2xl font-bold text-emerald-600">{stats.reviewedWeeks}</div>
               </div>
-              <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <div className="text-sm text-gray-500 mb-1">Completion</div>
                 <div className="text-2xl font-bold text-emerald-600">{stats.completionRate}%</div>
               </div>
-            </div>
-
-            {/* Sync status */}
-            <div className="mt-4 flex items-center justify-between px-4 py-2 bg-white/60 rounded-xl">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span className="text-gray-600">
-                  {selectedYear === currentYear ? `Week ${currentWeekNumber} of ${selectedYear}` : `${selectedYear} Archive`}
-                </span>
-              </div>
-              <SyncStatusIndicator
-                status={syncStatus}
-                hasUnsavedChanges={hasUnsavedChanges || annualHasUnsavedChanges}
-                onSyncNow={hasUnsavedChanges ? syncNow : annualHasUnsavedChanges ? annualSyncNow : undefined}
-                compact={true}
-              />
             </div>
 
             {/* Mobile Horizontal Season Navigation */}
@@ -687,9 +673,10 @@ export default function WeeklyReview() {
                 )
               })}
             </div>
-          </div>
-
-          {/* Loading State */}
+        </PageHeader>
+      }
+    >
+      {/* Loading State */}
           {isLoading ? (
             <div className="space-y-6">
               <SkeletonLoader variant="card" height="200px" />
@@ -736,8 +723,6 @@ export default function WeeklyReview() {
               </div>
             </>
           )}
-        </div>
-      </div>
-    </div>
+    </PageContainer>
   )
 }

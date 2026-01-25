@@ -12,6 +12,9 @@ import { ClearableInput } from './shared/ClearableInput'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Modal } from './shared/Modal'
 import { Tabs } from './shared/Tabs'
+import { PageContainer } from './layout/PageContainer'
+import { PageHeader } from './layout/PageHeader'
+import { Settings as SettingsIcon } from 'lucide-react'
 
 interface SettingsProps {
   onSettingsSaved?: () => void
@@ -312,36 +315,20 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      {/* Sync Status Bar */}
-      <div className={`flex items-center justify-between p-3 rounded-xl border shadow-sm transition-colors ${
-        settingsHasUnsavedChanges
-          ? 'bg-amber-50 border-amber-200'
-          : 'bg-white border-gray-100'
-      }`}>
-        <div className="flex items-center gap-3">
-          {settingsHasUnsavedChanges && (
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
-            </span>
-          )}
-          {settingsSyncStatus && (
-            <SyncStatusIndicator
-              status={settingsSyncStatus}
-              lastSynced={settingsLastSynced}
-              hasUnsavedChanges={settingsHasUnsavedChanges || false}
-              onSyncNow={syncSettingsNow}
-            />
-          )}
-          {settingsHasUnsavedChanges ? (
-            <span className="text-sm text-amber-600 font-medium">Unsaved changes (auto-syncing...)</span>
-          ) : (
-            <span className="text-sm text-gray-500">All changes saved</span>
-          )}
-        </div>
-      </div>
-
+    <PageContainer
+      header={
+        <PageHeader
+          title="Settings"
+          icon={SettingsIcon}
+          sync={{
+            status: settingsSyncStatus,
+            lastSynced: settingsLastSynced,
+            hasUnsavedChanges: settingsHasUnsavedChanges || false,
+            onSyncNow: syncSettingsNow
+          }}
+        />
+      }
+    >
       {/* Tabs Navigation */}
       <Card>
         <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
@@ -584,6 +571,6 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
         }
         closeOnBackdrop={true}
       />
-    </div>
+    </PageContainer>
   )
 }

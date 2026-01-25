@@ -11,7 +11,7 @@ export function useYearMemories(year: number) {
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isMountedRef = useRef(true)
 
-  // Load from database on mount, fallback to localStorage
+  // Load from localStorage first for instant UI, then sync with database
   useEffect(() => {
     isMountedRef.current = true
     let cancelled = false
@@ -20,7 +20,23 @@ export function useYearMemories(year: number) {
       setIsLoading(true)
       const localKey = `year-memories-${year}`
 
-      // Try loading from database first
+      // Load from localStorage FIRST for instant UI
+      const stored = localStorage.getItem(localKey)
+      if (stored && !cancelled) {
+        try {
+          const parsed: YearMemories = JSON.parse(stored)
+          setMemories(parsed.memories || {})
+          setIsLoading(false) // Show cached data immediately
+          setSyncStatus('pending')
+        } catch (err) {
+          console.error('Failed to parse year memories from localStorage:', err)
+          setIsLoading(false)
+        }
+      } else {
+        setIsLoading(false)
+      }
+
+      // Then fetch from database to update with fresh data
       try {
         const dbData = await getYearMemories(year)
         if (!cancelled && dbData) {
@@ -29,27 +45,16 @@ export function useYearMemories(year: number) {
           localStorage.setItem(localKey, JSON.stringify(dbData))
           setSyncStatus('synced')
           setLastSynced(new Date())
-          setIsLoading(false)
-          return
+        } else if (!cancelled && !stored) {
+          // No data in DB or cache, stay at idle
+          setSyncStatus('idle')
         }
       } catch (err) {
         console.error('Failed to load memories from database:', err)
-      }
-
-      // Fallback to localStorage if database fails or returns null
-      if (!cancelled) {
-        const stored = localStorage.getItem(localKey)
-        if (stored) {
-          try {
-            const parsed: YearMemories = JSON.parse(stored)
-            setMemories(parsed.memories || {})
-            // Mark as pending sync since we loaded from localStorage
-            setSyncStatus('pending')
-          } catch (err) {
-            console.error('Failed to parse year memories from localStorage:', err)
-          }
+        if (!cancelled && stored) {
+          // We have cached data, mark as error but keep showing it
+          setSyncStatus('error')
         }
-        setIsLoading(false)
       }
     }
 

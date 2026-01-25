@@ -1,7 +1,5 @@
 # Hi-Time Design System Documentation
 
-Last Updated: January 2, 2026
-
 ## Table of Contents
 1. [Overview](#overview)
 2. [Theme Colors](#theme-colors)
@@ -201,6 +199,198 @@ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ...
 ---
 
 ## Spacing & Layout
+
+### Page Layout System (v2.1 - Jan 2026)
+
+All pages use the standardized `PageContainer` and `PageHeader` components which implement a unified white card layout system.
+
+#### PageContainer Component
+
+**Location**: `components/layout/PageContainer.tsx`
+
+**Purpose**: Provides consistent page structure with unified white card styling (`bg-white rounded-xl shadow-sm`) and integrated sidebar support.
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `sidebar` | `ReactNode` | - | Optional sidebar content |
+| `sidebarWidth` | `'narrow' \| 'wide'` | `'wide'` | Sidebar width (w-32 or w-72) |
+| `sidebarCollapsible` | `boolean` | `false` | Enable sidebar collapse on desktop |
+| `sidebarDefaultCollapsed` | `boolean` | `false` | Default collapsed state |
+| `header` | `ReactNode` | - | Page header (usually PageHeader component) |
+| `className` | `string` | - | Additional classes |
+| `variant` | - | - | **Deprecated** (Removed in v2.1) |
+
+**Unified Layout:**
+
+All pages now share the same visual foundation:
+- **Background**: White (`bg-white`)
+- **Border Radius**: Extra Large (`rounded-xl`)
+- **Shadow**: Small (`shadow-sm`)
+- **Padding**: Responsive (`p-3 sm:p-6`)
+- **Sidebar**: Renders inside the card structure (if present)
+
+**Example Usage:**
+
+```tsx
+import { PageContainer } from './layout/PageContainer'
+import { PageHeader } from './layout/PageHeader'
+
+// Standard page (Memories, Dashboard)
+<PageContainer
+  header={
+    <PageHeader
+      title="Annual Memories"
+      icon={CalendarIcon}
+      sync={{ status, lastSynced, hasUnsavedChanges }}
+    />
+  }
+>
+  {/* Page content */}
+</PageContainer>
+
+// Page with sidebar (Learning)
+<PageContainer
+  sidebar={sidebarContent}
+  sidebarWidth="wide"
+  sidebarCollapsible={true}
+  header={
+    <PageHeader
+      title="Learning"
+      icon={BookIcon}
+      sync={{ status, lastSynced, hasUnsavedChanges }}
+    />
+  }
+>
+  {/* Page content */}
+</PageContainer>
+```
+
+**Features:**
+- Unified white card aesthetic for all pages
+- Automatic mobile drawer for sidebars
+- Sidebar collapse toggle on desktop
+- Mobile menu button injected into PageHeader when sidebar present
+- Consistent padding and spacing
+
+---
+
+#### PageHeader Component
+
+**Location**: `components/layout/PageHeader.tsx`
+
+**Purpose**: Provides consistent page headers with title, icon, sync status, and optional actions.
+
+**Props:**
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `title` | `string` | Required | Page title |
+| `subtitle` | `string` | - | Optional subtitle |
+| `icon` | `LucideIcon` | - | Optional icon |
+| `sync` | `object` | - | Sync status props |
+| `yearNav` | `object` | - | Year navigation props |
+| `actions` | `ReactNode` | - | Additional action buttons |
+| `children` | `ReactNode` | - | Content below header (stats, filters) |
+| `onMobileMenuClick` | `() => void` | - | Mobile menu handler (auto-injected by PageContainer) |
+| `variant` | - | - | **Deprecated** (Removed in v2.1) |
+| `bannerTheme` | - | - | **Deprecated** (Removed in v2.1) |
+
+**Unified Header Style:**
+- Large title (text-2xl)
+- Icon support (text-emerald-600)
+- Sync status on the right
+- Year navigation support
+- Clean, minimal design
+
+**Example Usage:**
+
+```tsx
+import { PageHeader } from './layout/PageHeader'
+
+<PageHeader
+  title="Weekly Reviews"
+  subtitle="Reflect on your journey, week by week"
+  icon={BookIcon}
+  yearNav={{
+    year: selectedYear,
+    onYearChange: setSelectedYear
+  }}
+  sync={{
+    status: syncStatus,
+    lastSynced,
+    hasUnsavedChanges
+  }}
+>
+  {/* Stats cards or other content */}
+</PageHeader>
+```
+
+---
+
+#### Page-to-Layout Mapping
+
+All pages now use the **Unified White Card** layout.
+
+| Page | Layout | Sidebar |
+|------|--------|---------|
+| Timesheet | (AppLayout) | None |
+| Dashboard | Unified White Card | None |
+| Memories | Unified White Card | None |
+| Learning | Unified White Card | `wide` (collapsible) |
+| WeeklyReview | Unified White Card | `narrow` |
+| QuarterlyPlan | Unified White Card | None |
+| Settings | Unified White Card | None |
+
+---
+
+### Legacy Layout Patterns (Pre-v2.0)
+
+**Note**: The patterns below are deprecated. New pages should use `PageContainer` and `PageHeader`.
+
+#### Pattern 1: Gradient Background with Sidebar (Legacy)
+
+Used for pages with rich navigation or sidebar elements: **Learning**, **WeeklyReview**, **QuarterlyPlan**
+
+```tsx
+// Outer container
+<div className="h-full flex bg-linear-to-br from-gray-50 to-gray-100/50">
+  {/* Optional sidebar */}
+  <div className="hidden md:flex w-32 ...">
+    {/* Sidebar content */}
+  </div>
+
+  {/* Main content */}
+  <div className="flex-1 overflow-auto">
+    <div className="max-w-5xl mx-auto p-3 sm:p-6 pb-12">
+      {/* Page content */}
+    </div>
+  </div>
+</div>
+```
+
+**Key properties:**
+- Gradient background: `bg-linear-to-br from-gray-50 to-gray-100/50`
+- Max width: `max-w-5xl` (standard for all gradient pages)
+- Responsive padding: `p-3 sm:p-6 pb-12`
+- Content uses `Card` component or equivalent
+
+#### Pattern 2: Card Layout (Legacy)
+
+Used for simpler pages rendered as cards: **Dashboard**, **Memories**
+
+```tsx
+// Direct card container
+<div className="rounded-xl p-6 bg-white shadow-sm">
+  {/* Page content */}
+</div>
+```
+
+**Key properties:**
+- White background card: `bg-white rounded-xl shadow-sm`
+- Standard padding: `p-6`
+- No max-width constraint (contained by AppLayout)
 
 ### Padding System
 
@@ -829,6 +1019,116 @@ import { Modal } from './components/shared/Modal'
 
 ---
 
+### 3.1. AnalysisPeriodBanner Component (STANDARD COMPONENT)
+
+**Location**: `components/shared/AnalysisPeriodBanner.tsx`
+
+**Purpose**: Provides consistent analysis period display across Trends and Annual dashboard views with integrated action buttons.
+
+#### Design Principles
+
+1. **Visual Consistency**: Same styling across all dashboard views
+2. **Responsive Layout**: Adapts to mobile and desktop screens
+3. **Flexible Content**: Supports dynamic subtitles and action buttons
+4. **Single Source of Truth**: Prevents styling drift between pages
+
+#### Component Structure
+
+```tsx
+import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
+
+<AnalysisPeriodBanner
+  dateRangeLabel="Dec 21 - Jan 18, 2026"
+  subtitle={<>Latest week: <span className="font-semibold">2026-W03</span> • 4-week trends</>}
+  actions={
+    <>
+      <ExportInfo reportType="trends" />
+      <ExportButton {...props} />
+    </>
+  }
+/>
+```
+
+**Props:**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `dateRangeLabel` | `string` | ✅ | Date range string (e.g., "Dec 21 - Jan 18, 2026") |
+| `subtitle` | `ReactNode` | ✅ | Additional context (can be JSX for formatting) |
+| `actions` | `ReactNode` | ✅ | Action buttons (export, navigation, etc.) |
+
+#### Standard Styling
+
+- **Container**: `rounded-xl p-4 bg-emerald-50 text-emerald-900`
+- **Layout**: Responsive flex layout (`flex-col md:flex-row`)
+- **Icon**: Calendar icon (`CalendarRange` from lucide-react)
+- **Spacing**: `gap-4 md:gap-0` for responsive spacing
+- **Actions**: `flex-wrap gap-2` for button wrapping
+
+#### Feature Implementation Status
+
+**✅ Both Views Using Standard Component:**
+- **Trends Dashboard** (`CurrentWeekDashboard.tsx`): Shows 4-week analysis period with export button
+- **Annual Dashboard** (`AnnualDashboard.tsx`): Shows year-to-date period with year navigator and export button
+
+#### Usage Examples
+
+**Trends View:**
+```tsx
+<AnalysisPeriodBanner
+  dateRangeLabel="Dec 21 - Jan 18, 2026"
+  subtitle={
+    <>
+      Latest week: <span className="font-semibold">{displayWeekKey}</span> • 4-week trends
+    </>
+  }
+  actions={
+    <>
+      <ExportInfo reportType="trends" />
+      <ExportButton {...exportProps} />
+    </>
+  }
+/>
+```
+
+**Annual View:**
+```tsx
+<AnalysisPeriodBanner
+  dateRangeLabel="Dec 28, 2025 - Jan 17, 2026"
+  subtitle={
+    <>
+      {weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}
+    </>
+  }
+  actions={
+    <>
+      <YearNavigator year={year} onYearChange={setYear} variant="emerald" />
+      <ExportInfo reportType="annual" />
+      <button onClick={handleExport}>Export Report</button>
+    </>
+  }
+/>
+```
+
+#### Benefits
+
+**Consistency:**
+- ✅ Identical container styling (padding, border radius, colors)
+- ✅ Same icon and typography treatment
+- ✅ Consistent responsive behavior
+
+**Maintainability:**
+- ✅ Single source of truth for banner styling
+- ✅ Changes propagate to both dashboards automatically
+- ✅ No styling drift between views
+
+**Developer Experience:**
+- ✅ Simple, clear API with 3 props
+- ✅ Flexible content via ReactNode
+- ✅ TypeScript support for type safety
+
+---
+
 ### 4. Buttons
 
 **Primary Button**:
@@ -1311,6 +1611,10 @@ src/
 
 - **v1.0** (Dec 2025): Initial design system with unified border radius
 - **v1.1** (Jan 2026): Added comprehensive Loading State Pattern documentation
+- **v1.2** (Jan 2026): Standardized page layout patterns (max-width, responsive padding, border radius consistency)
+- **v2.0** (Jan 2026): Unified Layout System - PageContainer and PageHeader components for consistent page structure across all views
+- **v2.1** (Jan 2026): Simplified Layout - Removed complex variants, established unified white card design for all pages
+
 
 ---
 
