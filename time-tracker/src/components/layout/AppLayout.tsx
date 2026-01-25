@@ -41,7 +41,7 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
         <div className="w-10" /> {/* Spacer for balance */}
       </div>
 
-      <div className="max-w-[1920px] mx-auto p-2 md:p-4 flex flex-col md:flex-row gap-4">
+      <div className="max-w-[1920px] mx-auto p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4">
         
         {/* Desktop Sidebar */}
         <aside className="hidden md:block w-[200px] md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
@@ -51,8 +51,8 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
         <div className="flex-1 min-w-0 flex flex-col h-full">
           {header && (
             <div className={cn(
-              'mb-2',
-              'bg-white rounded-xl py-2 px-3 shadow-sm'
+              'mb-3',
+              'bg-white rounded-xl p-3 md:p-4 shadow-sm'
             )}>
               {header}
             </div>

@@ -591,6 +591,7 @@ export default function WeeklyReview() {
         <PageHeader
           title="Weekly Reviews"
           subtitle="Reflect on your journey, week by week"
+          icon={Sparkles}
           sync={{
             status: syncStatus,
             hasUnsavedChanges: hasUnsavedChanges || annualHasUnsavedChanges,

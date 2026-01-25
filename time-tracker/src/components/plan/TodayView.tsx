@@ -44,12 +44,12 @@ export function TodayView() {
         />
       }
     >
-      <Card className="p-4 sm:p-6">
+      <Card className="p-4 md:p-6">
         {/* Tabs */}
         <Tabs tabs={TABS} activeTab={activeTab} onChange={(id) => setActiveTab(id as PlanTab)} />
 
         {/* Tab Content */}
-        <div className="mt-6">
+        <div className="mt-4 md:mt-6">
           {activeTab === 'mission' && <MissionControl data={planData} />}
           {activeTab === 'timeline' && <Timeline data={planData} />}
           {activeTab === 'settings' && <PlanSettings data={planData} />}

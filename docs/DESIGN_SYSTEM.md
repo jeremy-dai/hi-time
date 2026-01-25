@@ -411,6 +411,232 @@ Used for simpler pages rendered as cards: **Dashboard**, **Memories**
 | Inline Gap | `space-x-2`, `space-x-3` | 0.5-0.75rem |
 | Grid Gap | `gap-6` | 1.5rem / 24px |
 
+---
+
+### Mobile-First Responsive Design (v2.2 - Jan 2026)
+
+Hi-Time uses a **mobile-first approach** where all spacing, typography, and layout patterns default to mobile-optimized values and scale up for larger screens.
+
+#### Core Principles
+
+1. **Start Small, Scale Up**: Design for mobile first, then enhance for desktop
+2. **Consistent Breakpoints**: Use Tailwind's standard breakpoints (sm: 640px, md: 768px, lg: 1024px)
+3. **Progressive Enhancement**: Add complexity only where screen space allows
+4. **Touch-Friendly**: Ensure all interactive elements meet minimum touch target sizes
+
+#### Responsive Spacing Scale
+
+**Container Padding** (cards, panels):
+```tsx
+// Mobile (default) → Tablet+ (md:)
+p-4 md:p-6          // 16px → 24px (standard for cards)
+p-3 md:p-4          // 12px → 16px (containers, nested elements)
+```
+
+**Section Gaps** (spacing between major sections):
+```tsx
+// Mobile (default) → Tablet+ (md:)
+gap-4 md:gap-6      // 16px → 24px
+space-y-4 md:space-y-6   // Vertical spacing
+```
+
+**Component Gaps** (spacing between related elements):
+```tsx
+// Mobile (default) → Tablet+ (md:)
+gap-3 md:gap-4      // 12px → 16px (KPI cards, grids)
+gap-2 md:gap-3      // 8px → 12px (small elements, icons)
+```
+
+**Margins** (section separation):
+```tsx
+// Mobile (default) → Tablet+ (md:)
+mb-4 md:mb-6        // 16px → 24px (after headers)
+mt-4 md:mt-6        // 16px → 24px (before content)
+```
+
+#### Responsive Typography Scale
+
+**Page Titles**:
+```tsx
+text-xl sm:text-2xl          // 20px → 24px
+// Example: PageHeader title
+```
+
+**Section Headings**:
+```tsx
+text-lg sm:text-xl           // 18px → 20px
+text-base sm:text-lg         // 16px → 18px
+// Example: "Current Cycle", "Key Performance Indicators"
+```
+
+**Subtitles & Captions**:
+```tsx
+text-xs sm:text-sm           // 12px → 14px
+// Example: PageHeader subtitle, KPI metadata
+```
+
+**Body Text**:
+```tsx
+text-sm                      // Usually stays 14px (readable on all screens)
+```
+
+#### Touch Target Guidelines
+
+All interactive elements should meet minimum touch target sizes for mobile usability:
+
+| Element Type | Minimum Size | Recommended Class |
+|-------------|--------------|-------------------|
+| **Large Buttons** | 44px × 44px | `p-3` or `px-4 py-3` |
+| **Regular Buttons** | 40px × 40px | `p-2.5` or `px-3 py-2.5` |
+| **Icon Buttons** | 40px × 40px | `p-2.5`, icon size 20px+ |
+| **Small Buttons** | 36px × 36px | `p-2`, icon size 16px+ |
+| **List Items** | 44px height min | `py-3` |
+
+**Example**:
+```tsx
+// ✅ Good - 44px touch target
+<button className="p-3 hover:bg-gray-100 rounded-lg">
+  <Icon size={20} />
+</button>
+
+// ❌ Bad - 32px touch target (too small)
+<button className="p-2">
+  <Icon size={16} />
+</button>
+```
+
+#### Responsive Layout Patterns
+
+**Standard Page Container**:
+```tsx
+// AppLayout outer container
+<div className="p-3 md:p-4 gap-3 md:gap-4">
+  {/* Mobile: 12px padding, 12px gap */}
+  {/* Desktop: 16px padding, 16px gap */}
+</div>
+```
+
+**Card Components**:
+```tsx
+// PageContainer
+<div className="p-4 sm:p-6">
+  <div className="mb-4 sm:mb-6">
+    {/* Header */}
+  </div>
+  {/* Content */}
+</div>
+```
+
+**Grid Layouts**:
+```tsx
+// KPI Cards
+<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
+  {/* Mobile: 2 columns, 12px gap */}
+  {/* Tablet: 3 columns, 16px gap */}
+  {/* Desktop: 5 columns, 16px gap */}
+</div>
+
+// Main Content Grid
+<div className="grid gap-4 md:gap-6 md:grid-cols-2">
+  {/* Mobile: Stack vertically, 16px gap */}
+  {/* Desktop: 2 columns, 24px gap */}
+</div>
+```
+
+**Section Spacing**:
+```tsx
+// Mission Control sections
+<div className="flex flex-col gap-4 md:gap-6">
+  <div className="space-y-4 md:space-y-6">
+    {/* Nested sections with progressive spacing */}
+  </div>
+</div>
+```
+
+#### Mobile-Specific Optimizations
+
+**Fixed Heights** - Use min-height on mobile, fixed height on desktop:
+```tsx
+// ✅ Good - Flexible on mobile
+className="min-h-[400px] md:h-[calc(100vh-6rem)]"
+
+// ❌ Bad - Breaks on small screens
+className="h-[calc(100vh-6rem)]"
+```
+
+**Hidden Elements** - Hide non-essential UI on mobile:
+```tsx
+// Sidebar (show as drawer on mobile)
+className="hidden md:block"
+
+// Mobile-only elements
+className="md:hidden"
+```
+
+**Responsive Text Sizes** - Scale headings for mobile:
+```tsx
+// Section headings
+<h2 className="text-base sm:text-lg font-bold">
+  Key Performance Indicators
+</h2>
+
+// Supporting text
+<span className="text-xs sm:text-sm text-gray-500">
+  (Current Cycle)
+</span>
+```
+
+#### Breakpoint Usage Guidelines
+
+| Breakpoint | Size | Usage |
+|-----------|------|-------|
+| **default** | < 640px | Mobile phones (primary target) |
+| **sm:** | ≥ 640px | Large phones, small tablets (text scaling) |
+| **md:** | ≥ 768px | Tablets, small laptops (layout changes) |
+| **lg:** | ≥ 1024px | Laptops, desktops (grid expansions) |
+| **xl:** | ≥ 1280px | Large desktops (rarely used) |
+
+**Primary Breakpoint**: Use `md:` (768px) for most layout changes:
+- Sidebar visibility
+- Grid column counts
+- Padding increases
+- Component reorganization
+
+**Secondary Breakpoint**: Use `sm:` (640px) for typography scaling only
+
+**Tertiary Breakpoint**: Use `lg:` (1024px) for expanding grids beyond tablet layouts
+
+#### Implementation Checklist
+
+When creating or updating components for mobile:
+
+- [ ] **Padding**: Use `p-4 md:p-6` for cards (not `p-6` alone)
+- [ ] **Gaps**: Use `gap-4 md:gap-6` for sections (not `gap-6` alone)
+- [ ] **Typography**: Scale headings with `text-lg sm:text-xl` where appropriate
+- [ ] **Touch Targets**: Ensure buttons have `p-2.5` minimum (preferably `p-3`)
+- [ ] **Grids**: Start with 1-2 columns on mobile, expand to 3+ on desktop
+- [ ] **Fixed Heights**: Avoid on mobile - use `min-h-*` instead
+- [ ] **Testing**: Verify layout works at 320px width (iPhone SE)
+
+#### Benefits
+
+**User Experience**:
+- ✅ Comfortable spacing on small screens (no cramping)
+- ✅ Easy-to-tap buttons and controls (44px+ targets)
+- ✅ Readable text without zooming
+- ✅ Smooth scaling from mobile to desktop
+
+**Developer Experience**:
+- ✅ Consistent responsive patterns across codebase
+- ✅ Clear guidelines reduce guesswork
+- ✅ Mobile-first prevents desktop-only thinking
+- ✅ Easier to maintain and extend
+
+**Performance**:
+- ✅ Mobile devices load appropriate spacing (no wasted space)
+- ✅ No complex media queries needed (Tailwind handles it)
+- ✅ Faster development (reuse patterns)
+
 ### Container Widths
 
 | Purpose | Tailwind Class | Max Width |
@@ -1614,6 +1840,7 @@ src/
 - **v1.2** (Jan 2026): Standardized page layout patterns (max-width, responsive padding, border radius consistency)
 - **v2.0** (Jan 2026): Unified Layout System - PageContainer and PageHeader components for consistent page structure across all views
 - **v2.1** (Jan 2026): Simplified Layout - Removed complex variants, established unified white card design for all pages
+- **v2.2** (Jan 2026): Mobile-First Responsive Design - Comprehensive mobile optimization with responsive spacing, typography, and touch target guidelines
 
 
 ---

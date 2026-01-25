@@ -339,15 +339,15 @@ export function MissionControl({ data }: MissionControlProps) {
     : []
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6">
       {/* Cycle and KPIs Section */}
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Current Cycle */}
         {currentCycle && (
           <div>
             <div className="flex items-center gap-2 mb-3">
               <div className="h-6 w-1 bg-linear-to-b from-emerald-500 to-teal-600 rounded-full" />
-              <h2 className="text-lg font-bold text-gray-900">Current Cycle</h2>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">Current Cycle</h2>
             </div>
             <CycleCard
               cycle={currentCycle}
@@ -361,13 +361,13 @@ export function MissionControl({ data }: MissionControlProps) {
         {/* KPIs */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-lg font-bold text-gray-900">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900">
               Key Performance Indicators
-              {currentCycle && <span className="text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}
+              {currentCycle && <span className="text-xs sm:text-sm font-normal text-gray-500 ml-2">(Current Cycle)</span>}
             </h2>
           </div>
           {cycleTrackers.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
               {cycleTrackers.map(tracker => (
                 <KPICard
                   key={tracker.id}
@@ -387,7 +387,7 @@ export function MissionControl({ data }: MissionControlProps) {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 md:grid-cols-2 items-stretch">
+      <div className="grid gap-4 md:gap-6 md:grid-cols-2 items-stretch">
         {/* Left Column: Daily Shipping */}
         <WeeklyShipping />
 
@@ -419,10 +419,10 @@ export function MissionControl({ data }: MissionControlProps) {
 
       {/* Upcoming Trajectory (Full Width) */}
       {upcomingWeeks.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           <div className="flex items-center gap-2">
             <div className="h-6 w-1 bg-linear-to-b from-purple-500 to-indigo-600 rounded-full" />
-            <h3 className="text-lg font-bold text-gray-900">Upcoming Trajectory</h3>
+            <h3 className="text-base sm:text-lg font-bold text-gray-900">Upcoming Trajectory</h3>
           </div>
           <div className="relative pl-6 space-y-4">
             {/* Connector line */}

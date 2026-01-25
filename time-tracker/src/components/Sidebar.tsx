@@ -1,4 +1,4 @@
-import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, BookHeart, FileText, Package, BookOpen } from 'lucide-react'
+import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, CalendarRange, Sparkles, Target, BookOpen } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 import { cn } from '../utils/classNames'
 import { getISOWeekYear } from '../utils/date'
@@ -139,7 +139,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
       <div className="flex-1 space-y-1 pl-3">
         <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">Menu</div>
         <SidebarItem
-          icon={<Package size={20} />}
+          icon={<Target size={20} />}
           label="Today"
           active={active === 'today'}
           onClick={() => onNavigate('today')}
@@ -151,7 +151,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           onClick={() => onNavigate('timesheet')}
         />
         <SidebarItem
-          icon={<BookHeart size={20} />}
+          icon={<CalendarRange size={20} />}
           label="Memories"
           active={active === 'memories'}
           onClick={() => onNavigate('memories')}
@@ -169,7 +169,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           onClick={() => onNavigate('annual')}
         />
         <SidebarItem
-          icon={<FileText size={20} />}
+          icon={<Sparkles size={20} />}
           label="Review"
           active={active === 'review'}
           onClick={() => onNavigate('review')}

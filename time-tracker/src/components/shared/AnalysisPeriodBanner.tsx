@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
 import { CalendarRange } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 
@@ -6,12 +7,14 @@ interface AnalysisPeriodBannerProps {
   dateRangeLabel: string
   subtitle: ReactNode
   actions: ReactNode
+  icon?: LucideIcon
 }
 
 export default function AnalysisPeriodBanner({
   dateRangeLabel,
   subtitle,
-  actions
+  actions,
+  icon: Icon = CalendarRange
 }: AnalysisPeriodBannerProps) {
   return (
     <div className={cn(
@@ -19,7 +22,7 @@ export default function AnalysisPeriodBanner({
       'bg-emerald-50 text-emerald-900'
     )}>
       <div className="flex items-center space-x-3">
-        <CalendarRange className="w-5 h-5 text-emerald-600 shrink-0" />
+        <Icon className="w-5 h-5 text-emerald-600 shrink-0" />
         <div>
           <h3 className="font-semibold text-sm">
             Analysis Period: {dateRangeLabel}

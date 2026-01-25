@@ -19,6 +19,7 @@ import {
 import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
 import WeekNavigator from '../shared/WeekNavigator'
 import { cn } from '../../utils/classNames'
+import { TrendingUp } from 'lucide-react'
 
 interface CurrentWeekDashboardProps {
   weeksStore: Record<string, TimeBlock[][]>
@@ -121,6 +122,7 @@ export default function CurrentWeekDashboard({
     <div className="space-y-6">
       {/* Analysis Period Banner with Week Selector and Export Button */}
       <AnalysisPeriodBanner
+        icon={TrendingUp}
         dateRangeLabel={dateRangeLabel}
         subtitle={<>Latest week: <span className="font-semibold">{displayWeekKey}</span> • 4-week trends</>}
         actions={

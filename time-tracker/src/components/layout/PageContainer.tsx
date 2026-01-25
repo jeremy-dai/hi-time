@@ -59,8 +59,8 @@ export function PageContainer({
   // Layout without sidebar - simple white card
   if (!sidebar) {
     return (
-      <div className={cn('bg-white rounded-xl shadow-sm p-3 sm:p-6', className)}>
-        {header && <div className="mb-6">{header}</div>}
+      <div className={cn('bg-white rounded-xl shadow-sm p-4 sm:p-6', className)}>
+        {header && <div className="mb-4 sm:mb-6">{header}</div>}
         {children}
       </div>
     )
@@ -125,9 +125,9 @@ export function PageContainer({
 
         {/* Main content */}
         <div className="flex-1 min-w-0 overflow-auto">
-          <div className="p-3 sm:p-6">
+          <div className="p-4 sm:p-6">
             {header && (
-              <div className="mb-6">
+              <div className="mb-4 sm:mb-6">
                 {/* Inject onMobileMenuClick into PageHeader if sidebar exists */}
                 {isValidElement(header)
                   ? cloneElement(header, { onMobileMenuClick: () => setMobileSidebarOpen(true) } as any)

@@ -139,7 +139,7 @@ export function Timeline({ data }: TimelineProps) {
   }
 
   return (
-    <div className="bg-gray-50 h-[calc(100vh-6rem)] flex overflow-hidden">
+    <div className="bg-gray-50 min-h-[400px] md:h-[calc(100vh-6rem)] flex overflow-hidden">
       {/* Left Sidebar - Hidden on mobile, fixed height on desktop */}
       <div className={cn(
         "h-full overflow-y-auto border-r border-gray-200 bg-gray-50/95 transition-all duration-300 shrink-0 hidden md:block",
@@ -161,12 +161,12 @@ export function Timeline({ data }: TimelineProps) {
         ref={scrollContainerRef}
         className="flex-1 min-w-0 overflow-y-auto"
       >
-        <div className="max-w-5xl mx-auto p-6 flex flex-col gap-6">
+        <div className="max-w-5xl mx-auto p-4 md:p-6 flex flex-col gap-4 md:gap-6">
         {/* Compact Header */}
-        <h1 className="text-xl font-semibold text-gray-900">Timeline</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-gray-900">Timeline</h1>
 
         {/* Timeline by Cycle */}
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 space-y-4 md:space-y-6">
         {cycles.length === 0 ? (
           <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center text-gray-500">
             No cycles defined. Import a plan to get started.

@@ -12,7 +12,7 @@ import YearNavigator from '../shared/YearNavigator'
 import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
 import { SkeletonLoader } from '../shared/SkeletonLoader'
 import { ExportInfo } from '../insights'
-import { Download, Check } from 'lucide-react'
+import { Download, Check, CalendarDays } from 'lucide-react'
 import { cn } from '../../utils/classNames'
 import { generateAnnualReport, downloadAnnualMarkdownReport } from '../../utils/annualMarkdownGenerator'
 import { startOfISOWeek, endOfISOWeek } from '../../utils/date'
@@ -183,6 +183,7 @@ export default function AnnualDashboard({
     <div className="space-y-6">
       {/* Analysis Period Banner with Year Selector and Buttons */}
       <AnalysisPeriodBanner
+        icon={CalendarDays}
         dateRangeLabel={dateRangeLabel}
         subtitle={<>{weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}</>}
         actions={

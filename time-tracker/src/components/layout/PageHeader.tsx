@@ -79,27 +79,27 @@ export function PageHeader({
   return (
     <div className={className}>
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* Mobile menu button (only shown when onMobileMenuClick is provided) */}
           {onMobileMenuClick && (
             <button
               onClick={onMobileMenuClick}
-              className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+              className="md:hidden p-2.5 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
               aria-label="Open menu"
             >
               <Menu size={20} />
             </button>
           )}
-          {Icon && <Icon className="w-6 h-6 text-emerald-600" />}
-          <div>
+          {Icon && <Icon className="w-6 h-6 text-emerald-600 shrink-0" />}
+          <div className="min-w-0">
             <h1 className={cn(
               "font-bold text-gray-900",
-              subtitle ? "text-xl" : "text-2xl"
+              subtitle ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
             )}>{title}</h1>
-            {subtitle && <p className="text-gray-500 text-sm">{subtitle}</p>}
+            {subtitle && <p className="text-gray-500 text-xs sm:text-sm">{subtitle}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {sync && (
             <SyncStatusIndicator
               status={sync.status}
