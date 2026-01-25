@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useWeekReviews } from '../hooks/useWeekReviews'
 import { useAnnualReview } from '../hooks/useAnnualReview'
-import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Calendar, Circle, Leaf, Sun, CloudRain, Snowflake, Sparkles } from 'lucide-react'
 import { cn } from '../utils/classNames'

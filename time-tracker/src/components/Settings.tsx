@@ -4,7 +4,6 @@ import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX, CATEGORY_COLORS_HEX } from '..
 import { CATEGORY_KEYS } from '../types/time'
 import Card from './shared/Card'
 import { useLocalStorageSync } from '../hooks/useLocalStorageSync'
-import { SyncStatusIndicator } from './SyncStatusIndicator'
 import { normalizeSubcategories } from '../utils/subcategoryHelpers'
 import { toast } from 'sonner'
 import { IconButton } from './shared/IconButton'
