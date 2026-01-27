@@ -51,33 +51,33 @@ function DocumentView({ doc, onUpdate, onDelete }: {
   }
 
   return (
-    <div className="border-b border-gray-200 pb-6 mb-6 last:border-b-0">
+    <div className="pb-6 md:pb-8 mb-6 md:mb-8">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 mb-4 md:mb-6">
+        <div className="flex-1 w-full sm:w-auto">
           {isEditing ? (
             <input
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full text-2xl font-bold text-gray-900 border-b-2 border-lime-500 focus:outline-none pb-1"
+              className="w-full text-xl md:text-2xl font-bold text-gray-900 border-b-2 border-emerald-500 focus:outline-none pb-2"
             />
           ) : (
-            <h2 className="text-2xl font-bold text-gray-900">{doc.title}</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight leading-tight">{doc.title}</h2>
           )}
           {!isEditing && doc.description && (
-            <p className="text-sm text-gray-500 mt-1">{doc.description}</p>
+            <p className="text-sm md:text-base text-gray-500 mt-2 leading-relaxed">{doc.description}</p>
           )}
         </div>
-        <div className="flex items-center gap-2 ml-4">
+        <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-4">
           {isEditing ? (
             <>
               <button
                 onClick={handleUpdate}
-                className="rounded-xl px-3 py-1.5 bg-lime-600 hover:bg-lime-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
+                className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 md:py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center justify-center gap-2 transition-colors min-h-[44px] md:min-h-0"
               >
-                <Save size={14} />
-                Save
+                <Save size={16} />
+                <span>Save</span>
               </button>
               <button
                 onClick={() => {
@@ -87,26 +87,26 @@ function DocumentView({ doc, onUpdate, onDelete }: {
                   setEditDescription(doc.description || '')
                   setEditTags((doc.tags || []).join(', '))
                 }}
-                className="rounded-xl px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium flex items-center gap-2 transition-colors"
+                className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 md:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors min-h-[44px] md:min-h-0"
               >
-                <X size={14} />
-                Cancel
+                <X size={16} />
+                <span>Cancel</span>
               </button>
             </>
           ) : (
             <>
               <button
                 onClick={() => setIsEditing(true)}
-                className="rounded-xl px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium flex items-center gap-2 transition-colors"
+                className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 md:py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium flex items-center justify-center gap-2 transition-colors min-h-[44px] md:min-h-0"
               >
-                <Edit size={14} />
-                Edit
+                <Edit size={16} />
+                <span className="sm:inline">Edit</span>
               </button>
               <button
                 onClick={() => setIsDeleting(true)}
-                className="rounded-xl px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium flex items-center gap-2 transition-colors"
+                className="rounded-xl px-3 py-2.5 md:py-2 bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium flex items-center justify-center gap-2 transition-colors min-h-[44px] md:min-h-0"
               >
-                <Trash2 size={14} />
+                <Trash2 size={16} />
               </button>
             </>
           )}
@@ -115,23 +115,23 @@ function DocumentView({ doc, onUpdate, onDelete }: {
 
       {/* Tags */}
       {isEditing ? (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+        <div className="mb-4 md:mb-6">
+          <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
           <input
             type="text"
             value={editTags}
             onChange={(e) => setEditTags(e.target.value)}
             placeholder="learning, programming, notes"
-            className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
+            className="w-full rounded-xl px-4 py-3 md:py-2.5 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm md:text-base min-h-[44px] md:min-h-0"
           />
         </div>
       ) : (
         doc.tags && doc.tags.length > 0 && (
-          <div className="flex items-center gap-2 mb-4">
-            <Tag size={14} className="text-gray-400" />
+          <div className="flex items-center gap-2 mb-4 md:mb-6">
+            <Tag size={16} className="text-gray-400 flex-shrink-0" />
             <div className="flex flex-wrap gap-2">
               {doc.tags.map((tag, idx) => (
-                <span key={idx} className="rounded-full px-3 py-1 bg-lime-50 text-lime-700 text-xs font-medium">
+                <span key={idx} className="rounded-full px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs md:text-sm font-medium">
                   {tag}
                 </span>
               ))}
@@ -142,14 +142,14 @@ function DocumentView({ doc, onUpdate, onDelete }: {
 
       {/* Description (edit mode only) */}
       {isEditing && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        <div className="mb-4 md:mb-6">
+          <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Description</label>
           <input
             type="text"
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
             placeholder="Short description or summary"
-            className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
+            className="w-full rounded-xl px-4 py-3 md:py-2.5 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm md:text-base min-h-[44px] md:min-h-0"
           />
         </div>
       )}
@@ -160,11 +160,11 @@ function DocumentView({ doc, onUpdate, onDelete }: {
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           rows={15}
-          className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 font-mono text-sm resize-y"
+          className="w-full rounded-xl px-4 py-3 md:py-4 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm md:text-base resize-y leading-relaxed"
           placeholder="# Your Markdown Here&#10;&#10;Write your notes in **markdown** format.&#10;&#10;- Lists work&#10;- Code blocks too&#10;&#10;```javascript&#10;const example = 'hello'&#10;```"
         />
       ) : (
-        <div className="bg-gray-50 rounded-xl p-6">
+        <div className="bg-gray-50/50 rounded-xl p-4 md:p-6">
           <MarkdownRenderer content={doc.content} />
         </div>
       )}
@@ -210,11 +210,23 @@ export function Learning() {
 
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [newContent, setNewContent] = useState('')
   const [newDescription, setNewDescription] = useState('')
   const [newTags, setNewTags] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Filter documents based on search query
+  const filteredDocuments = useMemo(() => {
+    if (!searchQuery.trim()) return documents
+    const query = searchQuery.toLowerCase()
+    return documents.filter(doc =>
+      doc.title.toLowerCase().includes(query) ||
+      doc.content.toLowerCase().includes(query) ||
+      (doc.tags && doc.tags.some(tag => tag.toLowerCase().includes(query)))
+    )
+  }, [documents, searchQuery])
 
   // Derive selected document
   const selectedDoc = useMemo(() =>
@@ -224,10 +236,10 @@ export function Learning() {
 
   // Auto-select first doc when documents load
   useEffect(() => {
-    if (documents.length > 0 && !selectedDocId) {
-      setSelectedDocId(documents[0].id)
+    if (filteredDocuments.length > 0 && !selectedDocId) {
+      setSelectedDocId(filteredDocuments[0].id)
     }
-  }, [documents, selectedDocId])
+  }, [documents, selectedDocId, filteredDocuments])
 
   const handleCreate = async () => {
     if (!newTitle.trim()) {
@@ -374,13 +386,12 @@ export function Learning() {
           <input 
             type="text" 
             placeholder="Search notes..." 
-            className="w-full bg-zinc-50 border border-zinc-200 rounded-lg py-1.5 pl-8 pr-10 text-xs font-medium text-zinc-700 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-zinc-50 border border-zinc-200 rounded-lg py-1.5 pl-8 pr-3 text-xs font-medium text-zinc-700 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
           />
           <div className="absolute left-2.5 top-1.5 text-zinc-400 group-focus-within:text-emerald-500 transition-colors">
             <Search size={14} />
-          </div>
-          <div className="absolute right-2.5 top-1.5 text-2xs font-bold text-zinc-400 border border-zinc-200 rounded px-1.5 py-px bg-white shadow-sm">
-            ⌘K
           </div>
         </div>
       </div>
@@ -416,13 +427,13 @@ export function Learning() {
 
       {/* Document list */}
       <div className="flex-1 overflow-y-auto">
-        {documents.length === 0 ? (
+        {filteredDocuments.length === 0 ? (
           <div className="p-4 text-center text-gray-500 text-sm">
-            No documents yet
+            {documents.length === 0 ? 'No documents yet' : 'No matching documents'}
           </div>
         ) : (
           <div className="py-0">
-            {documents.map(doc => (
+            {filteredDocuments.map(doc => (
               <button
                 key={doc.id}
                 onClick={() => setSelectedDocId(doc.id)}
@@ -483,61 +494,61 @@ export function Learning() {
 
           {/* Create New Document Form */}
           {isCreating && (
-            <Card className="mb-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
-                <Plus size={20} className="text-lime-600" />
+            <div className="mb-6">
+              <h3 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-gray-900 flex items-center gap-2">
+                <Plus size={20} className="text-emerald-600" />
                 Create New Document
               </h3>
-              <div className="space-y-4">
+              <div className="space-y-4 md:space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Title *</label>
                   <input
                     type="text"
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="Document title"
-                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
+                    className="w-full rounded-xl px-4 py-3 md:py-2.5 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm md:text-base min-h-[44px] md:min-h-0"
                     autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Description</label>
                   <input
                     type="text"
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Short description or summary"
-                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
+                    className="w-full rounded-xl px-4 py-3 md:py-2.5 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm md:text-base min-h-[44px] md:min-h-0"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Tags (comma-separated)</label>
                   <input
                     type="text"
                     value={newTags}
                     onChange={(e) => setNewTags(e.target.value)}
                     placeholder="learning, programming, notes"
-                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
+                    className="w-full rounded-xl px-4 py-3 md:py-2.5 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm md:text-base min-h-[44px] md:min-h-0"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Content (Markdown)</label>
+                  <label className="block text-sm md:text-base font-medium text-gray-700 mb-2">Content (Markdown)</label>
                   <textarea
                     value={newContent}
                     onChange={(e) => setNewContent(e.target.value)}
                     rows={12}
-                    className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 font-mono text-sm resize-y"
+                    className="w-full rounded-xl px-4 py-3 md:py-4 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm md:text-base resize-y leading-relaxed"
                     placeholder="# Your Markdown Here&#10;&#10;Write your notes in **markdown** format."
                   />
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     onClick={handleCreate}
-                    className="flex-1 rounded-xl px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold text-sm shadow-sm transition-colors"
+                    className="flex-1 rounded-xl px-4 py-3 md:py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm md:text-base shadow-sm transition-colors min-h-[44px] md:min-h-0"
                   >
                     Create Document
                   </button>
@@ -549,48 +560,44 @@ export function Learning() {
                       setNewDescription('')
                       setNewTags('')
                     }}
-                    className="rounded-xl px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm transition-colors"
+                    className="rounded-xl px-4 py-3 md:py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-sm md:text-base transition-colors min-h-[44px] md:min-h-0"
                   >
                     Cancel
                   </button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Document Content */}
           {isLoading ? (
-            <Card>
-              <SkeletonLoader variant="card" height="400px" />
-            </Card>
-          ) : documents.length === 0 && !isCreating ? (
-            <Card>
-              <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 mb-4">No learning documents yet</p>
+            <SkeletonLoader variant="card" height="400px" />
+          ) : filteredDocuments.length === 0 && !isCreating ? (
+            <div className="text-center py-16 md:py-20">
+              <FileText className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4 md:mb-6" />
+              <p className="text-base md:text-lg text-gray-500 mb-6 md:mb-8">
+                {documents.length === 0 ? 'No learning documents yet' : 'No matching documents'}
+              </p>
+              {documents.length === 0 && (
                 <button
                   onClick={() => setIsCreating(true)}
-                  className="rounded-xl px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold text-sm shadow-sm transition-colors"
+                  className="rounded-xl px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm md:text-base shadow-sm transition-colors min-h-[44px]"
                 >
                   Create Your First Document
                 </button>
-              </div>
-            </Card>
+              )}
+            </div>
           ) : selectedDoc && !isCreating ? (
-            <Card>
-              <DocumentView
-                doc={selectedDoc}
-                onUpdate={updateDocument}
-                onDelete={handleDeleteDoc}
-              />
-            </Card>
+            <DocumentView
+              doc={selectedDoc}
+              onUpdate={updateDocument}
+              onDelete={handleDeleteDoc}
+            />
           ) : !isCreating ? (
-            <Card>
-              <div className="text-center py-12">
-                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Select a document from the sidebar</p>
-              </div>
-            </Card>
+            <div className="text-center py-16 md:py-20">
+              <FileText className="w-16 h-16 md:w-20 md:h-20 text-gray-300 mx-auto mb-4 md:mb-6" />
+              <p className="text-base md:text-lg text-gray-500">Select a document from the sidebar</p>
+            </div>
           ) : null}
     </PageContainer>
   )

@@ -5,7 +5,7 @@ import { generateEnhancedAnalysis } from '../../utils/enhancedAnalytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
 import { useWeekReviews } from '../../hooks/useWeekReviews'
 import { useDailyShipping } from '../../hooks/useDailyShipping'
-import KPICards from './KPICards'
+import CategoryBreakdown from '../shared/CategoryBreakdown'
 import WeeklyBreakdownChart from './WeeklyBreakdownChart'
 import MultiWeekTrendChart from './MultiWeekTrendChart'
 import {
@@ -16,10 +16,10 @@ import {
   WeeklyWorkGoal,
   WeeklyRhythmHeatmap
 } from '../insights'
-import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
 import WeekNavigator from '../shared/WeekNavigator'
+import { PageHeader } from '../layout/PageHeader'
 import { cn } from '../../utils/classNames'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, BarChart3 } from 'lucide-react'
 
 interface CurrentWeekDashboardProps {
   weeksStore: Record<string, TimeBlock[][]>
@@ -120,11 +120,15 @@ export default function CurrentWeekDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Analysis Period Banner with Week Selector and Export Button */}
-      <AnalysisPeriodBanner
+      {/* Page Header */}
+      <PageHeader
+        title="Trends"
+        subtitle={<>
+          {dateRangeLabel} • 4-week trends
+        </>}
         icon={TrendingUp}
-        dateRangeLabel={dateRangeLabel}
-        subtitle={<>Latest week: <span className="font-semibold">{displayWeekKey}</span> • 4-week trends</>}
+        useGradientTitle={true}
+        animateIcon={true}
         actions={
           <>
             <WeekNavigator
@@ -147,16 +151,14 @@ export default function CurrentWeekDashboard({
 
       {/* LATEST WEEK SECTION */}
       <div>
-        <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-          📊 Latest Week Overview
+        <h2 className={cn('text-base font-semibold mb-4', 'text-gray-900')}>
+          Latest Week Overview
         </h2>
-
         <div className="space-y-6">
           {/* Category Summary and Weekly Work Goal - Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <KPICards
-              latestWeekStats={currentStats}
-              fourWeekAverage={fourWeekAverage as any}
+            <CategoryBreakdown
+              categoryHours={currentStats.categoryHours}
             />
             <WeeklyWorkGoal metrics={enhancedAnalysis.latestWeek.workGoalMetrics} />
           </div>
@@ -175,8 +177,11 @@ export default function CurrentWeekDashboard({
 
           {/* Average Daily Breakdown - Pattern across week */}
           <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
-            <div className={cn('text-lg font-semibold mb-3', 'text-gray-900')}>
-              Average Daily Breakdown (4 Weeks)
+            <div className="flex items-center justify-between mb-3">
+              <h2 className={cn('text-base font-semibold', 'text-gray-900')}>
+                Average Daily Breakdown (4 Weeks)
+              </h2>
+              <BarChart3 className="w-4 h-4 text-gray-400" />
             </div>
             <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
           </div>

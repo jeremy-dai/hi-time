@@ -25,6 +25,8 @@ The design system uses a **Centralized Token Architecture** to ensure consistenc
 1. **Never Hardcode Values**: Do not use arbitrary values like `w-[170px]` or `text-[10px]`. Always use the semantic utility classes (e.g., `w-sidebar`, `text-2xs`).
 2. **Use Shared Components**: Prefer `<Card>` and `<Button>` over raw `div` elements to ensure consistent glassmorphism and interaction states.
 3. **Follow the Token Scale**: Use the defined spacing and typography scales.
+4. **Externalize Constants**: Define static data (like color maps) outside components to prevent re-creation on render. Use `as const` for type safety.
+5. **Use Type-Safe Helpers**: Create reusable helper functions for complex lookups (e.g., color classes) to eliminate duplication and ensure valid types.
 
 ---
 
@@ -33,6 +35,11 @@ The design system uses a **Centralized Token Architecture** to ensure consistenc
 ### Emerald & Zinc Theme
 
 The application uses a **refined Emerald** color palette that creates a professional, calm, and focused atmosphere. This theme replaces the previous Lime/Chartreuse theme.
+
+**Color Unification**:
+All semantic tokens and component styles have been unified to use the Emerald palette exclusively.
+- **Affected Areas**: Login, Navigation, Mission Control, Timeline, Settings.
+- **Removed**: All instances of Lime/Chartreuse (`lime-500`, `lime-50`, etc.).
 
 #### Primary Theme Colors
 
@@ -269,8 +276,15 @@ All interactive elements should meet minimum touch target sizes for mobile usabi
 |-------------|--------------|-------------------|
 | **Large Buttons** | 44px × 44px | `p-3` or `px-4 py-3` |
 | **Regular Buttons** | 40px × 40px | `p-2.5` or `px-3 py-2.5` |
-| **Icon Buttons** | 40px × 40px | `p-2.5`, icon size 20px+ |
+| **Inputs** | 44px height | `min-h-[44px]` |
+| **Icon Buttons** | 40px × 40px | `p-2.5`, icon size 16px+ |
 | **List Items** | 44px height min | `py-3` |
+
+#### Typography Adjustments
+
+- **Balanced Headings**: Max `text-2xl` on desktop (was `text-3xl`), `text-xl` on mobile.
+- **Body Text**: `text-sm` on mobile, `text-base` on desktop.
+- **Line Height**: `leading-relaxed` for better readability.
 
 #### Breakpoint Usage Guidelines
 
@@ -293,6 +307,37 @@ All interactive elements should meet minimum touch target sizes for mobile usabi
 ---
 
 ## Component Patterns
+
+### Dashboard Cards
+Cards on the dashboard follow a strict "Pro SaaS" pattern for consistency and information density.
+
+**Header Structure**:
+- **Title**: `text-base font-semibold text-gray-900`
+- **Icon**: `w-4 h-4 text-gray-400` (Right-aligned)
+- **Container**: `flex items-center justify-between mb-3` (or `mb-4` depending on spacing needs)
+
+**Card Container**:
+- **Background**: `bg-white shadow-sm` or `glass-card`
+- **Padding**: `p-4` or `p-6`
+- **Border Radius**: `rounded-xl`
+
+### Page Headers
+All pages use a unified `PageHeader` component.
+
+- **Title**: Large, bold, optionally gradient (`text-gradient`).
+- **Subtitle**: Support for rich text (ReactNode) for dynamic summaries.
+- **Actions**: Right-aligned controls (Export, Navigation).
+- **Icons**: Optional animated icons (`w-6 h-6 text-emerald-600`).
+
+### Buttons
+- **Primary**: `bg-emerald-600 text-white hover:bg-emerald-700`
+- **Secondary/Ghost**: `text-gray-600 hover:bg-gray-100`
+- **Size**: Standardized padding and height (`h-9` or `h-10`).
+
+### Charts
+- **Headers**: Standardized to `text-base` (not `text-lg`) to reduce visual noise.
+- **Legends**: Clear, concise labels with appropriate color indicators.
+- **Tooltips**: White background, shadow, rounded corners.
 
 ### 1. Card Component
 
@@ -319,13 +364,14 @@ Updated to use glassmorphism by default.
 
 ### 3. Segmented Controls (Tabs)
 
-**Location**: `components/plan/TodayView.tsx` (and others)
+**Location**: `components/shared/SegmentedTabs.tsx`
 
-Replaces standard tabs with a pill-shaped button group.
+Reusable component replacing standard tabs with a pill-shaped button group. Used in **TodayView** and **Settings**.
 
 - **Container**: `bg-zinc-100/50 p-1 rounded-lg inline-flex`
 - **Active Tab**: `bg-white shadow-sm text-zinc-900 ring-1 ring-black/5`
 - **Inactive Tab**: `text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/50`
+- **Features**: Smooth transitions, consistent Lucide icons, mobile-responsive.
 
 ### 4. KPI Cards
 
@@ -362,6 +408,62 @@ Simplified for clarity and modern aesthetic.
 | **Syncing** | 🔵 Emerald (`text-emerald-600`) | ⋯ | Currently uploading data |
 | **Error** | 🔴 Red (`text-red-600`) | ⚠ | Sync failed, retry available |
 | **Idle** | ⚫ Gray (`text-gray-500`) | - | No active changes or syncs |
+
+### 7. Unified Data Components
+
+**Location**: `components/shared/`
+
+Replaces disparate implementation files with unified, configurable components.
+
+#### CategoryBreakdown
+- **Purpose**: Visualizes time distribution across the 5 semantic categories.
+- **Style**: Single unified format (Title case labels, thin progress bars, hours + percentage on right).
+- **Updates**: Removed `variant` and `categoryAverages` props for consistency across dashboards.
+
+#### ProductivityStreak
+- **Purpose**: Tracks daily productivity streaks with visual indicators.
+- **Variants**: Unified component for both current week and annual views.
+
+### 8. Analysis Period Banner
+
+**Location**: `components/shared/AnalysisPeriodBanner.tsx`
+
+Follows the **PageHeader Aesthetic**:
+- **Background**: Clean white (`bg-white`) instead of heavy colors.
+- **Structure**: Emerald icon in pill, subtle bottom border, dark gray text.
+
+### 9. Page Header Standards
+
+**Location**: `components/layout/PageHeader.tsx` used in `TodayView`, `CurrentWeekDashboard`, `AnnualDashboard`.
+
+- **Visuals**:
+    - **Gradient Title**: Uses `text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-900`.
+    - **Animated Icon**: Primary icon animates on hover (e.g., Target, TrendingUp, CalendarDays).
+- **Structure**: Consistent use of `useGradientTitle={true}` and `animateIcon={true}` props.
+
+### 10. Settings Patterns
+
+**Location**: `components/settings/`
+
+- **Glassmorphism**: Replaced solid cards with `glass-card` components.
+- **Collapsible Sections**: Used for technical details (e.g., JSON Format) with chevron animation.
+- **Danger Zone**: Gradient background (`from-red-50 to-white`) with strong red border.
+- **Export/Import**: Large colored icons with better visual hierarchy.
+
+### 11. Learning Page Patterns
+
+**Location**: `components/Learning.tsx`
+
+Designed for distraction-free reading and writing.
+
+- **Layout**: Clean document view without card wrappers (removed inner cards).
+- **Search**: Real-time filtering with keyword matching (title, content, tags).
+- **Typography**: 
+  - **Title**: `text-xl md:text-2xl font-bold`
+  - **Content**: `text-sm md:text-base` with `leading-relaxed`
+- **Interactions**:
+  - **Edit Mode**: Seamless toggle between view/edit states.
+  - **Sidebar**: Integrated search and file management.
 
 ---
 

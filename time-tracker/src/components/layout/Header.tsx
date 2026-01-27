@@ -152,7 +152,7 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
           <button
             className={cn(
               'px-4 py-2 rounded-full text-sm font-bold transition-all ml-1',
-              'bg-[hsl(var(--color-brand-primary))] text-black hover:brightness-110 shadow-sm'
+              'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
             )}
             onClick={() => onChangeDate(new Date())}
           >

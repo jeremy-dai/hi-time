@@ -4,6 +4,67 @@ import { Target, Edit2, Check, X, CheckCircle2, Circle, Clock, AlertCircle, Chev
 import { cn } from '../../../utils/classNames'
 import { Modal } from '../../shared/Modal'
 
+// Color mappings (defined once outside component for performance)
+const COLOR_CLASSES = {
+  border: {
+    blue: 'border-blue-100',
+    purple: 'border-purple-100',
+    yellow: 'border-yellow-100',
+    green: 'border-green-100',
+    red: 'border-red-100',
+    indigo: 'border-indigo-100',
+    emerald: 'border-emerald-100',
+    lime: 'border-lime-100',
+  },
+  bgIcon: {
+    blue: 'text-blue-500/10',
+    purple: 'text-purple-500/10',
+    yellow: 'text-yellow-500/10',
+    green: 'text-green-500/10',
+    red: 'text-red-500/10',
+    indigo: 'text-indigo-500/10',
+    emerald: 'text-emerald-500/10',
+    lime: 'text-lime-500/10',
+  },
+  label: {
+    blue: 'text-blue-600/70',
+    purple: 'text-purple-600/70',
+    yellow: 'text-yellow-600/70',
+    green: 'text-green-600/70',
+    red: 'text-red-600/70',
+    indigo: 'text-indigo-600/70',
+    emerald: 'text-emerald-600/70',
+    lime: 'text-lime-600/70',
+  },
+  icon: {
+    blue: 'text-blue-600',
+    purple: 'text-purple-600',
+    yellow: 'text-yellow-600',
+    green: 'text-green-600',
+    red: 'text-red-600',
+    indigo: 'text-indigo-600',
+    emerald: 'text-emerald-600',
+    lime: 'text-lime-600',
+  },
+  bar: {
+    blue: 'bg-blue-600',
+    purple: 'bg-purple-600',
+    yellow: 'bg-yellow-600',
+    green: 'bg-green-600',
+    red: 'bg-red-600',
+    indigo: 'bg-indigo-600',
+    emerald: 'bg-emerald-600',
+    lime: 'bg-lime-600',
+  },
+} as const
+
+type ColorName = keyof typeof COLOR_CLASSES.border
+
+function getColorClass(color: string | undefined, type: keyof typeof COLOR_CLASSES, fallback: string): string {
+  if (!color || !(color in COLOR_CLASSES[type])) return fallback
+  return COLOR_CLASSES[type][color as ColorName]
+}
+
 interface KPICardProps {
   tracker: PlanTracker
   className?: string
@@ -64,21 +125,13 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
 
   const isNumeric = typeof tracker.baseline === 'number' && typeof tracker.target === 'number'
 
-  // Map color names to Tailwind classes
-  const colorMap: Record<string, string> = {
-    blue: 'text-blue-600',
-    purple: 'text-purple-600',
-    yellow: 'text-yellow-600',
-    green: 'text-green-600',
-    red: 'text-red-600',
-    indigo: 'text-indigo-600',
-    emerald: 'text-emerald-600',
-    lime: 'text-lime-600',
-  }
-  
-  const iconColorClass = tracker.color && colorMap[tracker.color] ? colorMap[tracker.color] : 'text-emerald-600'
-  const ringColorClass = tracker.color && colorMap[tracker.color] ? `ring-${tracker.color}-500` : 'ring-emerald-500'
-  const barColorClass = tracker.color && colorMap[tracker.color] ? `bg-${tracker.color}-600` : 'bg-emerald-600'
+  // Get color classes using helper function
+  const borderColorClass = getColorClass(tracker.color, 'border', 'border-emerald-100')
+  const bgIconColorClass = getColorClass(tracker.color, 'bgIcon', 'text-emerald-500/10')
+  const labelColorClass = getColorClass(tracker.color, 'label', 'text-emerald-600/70')
+  const iconColorClass = getColorClass(tracker.color, 'icon', 'text-emerald-600')
+  const barColorClass = getColorClass(tracker.color, 'bar', 'bg-emerald-600')
+  const ringColorClass = tracker.color ? `ring-${tracker.color}-500` : 'ring-emerald-500'
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -141,52 +194,43 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
     <div
       onClick={handleCardClick}
       className={cn(
-        'group relative glass-card rounded-xl transition-all duration-200 ease-out',
-        compact ? 'p-4' : 'p-6',
-        !isEditing && 'hover:translate-y-[-2px] hover:border-zinc-300/50',
+        'group relative rounded-xl overflow-hidden transition-all duration-300',
+        compact ? 'p-4' : 'p-5',
+        'bg-white border shadow-sm',
+        borderColorClass,
+        !isEditing && 'hover:scale-[1.02]',
         isEditing && `ring-2 border-transparent shadow-lg ${ringColorClass}`,
         isClickable && 'cursor-pointer',
         className
       )}
     >
-      {/* Header */}
-      <div className="relative flex items-start justify-between mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <div className={cn(
-              "p-1.5 rounded-lg bg-linear-to-br transition-colors",
-              iconColorClass.includes('blue') ? 'from-blue-100 to-blue-50' :
-              iconColorClass.includes('purple') ? 'from-purple-100 to-purple-50' :
-              iconColorClass.includes('yellow') ? 'from-yellow-100 to-yellow-50' :
-              iconColorClass.includes('green') && !iconColorClass.includes('emerald') ? 'from-green-100 to-green-50' :
-              iconColorClass.includes('red') ? 'from-red-100 to-red-50' :
-              iconColorClass.includes('indigo') ? 'from-indigo-100 to-indigo-50' :
-              'from-emerald-100 to-emerald-50'
-            )}>
-              <Icon className={cn(iconColorClass, compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
-            </div>
-            {onUpdate && !isEditing && (
-              <button
-                onClick={() => {
-                  setEditValue(tracker.current)
-                  setIsEditing(true)
-                }}
-                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-all"
-              >
-                <Edit2 className={cn(compact ? "h-3 w-3" : "h-3.5 w-3.5")} />
-              </button>
-            )}
-          </div>
-          <h4 className={cn("font-semibold text-gray-700 leading-tight", compact ? "text-xs" : "text-sm")}>
-            {tracker.name}
-          </h4>
-        </div>
-      </div>
+      {/* Decorative background icon */}
+      <Icon className={cn("absolute -right-2 -bottom-2 w-16 h-16 rotate-12", bgIconColorClass)} />
 
-      {/* Value */}
-      <div className={cn("relative", compact ? "mb-2" : "mb-3")}>
+      {/* Content */}
+      <div className="relative z-10">
+        {/* Label */}
+        <div className="flex items-center justify-between mb-1">
+          <div className={cn("text-2xs font-bold uppercase tracking-wider", labelColorClass)}>
+            {tracker.name}
+          </div>
+          {onUpdate && !isEditing && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setEditValue(tracker.current)
+                setIsEditing(true)
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-all"
+            >
+              <Edit2 className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Value */}
         {isEditing ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mt-2">
             <input
               ref={inputRef}
               type={isNumeric ? 'number' : 'text'}
@@ -199,13 +243,19 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
               )}
             />
             <button
-              onClick={handleSave}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleSave()
+              }}
               className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 shadow-sm transition-colors"
             >
               <Check size={compact ? 14 : 16} />
             </button>
             <button
-              onClick={handleCancel}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleCancel()
+              }}
               className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors"
             >
               <X size={compact ? 14 : 16} />
@@ -213,50 +263,28 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
           </div>
         ) : (
           <div className="flex items-baseline gap-1">
-            <span className={cn(
+            <div className={cn(
               "font-bold tracking-tight text-zinc-900",
-              compact ? "text-3xl" : "text-4xl"
+              compact ? "text-4xl" : "text-3xl"
             )}>
               {tracker.current}
-            </span>
-            {tracker.unit && (
-              <span className="text-xs font-medium text-zinc-400">
-                {tracker.unit}
-              </span>
-            )}
-            {tracker.target !== undefined && (
-              <span className="text-xs text-zinc-400 ml-1">
-                / {tracker.target}
-              </span>
-            )}
+            </div>
+            <div className="text-xs font-medium text-zinc-400">
+              {tracker.unit && <span>{tracker.unit} </span>}
+              {tracker.target !== undefined && (
+                <span>/ {tracker.target}</span>
+              )}
+            </div>
           </div>
         )}
       </div>
 
       {/* Progress bar (only for numeric) */}
-      {isNumeric && (
-        <div className="relative mt-1">
-          <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-            <div
-              className={cn(
-                "h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden",
-                barColorClass
-              )}
-              style={{ width: `${progress}%` }}
-            >
-              {/* Shine effect */}
-              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-            </div>
-          </div>
-          {/* Percentage label */}
-          <div className={cn(
-            "absolute -top-5 right-0 text-xs font-bold transition-opacity",
-            progress > 0 ? "opacity-100" : "opacity-0",
-            iconColorClass
-          )}>
-            {Math.round(progress)}%
-          </div>
-        </div>
+      {isNumeric && !isEditing && (
+        <div
+          className={cn("absolute bottom-0 left-0 h-1 transition-all duration-1000", barColorClass)}
+          style={{ width: `${progress}%` }}
+        />
       )}
 
       {/* Click indicator for cards with details */}

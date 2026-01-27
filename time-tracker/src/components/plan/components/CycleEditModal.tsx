@@ -67,7 +67,7 @@ export function CycleEditModal({ cycle, cycleIndex, isOpen, onClose, onSave }: C
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="Cycle name"
             />
           </div>
@@ -80,7 +80,7 @@ export function CycleEditModal({ cycle, cycleIndex, isOpen, onClose, onSave }: C
               type="text"
               value={editTheme}
               onChange={(e) => setEditTheme(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               placeholder="Cycle theme (optional)"
             />
           </div>
@@ -93,7 +93,7 @@ export function CycleEditModal({ cycle, cycleIndex, isOpen, onClose, onSave }: C
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
               rows={4}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500 resize-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
               placeholder="Cycle description (optional)"
             />
           </div>

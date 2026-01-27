@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { YTDStats } from '../../utils/analytics'
 import { cn } from '../../utils/classNames'
+import { Calendar } from 'lucide-react'
 
 interface WeeklyHeatmapProps {
   ytdStats: YTDStats
@@ -135,8 +136,11 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
 
   return (
     <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
-      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
-        Weekly Activity Heatmap
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
+          Weekly Activity Heatmap
+        </h3>
+        <Calendar className="w-4 h-4 text-gray-400" />
       </div>
 
       {dailyData.length === 0 ? (

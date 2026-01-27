@@ -46,12 +46,12 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
     )}>
       <div className="flex items-center justify-between mb-3">
         <h2 className={cn(
-          'text-lg font-semibold',
+          'text-base font-semibold',
           'text-gray-900'
         )}>
           Top {activities.length} Activities
         </h2>
-        <Trophy className="w-5 h-5 text-emerald-600" />
+        <Trophy className="w-4 h-4 text-gray-400" />
       </div>
 
       <div className="overflow-x-auto">

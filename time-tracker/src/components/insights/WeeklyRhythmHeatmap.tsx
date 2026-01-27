@@ -3,6 +3,7 @@ import { cn } from '../../utils/classNames'
 import type { WeeklyRhythmData } from '../../types/insights'
 import type { CategoryKey } from '../../types/time'
 import { CATEGORY_LABELS } from '../../constants/colors'
+import { Calendar } from 'lucide-react'
 
 interface WeeklyRhythmHeatmapProps {
   rhythmData: WeeklyRhythmData[]
@@ -74,17 +75,15 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
       'rounded-xl p-6',
       'bg-white shadow-sm'
     )}>
-      <div className="mb-4">
-        <h3 className={cn('text-lg font-semibold', 'text-gray-900')}>
-          Weekly Rhythm Heatmap
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
+          Weekly Rhythm Heatmap (4 Weeks)
         </h3>
-        <p className={cn('text-sm mt-1', 'text-gray-600')}>
-          Productive work blocks averaged over last 4 weeks (colored by Work hours)
-        </p>
+        <Calendar className="w-4 h-4 text-gray-400" />
       </div>
 
       <div className="flex justify-center w-full">
-        <div className="max-w-2xl w-full overflow-x-auto">
+        <div className="w-full">
         {/* Header Row - Days */}
         <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 mb-2">
           <div /> {/* Empty corner */}
@@ -172,17 +171,15 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
         {/* Legend */}
         <div className="mt-4 flex items-center justify-center gap-3">
         <span className={cn('text-xs', 'text-gray-600')}>
-          0
+          0h
         </span>
         <div className="flex gap-1">
           <div className="w-5 h-5 rounded bg-gray-50 border border-gray-200" />
-          <div className="w-5 h-5 rounded bg-yellow-100 border border-yellow-200" />
           <div className="w-5 h-5 rounded bg-yellow-200 border border-yellow-300" />
-          <div className="w-5 h-5 rounded bg-yellow-300 border border-yellow-400" />
           <div className="w-5 h-5 rounded bg-yellow-400 border border-yellow-500" />
         </div>
         <span className={cn('text-xs', 'text-gray-600')}>
-          2+ hours/week
+          1h/week
         </span>
         </div>
       </div>

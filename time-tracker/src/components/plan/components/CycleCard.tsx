@@ -45,7 +45,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
 
       {/* Decorative background pattern */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-radial from-lime-500 to-transparent blur-3xl" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-radial from-emerald-500 to-transparent blur-3xl" />
       </div>
 
       <div className="relative p-5 pl-6">
@@ -56,21 +56,21 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
             {isExpanded !== undefined && (
               <div className={cn(
                 "mt-0.5 p-1 rounded-md transition-colors",
-                isActive ? "text-lime-500" : "text-gray-400"
+                isActive ? "text-emerald-500" : "text-gray-400"
               )}>
                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </div>
             )}
-            <h3 className="text-lg font-bold text-gray-900 group-hover:text-lime-900 transition-colors leading-snug flex items-center gap-2 flex-wrap">
+            <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-900 transition-colors leading-snug flex items-center gap-2 flex-wrap">
               <span className={cn(
                 "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm",
-                isActive ? "bg-linear-to-br from-lime-100 to-lime-50 text-lime-700 ring-1 ring-lime-200" :
+                isActive ? "bg-linear-to-br from-emerald-100 to-emerald-50 text-emerald-700 ring-1 ring-emerald-200" :
                 isCompleted ? "bg-linear-to-br from-green-100 to-green-50 text-green-700 ring-1 ring-green-200" :
                 "bg-linear-to-br from-gray-100 to-gray-50 text-gray-600 ring-1 ring-gray-200"
               )}>
                 <div className={cn(
                   "w-1.5 h-1.5 rounded-full",
-                  isActive ? "bg-lime-500 animate-pulse" :
+                  isActive ? "bg-emerald-500 animate-pulse" :
                   isCompleted ? "bg-green-500" :
                   "bg-gray-400"
                 )} />
@@ -87,7 +87,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
                   e.stopPropagation()
                   setIsEditModalOpen(true)
                 }}
-                className="p-1.5 text-gray-400 hover:text-lime-600 hover:bg-lime-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit cycle"
               >
                 <Edit2 className="h-3.5 w-3.5" />

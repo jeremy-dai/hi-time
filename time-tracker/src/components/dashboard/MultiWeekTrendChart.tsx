@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import type { MultiWeekStats } from '../../utils/analytics'
 import { CATEGORY_COLORS_HEX } from '../../constants/colors'
 import { cn } from '../../utils/classNames'
+import { TrendingUp } from 'lucide-react'
 
 interface MultiWeekTrendChartProps {
   multiWeekStats: MultiWeekStats
@@ -29,8 +30,11 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
 
   return (
     <div className={cn('rounded-xl p-6 min-w-0', 'bg-white shadow-sm')}>
-      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
-        4-Week Trend
+      <div className="flex items-center justify-between mb-4">
+        <div className={cn('text-base font-semibold', 'text-gray-900')}>
+          4-Week Trend
+        </div>
+        <TrendingUp className="w-4 h-4 text-gray-400" />
       </div>
 
       {chartData.length === 0 ? (

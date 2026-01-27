@@ -4,6 +4,7 @@ import type { YTDStats } from '../../utils/analytics'
 import { CATEGORY_COLORS_HEX, CATEGORY_LABELS } from '../../constants/colors'
 import { CATEGORY_KEYS } from '../../types/time'
 import { cn } from '../../utils/classNames'
+import { BarChart3 } from 'lucide-react'
 
 interface AnnualWeeklyBreakdownProps {
   ytdStats: YTDStats
@@ -124,8 +125,11 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
 
   return (
     <div className={cn('rounded-xl p-6 min-w-0', 'bg-white shadow-sm')}>
-      <div className={cn('text-lg font-semibold mb-4', 'text-gray-900')}>
-        Weekly Breakdown
+      <div className="flex items-center justify-between mb-4">
+        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
+          Weekly Breakdown
+        </h3>
+        <BarChart3 className="w-4 h-4 text-gray-400" />
       </div>
 
       {chartData.length === 0 ? (

@@ -1,41 +1,48 @@
 import { cn } from '../../utils/classNames'
 import { CATEGORY_LABELS, CATEGORY_COLORS_HEX } from '../../constants/colors'
-import type { WeekStats } from '../../utils/analytics'
 import { CATEGORY_KEYS } from '../../types/time'
 import { BarChart3 } from 'lucide-react'
 
-interface KPICardsProps {
-  latestWeekStats: WeekStats
-  fourWeekAverage: Record<string, number>
+interface CategoryBreakdownProps {
+  /**
+   * Hours per category (e.g., { W: 40, R: 20, ... })
+   */
+  categoryHours: Record<string, number>
+  className?: string
 }
 
-export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsProps) {
-  const totalHours = latestWeekStats.totalHours
+export default function CategoryBreakdown({
+  categoryHours,
+  className
+}: CategoryBreakdownProps) {
+  const totalHours = Object.values(categoryHours).reduce((sum, h) => sum + h, 0)
 
   return (
-    <div className={cn('rounded-xl p-4', 'bg-white/80 backdrop-blur-xl border border-white/50 shadow-md hover:shadow-lg transition-all duration-300')}>
+    <div className={cn(
+      'rounded-xl p-4',
+      'glass-card',
+      className
+    )}>
       {/* Header */}
-      <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="w-4 h-4 text-gray-500" />
-        <h3 className={cn('text-2xs font-bold uppercase tracking-wider', 'text-gray-500')}>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-gray-900">
           Category Breakdown
         </h3>
+        <BarChart3 className="w-4 h-4 text-gray-400" />
       </div>
 
-      {/* Bar chart with all info */}
+      {/* Bar chart */}
       <div className="space-y-2">
         {CATEGORY_KEYS.filter(k => k !== '').map((cat) => {
-          const hours = latestWeekStats.categoryHours[cat] || 0
-          const avgHours = fourWeekAverage[cat] || 0
-          const delta = hours - avgHours
+          const hours = categoryHours[cat] || 0
           const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0
 
           if (hours === 0) return null
 
           return (
-            <div key={cat} className="flex items-center gap-3 min-w-0">
+            <div key={cat} className="flex items-center gap-2 sm:gap-3 min-w-0">
               {/* Label */}
-              <div className="w-16 sm:w-20 flex-shrink-0 text-2xs font-bold text-gray-500 uppercase tracking-wider truncate">
+              <div className="w-16 sm:w-20 text-xs font-medium text-gray-600 shrink-0 truncate">
                 {CATEGORY_LABELS[cat]}
               </div>
               {/* Bar */}
@@ -49,7 +56,7 @@ export default function KPICards({ latestWeekStats, fourWeekAverage }: KPICardsP
                 />
               </div>
               {/* Stats */}
-              <div className="flex items-center gap-2 text-2xs flex-shrink-0">
+              <div className="flex items-center gap-2 text-2xs shrink-0">
                 <span className="font-bold text-gray-900 w-8 text-right whitespace-nowrap">
                   {hours.toFixed(1)}h
                 </span>

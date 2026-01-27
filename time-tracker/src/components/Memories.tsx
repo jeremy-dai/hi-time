@@ -16,12 +16,32 @@ export default function Memories() {
     return `${selectedYear}`
   }, [selectedYear])
 
+  // Filter memories to ensure we only show/count those for the selected year
+  const filteredMemories = useMemo(() => {
+    if (!memories) return {}
+    const filtered: Record<string, typeof memories[string]> = {}
+    const yearPrefix = `${selectedYear}-`
+    
+    Object.entries(memories).forEach(([date, memory]) => {
+      if (date.startsWith(yearPrefix)) {
+        filtered[date] = memory
+      }
+    })
+    return filtered
+  }, [memories, selectedYear])
+
+  const totalMemories = Object.keys(filteredMemories).length
 
   return (
     <PageContainer
       header={
         <PageHeader
           title={`Annual Memories: ${dateRangeLabel}`}
+          subtitle={
+            <>
+              {totalMemories} {totalMemories === 1 ? 'memory' : 'memories'} recorded <span className="hidden sm:inline text-gray-400">• Click to edit, Enter to save, Esc to cancel</span>
+            </>
+          }
           icon={CalendarRange}
           useGradientTitle={true}
           animateIcon={true}

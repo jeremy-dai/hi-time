@@ -102,39 +102,39 @@ export const COLORS = {
   dangerHover: 'hover:bg-red-600',
   dangerLight: 'bg-red-50 text-red-700',
 
-  // Success - Harmonious lime (same as primary)
-  success: 'bg-lime-500 hover:bg-lime-600 text-gray-900',
-  successLight: 'bg-lime-50 text-lime-900',
+  // Success - Emerald (consistent with primary)
+  success: 'bg-emerald-500 hover:bg-emerald-600 text-white',
+  successLight: 'bg-emerald-50 text-emerald-900',
 
   // Warning - Soft amber
   warning: 'bg-amber-500 hover:bg-amber-600 text-white',
   warningLight: 'bg-amber-50 text-amber-900',
 
-  // Info - Soft lime
-  info: 'bg-lime-50 text-lime-900',
-  infoAccent: 'text-lime-600',
+  // Info - Soft emerald
+  info: 'bg-emerald-50 text-emerald-900',
+  infoAccent: 'text-emerald-600',
 
   // Borders
   border: 'border-gray-200',
-  borderHover: 'hover:border-lime-300',
-  borderFocus: 'border-lime-400',
+  borderHover: 'hover:border-emerald-300',
+  borderFocus: 'border-emerald-400',
 
   // Backgrounds
   bgWhite: 'bg-white',
   bgGray: 'bg-gray-50',
-  bgMint: 'bg-lime-50',
+  bgMint: 'bg-emerald-50',
 } as const
 
 // Interactive states
 export const STATES = {
   hover: {
-    card: 'hover:shadow-md hover:border-lime-200',
+    card: 'hover:shadow-md hover:border-emerald-200',
     button: 'hover:shadow-md',
   },
 
   focus: {
-    ring: 'focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent',
-    ringOffset: 'focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2',
+    ring: 'focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent',
+    ringOffset: 'focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2',
   },
 
   disabled: 'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -148,7 +148,7 @@ export const BUTTON = {
 
   danger: `${RADIUS.default} px-4 py-2 ${COLORS.danger} ${TYPOGRAPHY.weight.semibold} ${TYPOGRAPHY.size.sm} ${SHADOW.sm} ${TRANSITION.colors} ${STATES.focus.ringOffset}`,
 
-  ghost: `${RADIUS.default} px-4 py-2 bg-transparent hover:bg-lime-50 text-lime-700 ${TYPOGRAPHY.weight.medium} ${TYPOGRAPHY.size.sm} ${TRANSITION.colors}`,
+  ghost: `${RADIUS.default} px-4 py-2 bg-transparent hover:bg-emerald-50 text-emerald-700 ${TYPOGRAPHY.weight.medium} ${TYPOGRAPHY.size.sm} ${TRANSITION.colors}`,
 } as const
 
 // Card styles
@@ -162,10 +162,10 @@ export const INPUT = {
   default: `${RADIUS.default} px-4 py-2.5 ${TYPOGRAPHY.size.sm} ${TYPOGRAPHY.weight.medium} border ${COLORS.border} ${STATES.focus.ring} ${TRANSITION.all} ${SHADOW.sm}`,
 } as const
 
-// Banner styles (info messages) - Updated with bright lime theme
+// Banner styles (info messages) - Emerald theme
 export const BANNER = {
-  info: `${RADIUS.default} p-4 bg-lime-50 text-lime-900`,
-  success: `${RADIUS.default} p-4 bg-lime-50 text-lime-900`,
+  info: `${RADIUS.default} p-4 bg-emerald-50 text-emerald-900`,
+  success: `${RADIUS.default} p-4 bg-emerald-50 text-emerald-900`,
   warning: `${RADIUS.default} p-4 bg-amber-50 text-amber-900`,
   error: `${RADIUS.default} p-4 bg-red-50 text-red-900`,
 } as const
@@ -191,8 +191,8 @@ export const PAGE_HEADER = {
   titleWithSubtitle: 'text-xl font-bold text-gray-900',
   subtitle: 'text-gray-500 text-sm',
 
-  // Icon color - unified lime
-  icon: 'text-lime-600',
+  // Icon color - unified emerald
+  icon: 'text-emerald-600',
 } as const
 
 // Modern Design System Tokens

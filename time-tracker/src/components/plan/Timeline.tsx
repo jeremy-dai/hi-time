@@ -219,7 +219,7 @@ export function Timeline({ data }: TimelineProps) {
                           })
                           setAddWeekModalOpen(true)
                         }}
-                        className="w-full py-3 mb-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-xs font-medium text-lime-600 hover:text-lime-700 hover:bg-lime-50 rounded-lg border-2 border-dashed border-transparent hover:border-lime-300"
+                        className="w-full py-3 mb-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg border-2 border-dashed border-transparent hover:border-emerald-300"
                       >
                         <Plus className="h-3.5 w-3.5" />
                         <span>Add week at start</span>
@@ -268,7 +268,7 @@ export function Timeline({ data }: TimelineProps) {
                               })
                               setAddWeekModalOpen(true)
                             }}
-                            className="w-full py-3 mb-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-xs font-medium text-lime-600 hover:text-lime-700 hover:bg-lime-50 rounded-lg border-2 border-dashed border-transparent hover:border-lime-300"
+                            className="w-full py-3 mb-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg border-2 border-dashed border-transparent hover:border-emerald-300"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             <span>Add week after</span>

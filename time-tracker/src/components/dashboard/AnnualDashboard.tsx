@@ -4,12 +4,12 @@ import { aggregateYTDData } from '../../utils/analytics'
 import { useYearMemories } from '../../hooks/useYearMemories'
 import { useWeekReviews } from '../../hooks/useWeekReviews'
 import { useDailyShipping } from '../../hooks/useDailyShipping'
-import AnnualCategoryBreakdown from './AnnualCategoryBreakdown'
+import CategoryBreakdown from '../shared/CategoryBreakdown'
 import AnnualWeeklyBreakdown from './AnnualWeeklyBreakdown'
 import WeeklyHeatmap from './WeeklyHeatmap'
-import AnnualProductivityStreak from './AnnualProductivityStreak'
+import ProductivityStreak from '../shared/ProductivityStreak'
 import YearNavigator from '../shared/YearNavigator'
-import AnalysisPeriodBanner from '../shared/AnalysisPeriodBanner'
+import { PageHeader } from '../layout/PageHeader'
 import { SkeletonLoader } from '../shared/SkeletonLoader'
 import { ExportInfo } from '../insights'
 import { Download, Check, CalendarDays } from 'lucide-react'
@@ -181,11 +181,15 @@ export default function AnnualDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Analysis Period Banner with Year Selector and Buttons */}
-      <AnalysisPeriodBanner
+      {/* Page Header */}
+      <PageHeader
+        title="Annual"
+        subtitle={<>
+          {dateRangeLabel} • {weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}
+        </>}
         icon={CalendarDays}
-        dateRangeLabel={dateRangeLabel}
-        subtitle={<>{weekKeys.length} {weekKeys.length === 1 ? 'week' : 'weeks'} of data • Year {year}</>}
+        useGradientTitle={true}
+        animateIcon={true}
         actions={
           <>
             <YearNavigator
@@ -226,9 +230,6 @@ export default function AnnualDashboard({
       {isLoading ? (
         <div className="space-y-6">
           <div>
-            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-              📊 Overview
-            </h2>
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <SkeletonLoader variant="card" height="300px" />
@@ -243,15 +244,13 @@ export default function AnnualDashboard({
         <>
           {/* OVERVIEW SECTION */}
           <div>
-            <h2 className={cn('text-lg font-bold mb-4', 'text-gray-700')}>
-              📊 Overview
-            </h2>
-
             <div className="space-y-6">
               {/* Category Breakdown and Productivity Streak - Side by Side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <AnnualCategoryBreakdown ytdStats={ytdStats} />
-                <AnnualProductivityStreak streakMetrics={ytdStats.streakMetrics} />
+                <CategoryBreakdown
+                  categoryHours={ytdStats.categoryTotals || {}}
+                />
+                <ProductivityStreak streakMetrics={ytdStats.streakMetrics} variant="compact" />
               </div>
 
               {/* Weekly Heatmap */}

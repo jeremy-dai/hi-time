@@ -94,19 +94,7 @@ export default function AnnualMemoryCalendar({
   const totalMemories = Object.keys(memories).length
 
   return (
-    <div className={cn('rounded-xl p-3 sm:p-5', 'glass-card')}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-1.5 sm:gap-0">
-        <div>
-          <div className="text-[10px] sm:text-xs text-gray-500 font-medium">
-            {totalMemories} {totalMemories === 1 ? 'memory' : 'memories'} recorded
-            <span className="hidden sm:inline text-gray-400"> • Click to edit, Enter to save, Esc to cancel</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Year Calendar - Compact Table View with Inline Editing */}
-      <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 rounded-xl">
+    <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 rounded-xl">
         <table className="w-full border-collapse text-xs min-w-[640px] rounded-xl overflow-hidden">
           <thead>
             <tr>
@@ -203,6 +191,5 @@ export default function AnnualMemoryCalendar({
           </tbody>
         </table>
       </div>
-    </div>
   )
 }

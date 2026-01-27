@@ -15,7 +15,7 @@ export default function Card({ children, className, variant = 'default' }: CardP
   }
 
   return (
-    <div className={cn('rounded-xl p-6', variantStyles[variant], className)}>
+    <div className={cn('rounded-xl p-4 md:p-6', variantStyles[variant], className)}>
       {children}
     </div>
   )

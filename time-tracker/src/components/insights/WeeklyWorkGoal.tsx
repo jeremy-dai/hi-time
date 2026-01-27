@@ -29,11 +29,11 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
   return (
     <div className="glass-card rounded-xl p-6">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-5">
-        <Target className="w-4 h-4 text-zinc-500" />
+      <div className="flex items-center justify-between mb-5">
         <h3 className="text-sm font-semibold text-zinc-900">
           Weekly Work Goal
         </h3>
+        <Target className="w-4 h-4 text-gray-400" />
       </div>
 
       {/* Main Display - Horizontal Layout */}

@@ -14,7 +14,7 @@ interface PageHeaderProps {
   /**
    * Optional subtitle or description
    */
-  subtitle?: string
+  subtitle?: ReactNode
   /**
    * Optional icon to display before the title
    */
@@ -102,10 +102,10 @@ export function PageHeader({
           )}
           {Icon && (
             <div className={cn(
-              animateIcon && "p-2 bg-lime-50 rounded-lg hover:shadow-glow-sm transition-all duration-300 group"
+              animateIcon && "p-2 bg-emerald-50 rounded-lg hover:shadow-glow-sm transition-all duration-300 group"
             )}>
               <Icon className={cn(
-                "w-6 h-6 text-lime-600 shrink-0",
+                "w-6 h-6 text-emerald-600 shrink-0",
                 animateIcon && "transition-transform duration-300 group-hover:scale-110"
               )} />
             </div>

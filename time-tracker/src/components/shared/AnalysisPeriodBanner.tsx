@@ -18,16 +18,18 @@ export default function AnalysisPeriodBanner({
 }: AnalysisPeriodBannerProps) {
   return (
     <div className={cn(
-      'rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
-      'bg-lime-50 text-lime-900'
+      'flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
+      'pb-4 border-b border-gray-100'
     )}>
       <div className="flex items-center space-x-3">
-        <Icon className="w-5 h-5 text-lime-600 shrink-0" />
+        <div className="p-2 bg-emerald-50 rounded-lg">
+          <Icon className="w-5 h-5 text-emerald-600 shrink-0" />
+        </div>
         <div>
-          <h3 className="font-semibold text-sm">
+          <h3 className="font-semibold text-sm text-gray-900">
             Analysis Period: {dateRangeLabel}
           </h3>
-          <p className="text-xs mt-0.5 opacity-90">
+          <p className="text-xs mt-0.5 text-gray-500">
             {subtitle}
           </p>
         </div>

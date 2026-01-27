@@ -10,10 +10,10 @@ import { IconButton } from './shared/IconButton'
 import { ClearableInput } from './shared/ClearableInput'
 import { SkeletonLoader } from './shared/SkeletonLoader'
 import { Modal } from './shared/Modal'
-import { Tabs } from './shared/Tabs'
 import { PageContainer } from './layout/PageContainer'
 import { PageHeader } from './layout/PageHeader'
-import { Settings as SettingsIcon } from 'lucide-react'
+import { SegmentedTabs } from './shared/SegmentedTabs'
+import { Settings as SettingsIcon, Tag, Monitor, Download } from 'lucide-react'
 
 interface SettingsProps {
   onSettingsSaved?: () => void
@@ -31,33 +31,9 @@ const TIMEZONE_OPTIONS = [
 ]
 
 const TABS = [
-  {
-    id: 'categories',
-    label: 'Categories',
-    icon: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-      </svg>
-    )
-  },
-  {
-    id: 'display',
-    label: 'Display',
-    icon: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-    )
-  },
-  {
-    id: 'data',
-    label: 'Data',
-    icon: (
-      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-      </svg>
-    )
-  }
+  { id: 'categories', label: 'Categories', icon: <Tag size={16} /> },
+  { id: 'display', label: 'Display', icon: <Monitor size={16} /> },
+  { id: 'data', label: 'Data', icon: <Download size={16} /> },
 ]
 
 export function Settings({ onSettingsSaved }: SettingsProps) {
@@ -331,9 +307,11 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       }
     >
       {/* Tabs Navigation */}
-      <Card>
-        <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <div className="mb-6">
+        <SegmentedTabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      </div>
 
+      <Card>
         <div className="p-6">
           {/* Categories Tab */}
           {activeTab === 'categories' && (
@@ -467,7 +445,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     ))}
                     <button
                       onClick={addTimeDivider}
-                      className="px-2 py-1 bg-lime-50 text-lime-600 text-xs rounded-xl hover:bg-lime-100 transition-colors inline-flex items-center gap-1"
+                      className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
                     >
                       <span>+</span>
                       <span>Add</span>
