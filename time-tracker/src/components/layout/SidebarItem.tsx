@@ -1,8 +1,8 @@
-import type { ReactNode } from 'react'
+import { cloneElement, type ReactElement } from 'react'
 import { cn } from '../../utils/classNames'
 
 interface SidebarItemProps {
-  icon: ReactNode
+  icon: ReactElement
   label: string
   active?: boolean
   onClick?: () => void
@@ -14,15 +14,25 @@ export default function SidebarItem({ icon, label, active, onClick }: SidebarIte
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'w-full flex items-center gap-2 px-4 py-3 rounded-full mb-1 transition-all text-left border',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-lime-400/60',
+        'group w-full flex items-center gap-3 px-3 py-1.5 rounded-lg mb-0.5 transition-all text-left relative',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/60',
         active
-          ? 'bg-[hsl(var(--color-brand-primary))] text-black border-transparent shadow-md shadow-lime-900/20'
-          : 'text-gray-600 border-transparent hover:bg-gray-100 hover:text-gray-900'
+          ? 'bg-white text-zinc-900 shadow-sm'
+          : 'text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900'
       )}
     >
-      <span className={cn(active ? 'text-black' : 'text-current')}>{icon}</span>
-      <span className="text-sm font-bold">{label}</span>
+      {/* Active Indicator Bar */}
+      {active && (
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 bg-emerald-600 rounded-r-full" />
+      )}
+
+      <span className={cn(
+        "transition-colors",
+        active ? 'text-emerald-600' : 'text-zinc-400 group-hover:text-zinc-600'
+      )}>
+        {cloneElement(icon as any, { strokeWidth: 1.5, size: 20 })}
+      </span>
+      <span className={cn("text-sm font-medium", active ? "font-semibold" : "")}>{label}</span>
     </button>
   )
 }

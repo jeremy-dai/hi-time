@@ -63,6 +63,14 @@ interface PageHeaderProps {
    * Mobile menu button handler (for pages with sidebars)
    */
   onMobileMenuClick?: () => void
+  /**
+   * Whether to use gradient text for title
+   */
+  useGradientTitle?: boolean
+  /**
+   * Whether to animate the icon
+   */
+  animateIcon?: boolean
 }
 
 export function PageHeader({
@@ -74,7 +82,9 @@ export function PageHeader({
   actions,
   children,
   className,
-  onMobileMenuClick
+  onMobileMenuClick,
+  useGradientTitle = false,
+  animateIcon = false
 }: PageHeaderProps) {
   return (
     <div className={className}>
@@ -90,11 +100,21 @@ export function PageHeader({
               <Menu size={20} />
             </button>
           )}
-          {Icon && <Icon className="w-6 h-6 text-emerald-600 shrink-0" />}
+          {Icon && (
+            <div className={cn(
+              animateIcon && "p-2 bg-lime-50 rounded-lg hover:shadow-glow-sm transition-all duration-300 group"
+            )}>
+              <Icon className={cn(
+                "w-6 h-6 text-lime-600 shrink-0",
+                animateIcon && "transition-transform duration-300 group-hover:scale-110"
+              )} />
+            </div>
+          )}
           <div className="min-w-0">
             <h1 className={cn(
-              "font-bold text-gray-900",
-              subtitle ? "text-lg sm:text-xl" : "text-xl sm:text-2xl"
+              "font-bold",
+              subtitle ? "text-lg sm:text-xl" : "text-xl sm:text-2xl",
+              useGradientTitle ? "text-gradient" : "text-gray-900"
             )}>{title}</h1>
             {subtitle && <p className="text-gray-500 text-xs sm:text-sm">{subtitle}</p>}
           </div>

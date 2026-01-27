@@ -19,10 +19,10 @@ export default function AnalysisPeriodBanner({
   return (
     <div className={cn(
       'rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0',
-      'bg-emerald-50 text-emerald-900'
+      'bg-lime-50 text-lime-900'
     )}>
       <div className="flex items-center space-x-3">
-        <Icon className="w-5 h-5 text-emerald-600 shrink-0" />
+        <Icon className="w-5 h-5 text-lime-600 shrink-0" />
         <div>
           <h3 className="font-semibold text-sm">
             Analysis Period: {dateRangeLabel}

@@ -94,7 +94,7 @@ export default function AnnualMemoryCalendar({
   const totalMemories = Object.keys(memories).length
 
   return (
-    <div className={cn('rounded-xl p-3 sm:p-5', 'bg-gradient-to-br from-white to-gray-50/30 shadow-md border border-gray-100')}>
+    <div className={cn('rounded-xl p-3 sm:p-5', 'glass-card')}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 gap-1.5 sm:gap-0">
         <div>
@@ -107,42 +107,39 @@ export default function AnnualMemoryCalendar({
 
       {/* Year Calendar - Compact Table View with Inline Editing */}
       <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 rounded-xl">
-        <table className="w-full border-collapse text-xs min-w-[640px] shadow-sm rounded-xl overflow-hidden">
+        <table className="w-full border-collapse text-xs min-w-[640px] rounded-xl overflow-hidden">
           <thead>
-            <tr className="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100">
-              <th className="border-r border-b border-gray-300 bg-gradient-to-br from-gray-100 to-gray-50 px-1 sm:px-2 py-1.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-700 w-8 sm:w-12 sticky left-0 z-20 shadow-sm">
-                Day
+            <tr>
+              <th className="sticky left-0 top-0 z-20 bg-zinc-50 border-b border-r border-zinc-100 p-2 min-w-[30px]">
+                <div className="flex flex-col items-center">
+                  <span className="text-2xs text-zinc-400 font-medium uppercase tracking-wider">Day</span>
+                </div>
               </th>
-              {MONTH_NAMES.map((monthName, idx) => (
+              {calendarData.map((monthData, idx) => (
                 <th
-                  key={monthName}
+                  key={monthData.month}
                   className={cn(
-                    "border-b border-gray-300 px-0.5 sm:px-1.5 py-1.5 text-center text-[9px] sm:text-[10px] font-bold text-gray-700 min-w-[70px] sm:min-w-[90px] uppercase tracking-wide",
-                    idx < MONTH_NAMES.length - 1 && "border-r border-gray-200"
+                    "sticky top-0 z-10 border-b border-zinc-100 py-2 text-center min-w-[100px]",
+                    "bg-zinc-50"
                   )}
                 >
-                  {monthName}
+                  <span className="text-2xs font-bold uppercase tracking-wider text-zinc-500">{monthData.month}</span>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="bg-white">
+          <tbody className="bg-transparent">
             {Array.from({ length: 31 }, (_, dayIndex) => {
               const day = dayIndex + 1
 
               return (
                 <tr
                   key={day}
-                  className={cn(
-                    "transition-all duration-150",
-                    "hover:bg-gradient-to-r hover:from-emerald-50/40 hover:via-transparent hover:to-emerald-50/40",
-                    day % 5 === 0 && "bg-gray-50/30"
-                  )}
+                  className="transition-all duration-150 hover:bg-zinc-50/50"
                 >
                   <td className={cn(
-                    "border-r border-b border-gray-300 bg-gradient-to-r from-gray-50 to-white px-1 sm:px-2 py-0.5 text-center text-[9px] sm:text-[10px] font-bold sticky left-0 z-10 h-6 sm:h-7",
-                    day % 5 === 0 ? "text-emerald-600" : "text-gray-600",
-                    "shadow-sm"
+                    "border-b border-zinc-100/50 bg-zinc-50 px-1 sm:px-2 py-0.5 text-center text-2xs font-medium sticky left-0 z-10 h-6 sm:h-7 text-zinc-400",
+                    "backdrop-blur-sm"
                   )}>
                     {day}
                   </td>
@@ -152,10 +149,7 @@ export default function AnnualMemoryCalendar({
                       return (
                         <td
                           key={monthData.month}
-                          className={cn(
-                            "border-b border-gray-200 bg-gradient-to-br from-gray-100/40 to-gray-50/40 h-6 sm:h-7",
-                            idx < calendarData.length - 1 && "border-r border-gray-200"
-                          )}
+                          className="border-b border-zinc-100/50 bg-zinc-50/20 h-6 sm:h-7"
                         />
                       )
                     }
@@ -167,11 +161,11 @@ export default function AnnualMemoryCalendar({
                       <td
                         key={monthData.month}
                         className={cn(
-                          'border-b border-gray-200 px-0 py-0 cursor-text transition-all duration-200 relative h-6 sm:h-7 max-h-6 sm:max-h-7',
-                          idx < calendarData.length - 1 && "border-r border-gray-200",
-                          isEditing && 'z-10 bg-white',
-                          !isEditing && hasMemory && 'bg-[#b5d3e8] hover:bg-[#9ec3e0] hover:shadow-sm',
-                          !isEditing && !hasMemory && 'bg-white/50 hover:bg-emerald-50/40'
+                          'border-b border-zinc-100/50 px-0 py-0 cursor-text transition-all duration-200 relative h-6 sm:h-7 max-h-6 sm:max-h-7',
+                          isEditing && 'z-10 bg-white shadow-sm ring-1 ring-emerald-500',
+                          // Memory styles
+                          !isEditing && hasMemory && 'bg-emerald-50/30 border-l-[3px] border-emerald-500 pl-1',
+                          !isEditing && !hasMemory && 'hover:bg-zinc-50'
                         )}
                         onClick={() => !isEditing && handleCellClick(dayData.dateStr)}
                       >
@@ -186,15 +180,15 @@ export default function AnnualMemoryCalendar({
                             onKeyDown={handleKeyDown}
                             placeholder="Type..."
                             className={cn(
-                              'w-full h-full px-1 py-0 text-xs leading-none',
+                              'w-full h-full px-1.5 py-0 text-xs leading-none',
                               'focus:outline-none focus:bg-white',
-                              'text-[#0d2535] placeholder-gray-400 bg-transparent font-medium'
+                              'text-zinc-900 placeholder-zinc-400 bg-transparent font-medium'
                             )}
                           />
                         ) : (
-                          <div className="h-6 sm:h-7 px-0.5 sm:px-1 py-0.5 overflow-hidden flex items-center">
+                          <div className="h-6 sm:h-7 px-1.5 py-0.5 overflow-hidden flex items-center">
                             {hasMemory && (
-                              <div className="text-xs leading-snug text-[#0d2535] line-clamp-1 font-medium">
+                              <div className="text-xs leading-snug text-zinc-700 line-clamp-1 font-medium">
                                 {dayData.memory.memory}
                               </div>
                             )}

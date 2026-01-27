@@ -22,10 +22,10 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
   return (
     <div className={cn(
       'rounded-xl p-4',
-      'bg-white shadow-sm'
+      'glass-card'
     )}>
       <div className="flex items-center justify-between mb-3">
-        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
+        <h3 className={cn('text-sm font-semibold', 'text-gray-900')}>
           Productivity Streak
         </h3>
         <Flame className={cn('w-4 h-4', streakColor)} />
@@ -34,84 +34,63 @@ export default function AnnualProductivityStreak({ streakMetrics }: AnnualProduc
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Current Streak */}
         <div className={cn(
-          'rounded-xl p-3 text-center',
-          'bg-gradient-to-br from-orange-50 to-orange-100',
-          'border border-orange-200'
+          'rounded-xl p-4 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300',
+          'bg-white border border-orange-100 shadow-sm'
         )}>
-          <div className="flex justify-center mb-1">
-            <Flame className="w-6 h-6 text-orange-500" />
-          </div>
-          <div className="text-3xl font-bold text-orange-600 mb-0.5">
-            {currentStreak}
-          </div>
-          <div className="flex items-center justify-center gap-1 text-xs font-medium text-orange-900 mb-1.5">
-            <span>Current Streak</span>
-            <Tooltip content="Consecutive days with any productive work (W hours > 0)">
-              <Info className="w-3 h-3 text-orange-600 cursor-help" />
-            </Tooltip>
-          </div>
-          <div className="text-[10px] text-orange-700 font-medium">
-            {currentStreak === 1 ? 'day' : 'days'}
+          <Flame className="absolute -right-2 -bottom-2 w-16 h-16 text-orange-500/10 rotate-12" />
+          <div className="relative z-10">
+            <div className="text-2xs font-bold uppercase tracking-wider text-orange-600/70 mb-1">Current Streak</div>
+            <div className="flex items-baseline gap-1">
+              <div className="text-4xl font-bold tracking-tight text-zinc-900">
+                {currentStreak}
+              </div>
+              <div className="text-xs font-medium text-zinc-400">
+                {currentStreak === 1 ? 'day' : 'days'}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Longest Streak */}
         <div className={cn(
-          'rounded-xl p-3 text-center',
-          'bg-gradient-to-br from-purple-50 to-purple-100',
-          'border border-purple-200'
+          'rounded-xl p-4 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300',
+          'bg-white border border-purple-100 shadow-sm'
         )}>
-          <div className="flex justify-center mb-1">
-            <TrendingUp className="w-6 h-6 text-purple-500" />
-          </div>
-          <div className="text-3xl font-bold text-purple-600 mb-0.5">
-            {longestStreak}
-          </div>
-          <div className="flex items-center justify-center gap-1 text-xs font-medium text-purple-900 mb-1.5">
-            <span>Longest Streak</span>
-            <Tooltip content="The longest consecutive productive streak you've achieved this year">
-              <Info className="w-3 h-3 text-purple-600 cursor-help" />
-            </Tooltip>
-          </div>
-          <div className="text-[10px] text-purple-700 font-medium">
-            this year
+          <TrendingUp className="absolute -right-2 -bottom-2 w-16 h-16 text-purple-500/10 rotate-12" />
+          <div className="relative z-10">
+            <div className="text-2xs font-bold uppercase tracking-wider text-purple-600/70 mb-1">Longest Streak</div>
+            <div className="flex items-baseline gap-1">
+              <div className="text-4xl font-bold tracking-tight text-zinc-900">
+                {longestStreak}
+              </div>
+              <div className="text-xs font-medium text-zinc-400">
+                days
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Productive Days */}
         <div className={cn(
-          'rounded-xl p-3 text-center',
-          'bg-gradient-to-br from-emerald-50 to-emerald-100',
-          'border border-emerald-200',
-          'relative overflow-hidden'
+          'rounded-xl p-4 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300',
+          'bg-white border border-lime-100 shadow-sm'
         )}>
-          {/* Background progress indicator */}
+          {/* Background progress indicator - very subtle */}
           <div
-            className="absolute inset-0 bg-gradient-to-r from-emerald-200/40 to-emerald-300/40 transition-all duration-500"
+            className="absolute bottom-0 left-0 h-1 bg-lime-500 transition-all duration-1000"
             style={{ width: `${productivePercentage}%` }}
           />
-
-          {/* Content */}
-          <div className="relative">
-            <div className="flex justify-center mb-1">
-              <Calendar className="w-6 h-6 text-emerald-500" />
-            </div>
-
-            {/* Percentage as main metric */}
-            <div className="text-3xl font-bold text-emerald-600 mb-0.5">
-              {productivePercentage.toFixed(0)}%
-            </div>
-
-            <div className="flex items-center justify-center gap-1 text-xs font-medium text-emerald-900 mb-1.5">
-              <span>Productive Days</span>
-              <Tooltip content="Percentage of days with any productive work completed">
-                <Info className="w-3 h-3 text-emerald-600 cursor-help" />
-              </Tooltip>
-            </div>
-
-            {/* Compact day count */}
-            <div className="text-[10px] text-emerald-700 font-medium">
-              {productiveDays} of {totalDays} days
+          
+          <Calendar className="absolute -right-2 -bottom-2 w-16 h-16 text-lime-500/10 rotate-12" />
+          <div className="relative z-10">
+            <div className="text-2xs font-bold uppercase tracking-wider text-lime-600/70 mb-1">Productive Days</div>
+            <div className="flex items-baseline gap-1">
+              <div className="text-4xl font-bold tracking-tight text-zinc-900">
+                {productivePercentage.toFixed(0)}%
+              </div>
+              <div className="text-xs font-medium text-zinc-400">
+                {productiveDays}/{totalDays}
+              </div>
             </div>
           </div>
         </div>

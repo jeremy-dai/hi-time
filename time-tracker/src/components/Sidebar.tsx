@@ -47,42 +47,47 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
       case 'Spring':
         return {
           icon: Leaf,
-          bgGradient: 'from-emerald-50 to-teal-50',
-          borderColor: 'border-emerald-100',
-          textColor: 'text-emerald-900',
-          subTextColor: 'text-emerald-600/80',
+          accentColor: 'text-emerald-600',
+          badgeBg: 'bg-emerald-100',
+          badgeText: 'text-emerald-700',
+          barColor: 'bg-emerald-400',
+          barTrack: 'bg-emerald-100',
         }
       case 'Summer':
         return {
           icon: Sun,
-          bgGradient: 'from-amber-50 to-orange-50',
-          borderColor: 'border-amber-100',
-          textColor: 'text-amber-900',
-          subTextColor: 'text-amber-600/80',
+          accentColor: 'text-amber-500',
+          badgeBg: 'bg-amber-100',
+          badgeText: 'text-amber-700',
+          barColor: 'bg-amber-400',
+          barTrack: 'bg-amber-100',
         }
       case 'Fall':
         return {
           icon: CloudRain,
-          bgGradient: 'from-orange-50 to-amber-50',
-          borderColor: 'border-orange-100',
-          textColor: 'text-orange-900',
-          subTextColor: 'text-orange-600/80',
+          accentColor: 'text-orange-500',
+          badgeBg: 'bg-orange-100',
+          badgeText: 'text-orange-700',
+          barColor: 'bg-orange-400',
+          barTrack: 'bg-orange-100',
         }
       case 'Winter':
         return {
           icon: Snowflake,
-          bgGradient: 'from-sky-50 to-blue-50',
-          borderColor: 'border-sky-100',
-          textColor: 'text-sky-900',
-          subTextColor: 'text-sky-600/80',
+          accentColor: 'text-sky-500',
+          badgeBg: 'bg-sky-100',
+          badgeText: 'text-sky-700',
+          barColor: 'bg-sky-400',
+          barTrack: 'bg-sky-100',
         }
       default:
         return {
           icon: CalendarDays,
-          bgGradient: 'from-gray-50 to-slate-50',
-          borderColor: 'border-gray-200',
-          textColor: 'text-gray-900',
-          subTextColor: 'text-gray-500',
+          accentColor: 'text-gray-500',
+          badgeBg: 'bg-gray-100',
+          badgeText: 'text-gray-600',
+          barColor: 'bg-gray-400',
+          barTrack: 'bg-gray-100',
         }
     }
   }
@@ -90,7 +95,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
   return (
     <nav
       aria-label="Primary"
-      className="h-full bg-white md:bg-transparent rounded-xl border border-gray-200 md:border-none pb-4 pr-4 flex flex-col"
+      className="h-full bg-transparent pb-4 pr-4 flex flex-col"
     >
       {/* Week Display */}
       {currentDate && (() => {
@@ -98,46 +103,35 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         const style = getSeasonStyle(info.season)
         const SeasonIcon = style.icon
 
+        const progress = Math.round((info.weekInSeason / 13) * 100)
+
         return (
-          <div className="mb-4 pl-3 pt-3">
-            {/* Week info card */}
-            <div className={cn(
-              'relative overflow-hidden rounded-xl bg-linear-to-br transition-all duration-300',
-              style.bgGradient,
-              'border',
-              style.borderColor
-            )}>
-              <div className="relative z-10 px-3 py-3">
-                {/* Season with icon */}
-                <div className={cn("flex items-center justify-between mb-2", style.textColor)}>
-                  <div className="flex items-center gap-1.5">
-                    <SeasonIcon size={16} strokeWidth={2.5} />
-                    <span className="text-sm font-bold">{info.season}</span>
-                  </div>
-                  <span className="text-xs font-semibold opacity-50">#{info.weekNumber}</span>
-                </div>
-
-                {/* Main week number */}
-                <div className={cn("text-2xl font-bold leading-none", style.textColor)}>
-                  Week {info.weekInSeason}
-                </div>
-              </div>
-
-              {/* Background icon */}
-              <SeasonIcon
-                className={cn(
-                  "absolute -right-2 -bottom-2 w-20 h-20 opacity-[0.06]",
-                  style.textColor
-                )}
-                strokeWidth={1}
+          <div className="mb-2 px-5 pt-4 pb-1">
+            <div className="flex items-center gap-2.5">
+              <SeasonIcon size={18} className={style.accentColor} strokeWidth={2.5} />
+              <span className="text-sm font-bold text-zinc-800 tracking-tight">
+                {info.season}
+              </span>
+              <span className={cn(
+                "ml-auto text-2xs font-bold px-2 py-0.5 rounded-full",
+                style.badgeBg,
+                style.badgeText
+              )}>
+                W{info.weekInSeason}
+              </span>
+            </div>
+            <div className={cn("mt-2.5 h-1 rounded-full overflow-hidden", style.barTrack)}>
+              <div
+                className={cn("h-full rounded-full transition-all", style.barColor)}
+                style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         )
       })()}
 
-      <div className="flex-1 space-y-1 pl-3">
-        <div className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">Menu</div>
+      <div className="flex-1 space-y-0.5 pl-2 pr-2">
+        <div className="text-2xs font-bold uppercase tracking-wider text-zinc-400 mb-2 px-2 mt-2">Menu</div>
         <SidebarItem
           icon={<Target size={20} />}
           label="Today"
@@ -180,7 +174,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           active={active === 'learning'}
           onClick={() => onNavigate('learning')}
         />
-        <div className="mt-8 text-xs font-bold uppercase tracking-wider text-gray-500 mb-4 px-2">System</div>
+        <div className="mt-6 text-2xs font-bold uppercase tracking-wider text-zinc-400 mb-2 px-2">System</div>
         <SidebarItem
           icon={<Settings size={20} />}
           label="Settings"
@@ -191,7 +185,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
 
       <div className={cn(
         'mt-4 pt-4 border-t pl-3',
-        'border-white/10'
+        'border-gray-200'
       )}>
         {userEmail && (
           <div className={cn(

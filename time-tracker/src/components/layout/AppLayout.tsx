@@ -13,12 +13,9 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <div className={cn(
-      'min-h-screen transition-colors duration-300',
-      'bg-gray-50 text-gray-900'
-    )}>
+    <div className="min-h-screen app-background font-sans text-gray-900 transition-colors duration-200">
       {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-sm">
+      <div className="md:hidden glass-card px-4 py-3 flex items-center justify-between sticky top-0 z-30 mb-3">
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
             <button 
@@ -28,11 +25,12 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
               <Menu size={24} />
             </button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 flex flex-col gap-0">
+          <SheetContent side="left" className="w-72 p-0 flex flex-col gap-0 bg-white">
+             <div className="h-1 gradient-primary w-full shrink-0" />
              <div className="flex items-center justify-between p-4 border-b border-gray-100 shrink-0">
                  <SheetTitle className="font-bold text-lg">Menu</SheetTitle>
              </div>
-             <div className="flex-1 overflow-y-auto p-4" onClick={() => setIsMobileMenuOpen(false)}>
+             <div className="flex-1 overflow-y-auto scrollbar-thin p-4" onClick={() => setIsMobileMenuOpen(false)}>
                   {sidebar}
              </div>
           </SheetContent>
@@ -44,16 +42,16 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
       <div className="max-w-[1920px] mx-auto p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4">
         
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-[200px] md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
+        <aside className="hidden md:block w-sidebar md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
           {sidebar}
         </aside>
         
         <div className="flex-1 min-w-0 flex flex-col h-full">
           {header && (
             <div className={cn(
-              'mb-3',
-              'bg-white rounded-xl p-3 md:p-4 shadow-sm'
-            )}>
+            'mb-3',
+            'glass-card rounded-xl p-3 md:p-4'
+          )}>
               {header}
             </div>
           )}

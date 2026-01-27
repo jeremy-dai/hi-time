@@ -97,14 +97,14 @@ export default function WeekNavigator({
     switch (variant) {
       case 'emerald':
         return {
-          container: 'bg-white border-2 border-emerald-200',
-          button: 'hover:bg-emerald-50 text-emerald-600',
-          buttonDisabled: 'text-emerald-200',
-          week: 'text-emerald-900',
-          weekButton: 'hover:bg-emerald-50',
-          pickerBg: 'bg-white border-2 border-emerald-200',
-          pickerItem: 'hover:bg-emerald-50 text-gray-700',
-          pickerItemActive: 'bg-emerald-500 text-white hover:bg-emerald-600'
+          container: 'bg-white border-2 border-lime-200',
+          button: 'hover:bg-lime-50 text-lime-600',
+          buttonDisabled: 'text-lime-200',
+          week: 'text-lime-900',
+          weekButton: 'hover:bg-lime-50',
+          pickerBg: 'bg-white border-2 border-lime-200',
+          pickerItem: 'hover:bg-lime-50 text-gray-700',
+          pickerItemActive: 'bg-lime-500 text-white hover:bg-lime-600'
         }
       default:
         return {

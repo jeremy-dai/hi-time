@@ -73,11 +73,12 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
     red: 'text-red-600',
     indigo: 'text-indigo-600',
     emerald: 'text-emerald-600',
+    lime: 'text-lime-600',
   }
   
   const iconColorClass = tracker.color && colorMap[tracker.color] ? colorMap[tracker.color] : 'text-emerald-600'
   const ringColorClass = tracker.color && colorMap[tracker.color] ? `ring-${tracker.color}-500` : 'ring-emerald-500'
-  const barColorClass = tracker.color && colorMap[tracker.color] ? `bg-${tracker.color}-500` : 'bg-emerald-500'
+  const barColorClass = tracker.color && colorMap[tracker.color] ? `bg-${tracker.color}-600` : 'bg-emerald-600'
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -140,22 +141,14 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
     <div
       onClick={handleCardClick}
       className={cn(
-        'group relative bg-linear-to-br from-white to-gray-50/50 rounded-xl border transition-all duration-300',
-        compact ? 'p-4' : 'p-5',
-        !isEditing && 'border-gray-200 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-100/50',
+        'group relative glass-card rounded-xl transition-all duration-200 ease-out',
+        compact ? 'p-4' : 'p-6',
+        !isEditing && 'hover:translate-y-[-2px] hover:border-zinc-300/50',
         isEditing && `ring-2 border-transparent shadow-lg ${ringColorClass}`,
         isClickable && 'cursor-pointer',
         className
       )}
     >
-      {/* Icon decoration - top right */}
-      <div className={cn(
-        "absolute top-3 right-3 opacity-5 group-hover:opacity-10 transition-opacity",
-        compact ? "h-16 w-16" : "h-20 w-20"
-      )}>
-        <Icon className="h-full w-full" />
-      </div>
-
       {/* Header */}
       <div className="relative flex items-start justify-between mb-3">
         <div className="flex-1">
@@ -219,33 +212,31 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
             </button>
           </div>
         ) : (
-          isNumeric ? (
-            <div className="flex items-baseline gap-1">
-              <span className={cn("font-black bg-linear-to-br from-gray-900 to-gray-700 bg-clip-text text-transparent", compact ? "text-3xl" : "text-4xl")}>
-                {tracker.current}
+          <div className="flex items-baseline gap-1">
+            <span className={cn(
+              "font-bold tracking-tight text-zinc-900",
+              compact ? "text-3xl" : "text-4xl"
+            )}>
+              {tracker.current}
+            </span>
+            {tracker.unit && (
+              <span className="text-xs font-medium text-zinc-400">
+                {tracker.unit}
               </span>
-              <span className={cn("font-bold text-gray-400", compact ? "text-base" : "text-lg")}>
+            )}
+            {tracker.target !== undefined && (
+              <span className="text-xs text-zinc-400 ml-1">
                 / {tracker.target}
               </span>
-              {tracker.unit && <span className="text-xs text-gray-500 ml-1">{tracker.unit}</span>}
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              <div className="text-sm font-medium text-gray-900">
-                {tracker.current}
-              </div>
-              <div className="text-xs text-gray-500">
-                Target: <span className="font-semibold text-gray-600">{tracker.target}</span>
-              </div>
-            </div>
-          )
+            )}
+          </div>
         )}
       </div>
 
       {/* Progress bar (only for numeric) */}
       {isNumeric && (
-        <div className="relative">
-          <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+        <div className="relative mt-1">
+          <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
             <div
               className={cn(
                 "h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden",

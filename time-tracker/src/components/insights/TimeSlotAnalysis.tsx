@@ -86,16 +86,16 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
         )}>
           Time Slot Patterns
         </h2>
-        <Clock className="w-5 h-5 text-emerald-600" />
+        <Clock className="w-5 h-5 text-lime-600" />
       </div>
 
       {peakProductiveSlot && (
         <div className={cn(
           'mb-2 p-2 rounded-xl',
-          'bg-emerald-50',
-          'border border-emerald-200'
+          'bg-lime-50',
+          'border border-lime-200'
         )}>
-          <p className="text-sm text-emerald-900">
+          <p className="text-sm text-lime-900">
             <span className="font-semibold">Peak Productivity:</span>{' '}
             {peakProductiveSlot.timeSlot} ({maxProductiveBlocks * 0.5} hours of productive work)
           </p>

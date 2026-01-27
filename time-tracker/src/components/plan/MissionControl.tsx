@@ -135,12 +135,12 @@ function WeeklyShipping() {
     ' - ' + weekRange.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 
   return (
-    <div className="bg-linear-to-br from-white via-emerald-50/30 to-white rounded-xl border border-emerald-200 shadow-lg shadow-emerald-100/20 p-5 h-full flex flex-col">
+    <div className="bg-linear-to-br from-white via-lime-50/30 to-white rounded-xl border border-lime-200 shadow-lg shadow-lime-100/20 p-5 h-full flex flex-col">
       {/* Header with week navigation */}
       <div className="flex items-center justify-between mb-5 min-h-[28px]">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-linear-to-br from-emerald-100 to-emerald-50 rounded-lg shadow-sm">
-            <Package className="h-5 w-5 text-emerald-600" />
+          <div className="p-2 bg-linear-to-br from-lime-100 to-lime-50 rounded-lg shadow-sm">
+            <Package className="h-5 w-5 text-lime-600" />
           </div>
           <h3 className="font-bold text-gray-900 text-lg">Daily Shipping</h3>
         </div>
@@ -165,7 +165,7 @@ function WeeklyShipping() {
           {weekOffset !== 0 && (
             <button
               onClick={() => setWeekOffset(0)}
-              className="text-xs text-emerald-600 hover:text-emerald-700 ml-2"
+              className="text-xs text-lime-600 hover:text-lime-700 ml-2"
             >
               Today
             </button>
@@ -187,7 +187,7 @@ function WeeklyShipping() {
               key={dateKey}
               className={cn(
                 'flex items-center gap-3 p-2 rounded-lg transition-colors',
-                isToday(date) && 'bg-emerald-100/50 border border-emerald-200',
+                isToday(date) && 'bg-lime-100/50 border border-lime-200',
                 !isToday(date) && isPast(date) && !hasContent && 'opacity-50'
               )}
             >
@@ -195,13 +195,13 @@ function WeeklyShipping() {
               <div className="w-12 shrink-0 text-center">
                 <div className={cn(
                   'text-xs font-medium',
-                  isToday(date) ? 'text-emerald-700' : 'text-gray-500'
+                  isToday(date) ? 'text-lime-700' : 'text-gray-500'
                 )}>
                   {dayLabel}
                 </div>
                 <div className={cn(
                   'text-lg font-bold',
-                  isToday(date) ? 'text-emerald-700' : 'text-gray-700'
+                  isToday(date) ? 'text-lime-700' : 'text-gray-700'
                 )}>
                   {dateLabel}
                 </div>
@@ -241,7 +241,7 @@ function WeeklyShipping() {
                   }}
                   onBlur={() => saveEdit(date)}
                   placeholder="What did you ship?"
-                  className="flex-1 px-2 py-1 text-sm border border-emerald-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="flex-1 px-2 py-1 text-sm border border-lime-300 rounded focus:outline-none focus:ring-2 focus:ring-lime-500 focus:border-transparent"
                 />
               ) : (
                 <div
@@ -262,7 +262,7 @@ function WeeklyShipping() {
       </div>
 
       {/* Sync status */}
-      <div className="mt-3 pt-3 border-t border-emerald-200/50 flex justify-end">
+      <div className="mt-3 pt-3 border-t border-lime-200/50 flex justify-end">
         <SyncStatusIndicator
           status={syncStatus}
           lastSynced={null}
@@ -346,7 +346,7 @@ export function MissionControl({ data }: MissionControlProps) {
         {currentCycle && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <div className="h-6 w-1 bg-linear-to-b from-emerald-500 to-teal-600 rounded-full" />
+              <div className="h-6 w-1 bg-linear-to-b from-lime-500 to-lime-600 rounded-full" />
               <h2 className="text-base sm:text-lg font-bold text-gray-900">Current Cycle</h2>
             </div>
             <CycleCard

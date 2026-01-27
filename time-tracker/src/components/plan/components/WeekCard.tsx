@@ -22,10 +22,10 @@ interface WeekCardProps {
 }
 
 const STATUS_CONFIG: Record<PlanWeek['status'], { label: string, color: string, bg: string, border: string }> = {
-  completed: { label: 'Done', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-200' },
+  completed: { label: 'Done', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
   current: { label: 'Current', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200' },
   in_progress: { label: 'In Progress', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
-  not_started: { label: 'Todo', color: 'text-gray-600', bg: 'bg-gray-50', border: 'border-gray-200' },
+  not_started: { label: 'Todo', color: 'text-zinc-600', bg: 'bg-zinc-50', border: 'border-zinc-200' },
 }
 
 export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
@@ -57,21 +57,21 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
     <>
       <div
         className={cn(
-          'group bg-white rounded-xl border transition-all duration-300',
+          'group rounded-xl transition-all duration-200 ease-out',
           isCurrent 
-            ? 'border-emerald-200 shadow-md shadow-emerald-50/40 ring-1 ring-emerald-100' 
-            : 'border-gray-200 hover:border-emerald-200 hover:shadow-sm hover:shadow-gray-50',
-          isDone && 'opacity-75 bg-gray-50/30',
+            ? 'glass-card border-emerald-500/30 shadow-md ring-1 ring-emerald-500/20 bg-emerald-50/5' 
+            : 'glass-card hover:translate-y-[-2px] hover:border-zinc-300/50',
+          isDone && 'opacity-75 bg-zinc-50/50',
           className
         )}
       >
         {/* Header Section */}
-        <div className="px-5 py-4 border-b border-gray-100">
+        <div className="px-5 py-4 border-b border-zinc-100/50">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <h4 className="text-base font-bold text-gray-900 leading-snug">
-                  <span className="mr-2 inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium bg-gray-100 text-gray-600 rounded align-middle relative -top-0.5">
+                <h4 className="text-base font-bold text-zinc-900 leading-snug">
+                  <span className="mr-2 inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium bg-zinc-100 text-zinc-600 rounded align-middle relative -top-0.5">
                     Week {week.weekNumber}
                   </span>
                   {week.name}
@@ -85,12 +85,12 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
               </div>
 
               {/* Date range */}
-              <p className="text-xs text-gray-500 mt-1 ml-1">
+              <p className="text-xs text-zinc-500 mt-1 ml-1">
                 {week.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {week.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
               
               {week.theme && (
-                <p className="text-xs text-gray-500 italic mt-1 ml-1">
+                <p className="text-xs text-zinc-500 italic mt-1 ml-1">
                   "{week.theme}"
                 </p>
               )}

@@ -59,8 +59,8 @@ export function PageContainer({
   // Layout without sidebar - simple white card
   if (!sidebar) {
     return (
-      <div className={cn('bg-white rounded-xl shadow-sm p-4 sm:p-6', className)}>
-        {header && <div className="mb-4 sm:mb-6">{header}</div>}
+      <div className={cn('glass-card rounded-xl shadow-elevated p-3 sm:p-6', className)}>
+        {header && <div className="mb-3 sm:mb-6">{header}</div>}
         {children}
       </div>
     )
@@ -68,7 +68,7 @@ export function PageContainer({
 
   // Layout with sidebar - white card containing sidebar + content
   return (
-    <div className={cn('bg-white rounded-xl shadow-sm overflow-hidden', className)}>
+    <div className={cn('glass-card rounded-xl shadow-elevated overflow-hidden', className)}>
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <div
@@ -80,12 +80,12 @@ export function PageContainer({
       {/* Mobile sidebar drawer */}
       <div
         className={cn(
-          'md:hidden fixed inset-y-0 left-0 z-50 bg-white shadow-xl transform transition-transform duration-300',
+          'md:hidden fixed inset-y-0 left-0 z-50 bg-white shadow-elevated transform transition-transform duration-300',
           widthClasses[sidebarWidth],
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="h-full overflow-y-auto">
+        <div className="h-full overflow-y-auto scrollbar-thin">
           {sidebar}
         </div>
       </div>
@@ -117,17 +117,17 @@ export function PageContainer({
 
           {/* Sidebar content - hide when collapsed */}
           {(!sidebarCollapsible || !sidebarCollapsed) && (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto scrollbar-thin">
               {sidebar}
             </div>
           )}
         </div>
 
         {/* Main content */}
-        <div className="flex-1 min-w-0 overflow-auto">
-          <div className="p-4 sm:p-6">
+        <div className="flex-1 min-w-0 overflow-auto scrollbar-thin">
+          <div className="p-3 sm:p-6">
             {header && (
-              <div className="mb-4 sm:mb-6">
+              <div className="mb-3 sm:mb-6">
                 {/* Inject onMobileMenuClick into PageHeader if sidebar exists */}
                 {isValidElement(header)
                   ? cloneElement(header, { onMobileMenuClick: () => setMobileSidebarOpen(true) } as any)

@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
-import { BookOpen, FileText, Plus, Trash2, Edit, Save, X, Tag, Upload } from 'lucide-react'
+import { BookOpen, FileText, Plus, Trash2, Edit, Save, X, Tag, Upload, Search } from 'lucide-react'
 import { useLearningDocuments } from '../hooks/useLearningDocuments'
 import type { LearningDocument } from '../types/time'
 import Card from './shared/Card'
@@ -60,7 +60,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full text-2xl font-bold text-gray-900 border-b-2 border-emerald-500 focus:outline-none pb-1"
+              className="w-full text-2xl font-bold text-gray-900 border-b-2 border-lime-500 focus:outline-none pb-1"
             />
           ) : (
             <h2 className="text-2xl font-bold text-gray-900">{doc.title}</h2>
@@ -74,7 +74,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
             <>
               <button
                 onClick={handleUpdate}
-                className="rounded-xl px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
+                className="rounded-xl px-3 py-1.5 bg-lime-600 hover:bg-lime-700 text-white text-sm font-semibold flex items-center gap-2 transition-colors"
               >
                 <Save size={14} />
                 Save
@@ -122,7 +122,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
             value={editTags}
             onChange={(e) => setEditTags(e.target.value)}
             placeholder="learning, programming, notes"
-            className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+            className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
           />
         </div>
       ) : (
@@ -131,7 +131,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
             <Tag size={14} className="text-gray-400" />
             <div className="flex flex-wrap gap-2">
               {doc.tags.map((tag, idx) => (
-                <span key={idx} className="rounded-full px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium">
+                <span key={idx} className="rounded-full px-3 py-1 bg-lime-50 text-lime-700 text-xs font-medium">
                   {tag}
                 </span>
               ))}
@@ -149,7 +149,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
             value={editDescription}
             onChange={(e) => setEditDescription(e.target.value)}
             placeholder="Short description or summary"
-            className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+            className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
           />
         </div>
       )}
@@ -160,7 +160,7 @@ function DocumentView({ doc, onUpdate, onDelete }: {
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           rows={15}
-          className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm resize-y"
+          className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 font-mono text-sm resize-y"
           placeholder="# Your Markdown Here&#10;&#10;Write your notes in **markdown** format.&#10;&#10;- Lists work&#10;- Code blocks too&#10;&#10;```javascript&#10;const example = 'hello'&#10;```"
         />
       ) : (
@@ -367,17 +367,28 @@ export function Learning() {
 
   // Sidebar content (shared between desktop and mobile)
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-white">
+      {/* Search Bar - Pro Feature */}
+      <div className="p-3 pb-0">
+        <div className="relative group">
+          <input 
+            type="text" 
+            placeholder="Search notes..." 
+            className="w-full bg-zinc-50 border border-zinc-200 rounded-lg py-1.5 pl-8 pr-10 text-xs font-medium text-zinc-700 placeholder:text-zinc-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+          />
+          <div className="absolute left-2.5 top-1.5 text-zinc-400 group-focus-within:text-emerald-500 transition-colors">
+            <Search size={14} />
+          </div>
+          <div className="absolute right-2.5 top-1.5 text-2xs font-bold text-zinc-400 border border-zinc-200 rounded px-1.5 py-px bg-white shadow-sm">
+            ⌘K
+          </div>
+        </div>
+      </div>
+
       {/* Header with actions */}
-      <div className="p-3 border-b border-gray-200">
+      <div className="px-3 py-3 border-b border-gray-100 flex items-center justify-between mt-1">
+        <div className="text-2xs font-bold uppercase tracking-wider text-zinc-400">Documents</div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsCreating(true)}
-            className="flex-1 rounded-xl px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-          >
-            <Plus size={16} />
-            New
-          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -388,10 +399,17 @@ export function Learning() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-xl p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors"
+            className="rounded-lg p-1.5 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
             title="Upload markdown files"
           >
-            <Upload size={16} />
+            <Upload size={14} />
+          </button>
+          <button
+            onClick={() => setIsCreating(true)}
+            className="rounded-lg px-2.5 py-1.5 bg-zinc-900 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm hover:shadow-md"
+          >
+            <Plus size={14} />
+            <span>New</span>
           </button>
         </div>
       </div>
@@ -403,28 +421,33 @@ export function Learning() {
             No documents yet
           </div>
         ) : (
-          <div className="py-2">
+          <div className="py-0">
             {documents.map(doc => (
               <button
                 key={doc.id}
                 onClick={() => setSelectedDocId(doc.id)}
-                className={`w-full text-left px-3 py-3 border-b border-gray-100 transition-colors ${
+                className={`w-full text-left px-3 py-3 border-b border-zinc-50 transition-all group relative ${
                   selectedDocId === doc.id
-                    ? 'bg-emerald-50 border-l-2 border-l-emerald-600'
-                    : 'hover:bg-gray-50'
+                    ? 'bg-emerald-50/30'
+                    : 'hover:bg-zinc-50'
                 }`}
               >
-                <p className={`font-medium text-sm line-clamp-1 ${
-                  selectedDocId === doc.id ? 'text-emerald-900' : 'text-gray-900'
+                {/* Active Indicator */}
+                {selectedDocId === doc.id && (
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-emerald-500" />
+                )}
+
+                <p className={`font-semibold text-sm line-clamp-1 mb-1 transition-colors ${
+                  selectedDocId === doc.id ? 'text-emerald-900' : 'text-zinc-700 group-hover:text-zinc-900'
                 }`}>
                   {doc.title}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-400">
-                    {formatDate(doc.updatedAt)}
+                <div className="flex items-center justify-between">
+                  <span className="text-2xs text-zinc-400 font-medium group-hover:text-zinc-500 transition-colors">
+                    Edited {formatDate(doc.updatedAt)}
                   </span>
                   {doc.tags && doc.tags.length > 0 && (
-                    <span className="text-xs text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                    <span className="text-2xs text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded-full border border-zinc-200">
                       {doc.tags[0]}
                     </span>
                   )}
@@ -447,6 +470,8 @@ export function Learning() {
         <PageHeader
           title="Learning"
           icon={BookOpen}
+          useGradientTitle={true}
+          animateIcon={true}
           sync={{
             status: syncStatus,
             lastSynced,
@@ -460,7 +485,7 @@ export function Learning() {
           {isCreating && (
             <Card className="mb-6">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
-                <Plus size={20} className="text-emerald-600" />
+                <Plus size={20} className="text-lime-600" />
                 Create New Document
               </h3>
               <div className="space-y-4">
@@ -471,7 +496,7 @@ export function Learning() {
                     value={newTitle}
                     onChange={(e) => setNewTitle(e.target.value)}
                     placeholder="Document title"
-                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
                     autoFocus
                   />
                 </div>
@@ -483,7 +508,7 @@ export function Learning() {
                     value={newDescription}
                     onChange={(e) => setNewDescription(e.target.value)}
                     placeholder="Short description or summary"
-                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
                   />
                 </div>
 
@@ -494,7 +519,7 @@ export function Learning() {
                     value={newTags}
                     onChange={(e) => setNewTags(e.target.value)}
                     placeholder="learning, programming, notes"
-                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className="w-full rounded-xl px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 text-sm"
                   />
                 </div>
 
@@ -504,7 +529,7 @@ export function Learning() {
                     value={newContent}
                     onChange={(e) => setNewContent(e.target.value)}
                     rows={12}
-                    className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm resize-y"
+                    className="w-full rounded-xl px-4 py-3 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-lime-500 font-mono text-sm resize-y"
                     placeholder="# Your Markdown Here&#10;&#10;Write your notes in **markdown** format."
                   />
                 </div>
@@ -512,7 +537,7 @@ export function Learning() {
                 <div className="flex gap-3">
                   <button
                     onClick={handleCreate}
-                    className="flex-1 rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors"
+                    className="flex-1 rounded-xl px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold text-sm shadow-sm transition-colors"
                   >
                     Create Document
                   </button>
@@ -545,7 +570,7 @@ export function Learning() {
                 <p className="text-gray-500 mb-4">No learning documents yet</p>
                 <button
                   onClick={() => setIsCreating(true)}
-                  className="rounded-xl px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-sm transition-colors"
+                  className="rounded-xl px-4 py-2 bg-lime-600 hover:bg-lime-700 text-white font-semibold text-sm shadow-sm transition-colors"
                 >
                   Create Your First Document
                 </button>

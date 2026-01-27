@@ -53,7 +53,7 @@ function getSeasonStyle(season: 'Spring' | 'Summer' | 'Fall' | 'Winter') {
     case 'Spring':
       return {
         icon: Leaf,
-        bgGradient: 'from-emerald-50 to-teal-50',
+        bgGradient: 'from-emerald-50 to-emerald-100',
         borderColor: 'border-emerald-200',
         textColor: 'text-emerald-900',
         accentColor: 'text-emerald-600',
@@ -591,6 +591,8 @@ export default function WeeklyReview() {
           title="Weekly Reviews"
           subtitle="Reflect on your journey, week by week"
           icon={Sparkles}
+          useGradientTitle={true}
+          animateIcon={true}
           sync={{
             status: syncStatus,
             hasUnsavedChanges: hasUnsavedChanges || annualHasUnsavedChanges,

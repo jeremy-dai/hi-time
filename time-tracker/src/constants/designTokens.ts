@@ -54,6 +54,7 @@ export const TRANSITION = {
 export const TYPOGRAPHY = {
   // Font sizes
   size: {
+    '2xs': 'text-2xs',  // 10px - data labels, metadata
     xs: 'text-xs',      // 12px - captions
     sm: 'text-sm',      // 14px - body text
     base: 'text-base',  // 16px - large body
@@ -85,55 +86,55 @@ export const TYPOGRAPHY = {
   },
 } as const
 
-// Colors (semantic) - Gentle Mint-Green Theme (Emerald)
+// Colors (semantic) - Modern Emerald Theme
 export const COLORS = {
-  // Primary actions - Soft emerald/mint (like left panel)
-  primary: 'bg-emerald-500 hover:bg-emerald-600 text-white',
-  primaryHover: 'hover:bg-emerald-600',
+  // Primary actions - Emerald (like linear/vercel)
+  primary: 'bg-emerald-600 hover:bg-emerald-700 text-white',
+  primaryHover: 'hover:bg-emerald-700',
   primaryLight: 'bg-emerald-50 text-emerald-900',
 
-  // Secondary actions - Soft gray
-  secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
-  secondaryHover: 'hover:bg-gray-200',
+  // Secondary actions - Zinc
+  secondary: 'bg-zinc-100 hover:bg-zinc-200 text-zinc-900',
+  secondaryHover: 'hover:bg-zinc-200',
 
-  // Danger - Softer red
+  // Danger - Red
   danger: 'bg-red-500 hover:bg-red-600 text-white',
   dangerHover: 'hover:bg-red-600',
   dangerLight: 'bg-red-50 text-red-700',
 
-  // Success - Harmonious green (same as primary)
-  success: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-  successLight: 'bg-emerald-50 text-emerald-900',
+  // Success - Harmonious lime (same as primary)
+  success: 'bg-lime-500 hover:bg-lime-600 text-gray-900',
+  successLight: 'bg-lime-50 text-lime-900',
 
   // Warning - Soft amber
   warning: 'bg-amber-500 hover:bg-amber-600 text-white',
   warningLight: 'bg-amber-50 text-amber-900',
 
-  // Info - Soft emerald
-  info: 'bg-emerald-50 text-emerald-900',
-  infoAccent: 'text-emerald-600',
+  // Info - Soft lime
+  info: 'bg-lime-50 text-lime-900',
+  infoAccent: 'text-lime-600',
 
   // Borders
   border: 'border-gray-200',
-  borderHover: 'hover:border-emerald-300',
-  borderFocus: 'border-emerald-500',
+  borderHover: 'hover:border-lime-300',
+  borderFocus: 'border-lime-400',
 
   // Backgrounds
   bgWhite: 'bg-white',
   bgGray: 'bg-gray-50',
-  bgMint: 'bg-emerald-50',
+  bgMint: 'bg-lime-50',
 } as const
 
 // Interactive states
 export const STATES = {
   hover: {
-    card: 'hover:shadow-md hover:border-emerald-200',
+    card: 'hover:shadow-md hover:border-lime-200',
     button: 'hover:shadow-md',
   },
 
   focus: {
-    ring: 'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent',
-    ringOffset: 'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2',
+    ring: 'focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent',
+    ringOffset: 'focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2',
   },
 
   disabled: 'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -147,7 +148,7 @@ export const BUTTON = {
 
   danger: `${RADIUS.default} px-4 py-2 ${COLORS.danger} ${TYPOGRAPHY.weight.semibold} ${TYPOGRAPHY.size.sm} ${SHADOW.sm} ${TRANSITION.colors} ${STATES.focus.ringOffset}`,
 
-  ghost: `${RADIUS.default} px-4 py-2 bg-transparent hover:bg-emerald-50 text-emerald-700 ${TYPOGRAPHY.weight.medium} ${TYPOGRAPHY.size.sm} ${TRANSITION.colors}`,
+  ghost: `${RADIUS.default} px-4 py-2 bg-transparent hover:bg-lime-50 text-lime-700 ${TYPOGRAPHY.weight.medium} ${TYPOGRAPHY.size.sm} ${TRANSITION.colors}`,
 } as const
 
 // Card styles
@@ -161,10 +162,10 @@ export const INPUT = {
   default: `${RADIUS.default} px-4 py-2.5 ${TYPOGRAPHY.size.sm} ${TYPOGRAPHY.weight.medium} border ${COLORS.border} ${STATES.focus.ring} ${TRANSITION.all} ${SHADOW.sm}`,
 } as const
 
-// Banner styles (info messages) - Updated with emerald theme
+// Banner styles (info messages) - Updated with bright lime theme
 export const BANNER = {
-  info: `${RADIUS.default} p-4 bg-emerald-50 text-emerald-900`,
-  success: `${RADIUS.default} p-4 bg-emerald-50 text-emerald-900`,
+  info: `${RADIUS.default} p-4 bg-lime-50 text-lime-900`,
+  success: `${RADIUS.default} p-4 bg-lime-50 text-lime-900`,
   warning: `${RADIUS.default} p-4 bg-amber-50 text-amber-900`,
   error: `${RADIUS.default} p-4 bg-red-50 text-red-900`,
 } as const
@@ -178,9 +179,9 @@ export const PAGE_LAYOUT = {
   padding: 'p-3 sm:p-6',
 
   // Sidebar widths
-  sidebarNarrow: 'w-32',
-  sidebarWide: 'w-72',
-  sidebarCollapsed: 'w-12',
+  sidebarNarrow: 'w-[var(--sidebar-width-collapsed)]', // 64px
+  sidebarWide: 'w-[var(--sidebar-width)]', // 170px
+  sidebarCollapsed: 'w-[var(--sidebar-width-collapsed)]',
 } as const
 
 // Page Header styles (unified header style)
@@ -190,6 +191,49 @@ export const PAGE_HEADER = {
   titleWithSubtitle: 'text-xl font-bold text-gray-900',
   subtitle: 'text-gray-500 text-sm',
 
-  // Icon color - unified emerald
-  icon: 'text-emerald-600',
+  // Icon color - unified lime
+  icon: 'text-lime-600',
+} as const
+
+// Modern Design System Tokens
+
+export const SHADOW_MODERN = {
+  glow: 'shadow-glow',
+  glowSm: 'shadow-glow-sm',
+  card: 'shadow-card',
+  cardHover: 'shadow-card-hover',
+  elevated: 'shadow-elevated',
+} as const
+
+export const GRADIENT = {
+  primary: 'gradient-primary',
+  mesh: 'bg-mesh',
+  text: 'text-gradient',
+  border: 'gradient-border',
+} as const
+
+export const GLASS = {
+  card: 'glass-card',
+  cardStrong: 'glass-card-strong',
+} as const
+
+export const ANIMATION = {
+  fadeIn: 'animate-in fade-in duration-500',
+  slideUp: 'animate-in slide-in-from-bottom duration-500',
+  scaleIn: 'animate-[scale-in_0.3s_ease-out]',
+  shimmer: 'animate-[shimmer_2s_linear_infinite]',
+  glowPulse: 'animate-[glow-pulse_2s_ease-in-out_infinite]',
+  stagger: (index: number) => `stagger-${Math.min(index + 1, 5)}`,
+} as const
+
+export const CARD_MODERN = {
+  default: `${SHADOW_MODERN.card} hover:${SHADOW_MODERN.cardHover} transition-all duration-300`,
+  glass: `${GLASS.card} hover:${SHADOW_MODERN.cardHover} transition-all duration-300`,
+  interactive: `${SHADOW_MODERN.card} gradient-border hover:shadow-lg transition-all duration-300`,
+} as const
+
+export const CHART_CONTAINER = {
+  default: `bg-white ${SHADOW_MODERN.card} rounded-xl p-4`,
+  glass: `${GLASS.card} rounded-xl p-4`,
+  animated: `bg-white ${SHADOW_MODERN.card} rounded-xl p-4 hover:scale-[1.01] transition-transform duration-300`,
 } as const

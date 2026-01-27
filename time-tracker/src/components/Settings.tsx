@@ -319,6 +319,8 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
         <PageHeader
           title="Settings"
           icon={SettingsIcon}
+          useGradientTitle={true}
+          animateIcon={true}
           sync={{
             status: settingsSyncStatus,
             lastSynced: settingsLastSynced,
@@ -465,7 +467,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     ))}
                     <button
                       onClick={addTimeDivider}
-                      className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
+                      className="px-2 py-1 bg-lime-50 text-lime-600 text-xs rounded-xl hover:bg-lime-100 transition-colors inline-flex items-center gap-1"
                     >
                       <span>+</span>
                       <span>Add</span>

@@ -49,7 +49,7 @@ export function ActiveMissionCard({
       {/* Refined Header */}
       <div className="relative bg-white rounded-xl border border-gray-200 p-6 shadow-sm overflow-hidden">
         {/* Subtle decorative accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-emerald-400 to-teal-500 opacity-60" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-lime-400 to-lime-500 opacity-60" />
 
         <div className="relative flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">

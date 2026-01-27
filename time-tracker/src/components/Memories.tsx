@@ -23,6 +23,8 @@ export default function Memories() {
         <PageHeader
           title={`Annual Memories: ${dateRangeLabel}`}
           icon={CalendarRange}
+          useGradientTitle={true}
+          animateIcon={true}
           sync={{
             status: syncStatus,
             lastSynced,

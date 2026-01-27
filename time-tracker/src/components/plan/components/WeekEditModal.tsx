@@ -121,7 +121,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete, workTyp
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
               placeholder="Week name"
             />
           </div>
@@ -134,7 +134,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete, workTyp
               type="text"
               value={editTheme}
               onChange={(e) => setEditTheme(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-lime-500"
               placeholder="Week theme (optional)"
             />
           </div>
