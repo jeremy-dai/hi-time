@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import type { DailyBreakdown } from '../../types/insights'
-import { CATEGORY_COLORS_HEX } from '../../constants/colors'
+import { getCategoryColor } from '../../utils/colorHelpers'
 import { CATEGORY_KEYS } from '../../types/time'
+import { CHART_CONFIG } from '../../utils/chartConfig'
 
 interface WeeklyBreakdownChartProps {
   dailyPattern: DailyBreakdown[]
@@ -48,28 +49,24 @@ export default function WeeklyBreakdownChart({ dailyPattern }: WeeklyBreakdownCh
           <BarChart data={data} barSize={50}>
           <XAxis
             dataKey="day"
-            stroke="#6b7280"
-            tick={{ fill: '#6b7280' }}
+            stroke={CHART_CONFIG.axis.stroke}
+            tick={CHART_CONFIG.axis.tick}
           />
           <YAxis
-            stroke="#6b7280"
-            tick={{ fill: '#6b7280' }}
-            label={{ value: 'Hours', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+            stroke={CHART_CONFIG.axis.stroke}
+            tick={CHART_CONFIG.axis.tick}
+            label={{ value: 'Hours', angle: -90, position: 'insideLeft', fill: CHART_CONFIG.axis.label.fill }}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem'
-            }}
-            labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+            contentStyle={CHART_CONFIG.tooltip.contentStyle}
+            labelStyle={CHART_CONFIG.tooltip.labelStyle}
           />
           {CATEGORY_KEYS.filter(k => k !== '').map((cat, idx, arr) => (
             <Bar
               key={cat}
               dataKey={cat}
               stackId="a"
-              fill={CATEGORY_COLORS_HEX[cat].bg}
+              fill={getCategoryColor(cat).bg}
               name={cat}
               radius={idx === arr.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
             />

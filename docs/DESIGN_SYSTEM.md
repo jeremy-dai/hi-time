@@ -225,15 +225,55 @@ Used for pages with rich navigation or sidebar elements: **Learning**, **WeeklyR
 #### Pattern 2: Card Layout (Legacy)
 Used for simpler pages rendered as cards: **Dashboard**, **Memories**
 
-### Padding System
+### Padding System (v2.3 - Jan 2026)
+
+**Standardized Card Padding**: All dashboard cards now use `p-5` (20px) for consistency.
 
 | Context | Tailwind Class | Size |
 |---------|----------------|------|
+| **Card Standard** | `p-5` | 1.25rem / 20px |
+| Card Compact | `p-4` | 1rem / 16px |
 | Card Large | `p-6` | 1.5rem / 24px |
-| Card Medium | `p-4` | 1rem / 16px |
-| Card Small | `p-3` | 0.75rem / 12px |
 | Button | `px-4 py-2` | 1rem × 0.5rem |
 | Input | `px-4 py-2.5` | 1rem × 0.625rem |
+
+### Surface Elevation System (v2.3 - Jan 2026)
+
+To prevent nested white-on-white cards, use the surface elevation system:
+
+```css
+/* CSS Variables in index.css */
+--surface-0: transparent;                    /* Page background */
+--surface-1: rgba(255, 255, 255, 0.7);      /* Primary cards */
+--surface-2: rgba(250, 250, 252, 0.9);      /* Nested content */
+--surface-3: rgba(244, 244, 245, 1);        /* Inset/recessed elements */
+--surface-inset: rgba(0, 0, 0, 0.02);       /* Inset backgrounds */
+```
+
+**Usage**:
+```tsx
+// Primary card - use glass-card
+<div className="glass-card rounded-xl p-5">...</div>
+
+// Nested content - use border instead of nested card
+<div className="border-t border-zinc-100 pt-4 mt-4">...</div>
+
+// Inset element - use surface-inset
+<div className="surface-inset rounded-lg p-3">...</div>
+```
+
+**Anti-pattern** (avoid nested cards):
+```tsx
+// BAD - creates white-on-white visual clutter
+<Card>
+  <div className="bg-white rounded-xl p-4">nested content</div>
+</Card>
+
+// GOOD - use border separator
+<Card>
+  <div className="border-t border-zinc-100 pt-4 mt-4">nested content</div>
+</Card>
+```
 
 ### Mobile-First Responsive Design (v2.2 - Jan 2026)
 
@@ -333,6 +373,7 @@ All pages use a unified `PageHeader` component.
 - **Primary**: `bg-emerald-600 text-white hover:bg-emerald-700`
 - **Secondary/Ghost**: `text-gray-600 hover:bg-gray-100`
 - **Size**: Standardized padding and height (`h-9` or `h-10`).
+- **Press Feedback**: All buttons include `active:scale-[0.98]` for tactile feedback.
 
 ### Charts
 - **Headers**: Standardized to `text-base` (not `text-lg`) to reduce visual noise.
@@ -343,13 +384,31 @@ All pages use a unified `PageHeader` component.
 
 **Location**: `components/shared/Card.tsx`
 
-Updated to use glassmorphism by default.
+Updated to use glassmorphism by default with standardized padding.
 
 ```tsx
-<div className="glass-card rounded-xl p-6 transition-all duration-300 hover:shadow-md">
+<div className="glass-card rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5">
   {children}
 </div>
 ```
+
+### 2. Skeleton Loading Component (v2.3)
+
+**Location**: `components/ui/skeleton.tsx`
+
+Provides loading state placeholders with shimmer animation.
+
+```tsx
+// Basic skeleton
+<Skeleton className="h-4 w-32" />
+
+// Pre-built variants
+<CardSkeleton />      // Full card with header and content
+<ChartSkeleton />     // Chart container skeleton
+<TextSkeleton lines={3} />  // Multiple text lines
+```
+
+The shimmer animation is defined in `index.css` with the `.skeleton` class.
 
 ### 2. Floating Transparent Sidebar
 
@@ -493,6 +552,29 @@ All interactive elements feature smooth transitions.
 
 ### Hover Effects
 
-- **Cards**: Slight lift and shadow increase (`hover:-translate-y-1 hover:shadow-md`)
-- **Buttons**: Opacity change or brightness shift
+- **Cards**: Slight lift (`hover:-translate-y-0.5`)
+- **Buttons**: Opacity change or brightness shift + press feedback (`active:scale-[0.98]`)
 - **Links**: Underline or color shift
+
+### Staggered Reveal Animation (v2.3)
+
+For revealing content in sequence, use the `.stagger-reveal` class:
+
+```tsx
+<div className="space-y-6 stagger-reveal">
+  <Card>First (appears immediately)</Card>
+  <Card>Second (50ms delay)</Card>
+  <Card>Third (100ms delay)</Card>
+</div>
+```
+
+CSS animation defined in `index.css`:
+```css
+.stagger-reveal > * {
+  opacity: 0;
+  animation: fade-up 0.4s ease-out forwards;
+}
+.stagger-reveal > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-reveal > *:nth-child(2) { animation-delay: 50ms; }
+/* ... up to 6 children */
+```

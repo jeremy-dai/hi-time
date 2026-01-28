@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { cn } from '../../utils/classNames'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 import type { WeeklyRhythmData } from '../../types/insights'
 import type { CategoryKey } from '../../types/time'
-import { CATEGORY_LABELS } from '../../constants/colors'
+import { getCategoryLabel } from '../../utils/colorHelpers'
 import { Calendar } from 'lucide-react'
+import CardHeader from '../shared/CardHeader'
 
 interface WeeklyRhythmHeatmapProps {
   rhythmData: WeeklyRhythmData[]
 }
 
 export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapProps) {
-  const [hoveredCell, setHoveredCell] = useState<{ day: number; slot: number } | null>(null)
-
   // Organize data into a 2D grid structure (17 hourly slots from 6am-11pm)
   const gridData = useMemo(() => {
     const grid: WeeklyRhythmData[][] = []
@@ -61,38 +61,36 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
     const workHours = (categoryBreakdown['W'] || 0) / 4 // Average across 4 weeks
     const blocks = Math.round(workHours * 2)
 
-    if (blocks === 0) return 'bg-gray-50 border border-gray-200'
-    if (blocks === 1) return 'bg-yellow-100 border border-yellow-200'
-    if (blocks === 2) return 'bg-yellow-200 border border-yellow-300'
-    if (blocks === 3) return 'bg-yellow-300 border border-yellow-400'
-    return 'bg-yellow-400 border border-yellow-500'
+    if (blocks === 0) return 'bg-zinc-50/50 border border-zinc-200/50'
+    if (blocks === 1) return 'bg-emerald-100/70 border border-emerald-200/70'
+    if (blocks === 2) return 'bg-emerald-200/80 border border-emerald-300/80'
+    if (blocks === 3) return 'bg-emerald-400/90 border border-emerald-500/90'
+    return 'bg-emerald-500 border border-emerald-600'
   }
 
   const dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <div className={cn(
-      'rounded-xl p-6',
-      'bg-white shadow-sm'
+      'rounded-xl p-5',
+      'glass-card'
     )}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
-          Weekly Rhythm Heatmap (4 Weeks)
-        </h3>
-        <Calendar className="w-4 h-4 text-gray-400" />
-      </div>
+      <CardHeader 
+        title="Weekly Activity Heatmap" 
+        icon={Calendar}
+        className="mb-5"
+        titleClassName="text-zinc-900"
+      />
 
-      <div className="flex justify-center w-full">
-        <div className="w-full">
         {/* Header Row - Days */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 mb-2">
+        <div className="grid grid-cols-[70px_repeat(7,minmax(0,1fr))] gap-1 mb-2">
           <div /> {/* Empty corner */}
           {dayLabels.map(day => (
             <div
               key={day}
               className={cn(
-                'text-center text-sm font-semibold py-1',
-                'text-gray-700'
+                'text-center text-xs font-bold uppercase tracking-wider py-0.5',
+                'text-zinc-600'
               )}
             >
               {day}
@@ -102,11 +100,11 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
 
         {/* Heatmap Grid */}
         {gridData.map((row, rowIndex) => (
-          <div key={rowIndex} className="grid grid-cols-[60px_repeat(7,1fr)] gap-1 mb-0.5">
+          <div key={rowIndex} className="grid grid-cols-[70px_repeat(7,minmax(0,1fr))] gap-1 mb-1">
             {/* Time Slot Label */}
             <div className={cn(
-              'flex items-center justify-end pr-2 text-[10px] h-4',
-              'text-gray-600'
+              'flex items-center justify-end pr-3 text-xs font-semibold h-4',
+              'text-zinc-600'
             )}>
               {row[0].timeSlot.split('-')[0]}
             </div>
@@ -114,76 +112,69 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
             {/* Cells for each day */}
             {row.map((cell, colIndex) => {
               const workHours = (cell.categoryBreakdown['W'] || 0) / 4 // Average across 4 weeks
-              const workBlocks = Math.round(workHours * 2)
-              const totalBlocks = Math.round((cell.averageHours) * 2)
 
               return (
-                <div
-                  key={`${rowIndex}-${colIndex}`}
-                  className={cn(
-                    'h-4 rounded transition-all duration-200 cursor-pointer relative',
-                    getProductiveColor(cell.categoryBreakdown),
-                    'hover:ring-2 hover:ring-emerald-400 hover:scale-110 hover:z-10'
-                  )}
-                  onMouseEnter={() => setHoveredCell({ day: colIndex, slot: rowIndex })}
-                  onMouseLeave={() => setHoveredCell(null)}
-                >
-                  {/* Tooltip */}
-                  {hoveredCell?.day === colIndex && hoveredCell?.slot === rowIndex && (
-                    <div className={cn(
-                      'absolute z-20 bottom-full mb-2 left-1/2 -translate-x-1/2',
-                      'w-48 p-3 rounded-xl shadow-lg',
-                      'bg-white',
-                      'border border-gray-200',
-                      'text-xs pointer-events-none'
-                    )}>
-                      <div className="font-semibold text-gray-900 mb-1">
-                        {cell.day}, {cell.timeSlot}
-                      </div>
-                      <div className="text-gray-600 mb-2">
-                        {workBlocks} work blocks ({workHours.toFixed(1)}h avg)
-                      </div>
-                      <div className="text-gray-500 text-xs">
-                        {totalBlocks} total blocks ({cell.averageHours.toFixed(1)}h avg)
-                      </div>
-                      {Object.keys(cell.categoryBreakdown).length > 0 && (
-                        <div className="mt-2 space-y-1 border-t border-gray-200 pt-2">
-                          {Object.entries(cell.categoryBreakdown)
-                            .filter(([_, hours]) => (hours as number) > 0)
-                            .sort(([, a], [, b]) => (b as number) - (a as number))
-                            .slice(0, 3)
-                            .map(([cat, hours]) => (
-                              <div key={cat} className="flex justify-between text-gray-700">
-                                <span>{CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS]}</span>
-                                <span className="font-medium">{((hours as number) / 4).toFixed(1)}h</span>
-                              </div>
-                            ))}
-                        </div>
+                <Tooltip key={`${rowIndex}-${colIndex}`}>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={cn(
+                        'h-4 rounded-sm transition-all duration-200 cursor-pointer',
+                        getProductiveColor(cell.categoryBreakdown),
+                        'hover:ring-2 hover:ring-emerald-500 hover:scale-105 hover:z-10 hover:shadow-md'
                       )}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="w-52 p-3 rounded-xl shadow-xl bg-white/95 backdrop-blur-sm border border-zinc-200 text-xs"
+                    sideOffset={5}
+                    showArrow={false}
+                  >
+                    <div className="font-bold text-zinc-900 mb-1.5">
+                      {cell.day} • {cell.timeSlot}
                     </div>
-                  )}
-                </div>
+                    <div className="text-emerald-700 font-semibold mb-1">
+                      {workHours.toFixed(1)}h work
+                    </div>
+                    <div className="text-zinc-500 text-2xs mb-2">
+                      {cell.averageHours.toFixed(1)}h total activity
+                    </div>
+                    {Object.keys(cell.categoryBreakdown).length > 0 && (
+                      <div className="space-y-1 border-t border-zinc-200 pt-2">
+                        {Object.entries(cell.categoryBreakdown)
+                          .filter(([_, hours]) => (hours as number) > 0)
+                          .sort(([, a], [, b]) => (b as number) - (a as number))
+                          .slice(0, 3)
+                          .map(([cat, hours]) => (
+                            <div key={cat} className="flex justify-between text-zinc-700">
+                              <span className="text-2xs">{getCategoryLabel(cat as any)}</span>
+                              <span className="font-semibold text-2xs">{((hours as number) / 4).toFixed(1)}h</span>
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
               )
             })}
           </div>
         ))}
 
         {/* Legend */}
-        <div className="mt-4 flex items-center justify-center gap-3">
-        <span className={cn('text-xs', 'text-gray-600')}>
-          0h
-        </span>
-        <div className="flex gap-1">
-          <div className="w-5 h-5 rounded bg-gray-50 border border-gray-200" />
-          <div className="w-5 h-5 rounded bg-yellow-200 border border-yellow-300" />
-          <div className="w-5 h-5 rounded bg-yellow-400 border border-yellow-500" />
+        <div className="mt-5 flex items-center justify-center gap-2">
+          <span className={cn('text-xs font-medium', 'text-zinc-500')}>
+            Less
+          </span>
+          <div className="flex gap-1">
+            <div className="w-4 h-4 rounded-sm bg-zinc-50/50 border border-zinc-200/50" />
+            <div className="w-4 h-4 rounded-sm bg-emerald-100/70 border border-emerald-200/70" />
+            <div className="w-4 h-4 rounded-sm bg-emerald-200/80 border border-emerald-300/80" />
+            <div className="w-4 h-4 rounded-sm bg-emerald-400/90 border border-emerald-500/90" />
+            <div className="w-4 h-4 rounded-sm bg-emerald-500 border border-emerald-600" />
+          </div>
+          <span className={cn('text-xs font-medium', 'text-zinc-500')}>
+            More
+          </span>
         </div>
-        <span className={cn('text-xs', 'text-gray-600')}>
-          1h/week
-        </span>
-        </div>
-      </div>
-      </div>
     </div>
   )
 }

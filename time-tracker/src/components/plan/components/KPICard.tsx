@@ -3,6 +3,7 @@ import type { PlanTracker, PlanWeek } from '../../../hooks/useQuarterlyPlan'
 import { Target, Edit2, Check, X, CheckCircle2, Circle, Clock, AlertCircle, ChevronRight } from 'lucide-react'
 import { cn } from '../../../utils/classNames'
 import { Modal } from '../../shared/Modal'
+import { useEditModal } from '../../../hooks/useEditModal'
 
 // Color mappings (defined once outside component for performance)
 const COLOR_CLASSES = {
@@ -76,7 +77,7 @@ interface KPICardProps {
 export function KPICard({ tracker, className, onUpdate, compact = false, weeks }: KPICardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(tracker.current)
-  const [showDetailModal, setShowDetailModal] = useState(false)
+  const { isOpen: showDetailModal, open: openDetailModal, close: closeDetailModal } = useEditModal()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const Icon = Target
@@ -159,7 +160,7 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
 
   const handleCardClick = () => {
     if (isClickable) {
-      setShowDetailModal(true)
+      openDetailModal()
     }
   }
 
@@ -298,7 +299,7 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
     {/* Detail Modal */}
     <Modal
       isOpen={showDetailModal}
-      onClose={() => setShowDetailModal(false)}
+      onClose={closeDetailModal}
       title={tracker.name}
       description={`${tracker.current} / ${tracker.target} tasks completed`}
       icon={<Target className={iconColorClass} />}

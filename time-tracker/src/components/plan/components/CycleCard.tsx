@@ -1,8 +1,8 @@
-import { useState } from 'react'
 import type { PlanCycle } from '../../../hooks/useQuarterlyPlan'
 import { cn } from '../../../utils/classNames'
 import { Edit2, Calendar, ChevronDown, ChevronRight } from 'lucide-react'
 import { CycleEditModal } from './CycleEditModal'
+import { useEditModal } from '../../../hooks/useEditModal'
 
 interface CycleCardProps {
   cycle: PlanCycle
@@ -16,7 +16,7 @@ interface CycleCardProps {
 export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit, isExpanded }: CycleCardProps) {
   const isActive = cycle.status === 'in_progress'
   const isCompleted = cycle.status === 'completed'
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const { isOpen: isEditModalOpen, open: openEditModal, close: closeEditModal } = useEditModal()
 
   const handleStatusChange = (newStatus: PlanCycle['status']) => {
     if (onStatusChange && newStatus !== cycle.status) {
@@ -63,7 +63,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
             )}
             <h3 className="text-lg font-bold text-gray-900 group-hover:text-emerald-900 transition-colors leading-snug flex items-center gap-2 flex-wrap">
               <span className={cn(
-                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                "inline-flex items-center gap-1 px-2 py-1 rounded-lg text-2xs font-bold uppercase tracking-wider shadow-sm",
                 isActive ? "bg-linear-to-br from-emerald-100 to-emerald-50 text-emerald-700 ring-1 ring-emerald-200" :
                 isCompleted ? "bg-linear-to-br from-green-100 to-green-50 text-green-700 ring-1 ring-green-200" :
                 "bg-linear-to-br from-gray-100 to-gray-50 text-gray-600 ring-1 ring-gray-200"
@@ -85,7 +85,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setIsEditModalOpen(true)
+                  openEditModal()
                 }}
                 className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                 title="Edit cycle"
@@ -101,7 +101,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
                   onChange={(e) => handleStatusChange(e.target.value as PlanCycle['status'])}
                   onClick={(e) => e.stopPropagation()}
                   className={cn(
-                    "appearance-none pl-2.5 pr-7 py-1.5 text-[10px] font-bold rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm uppercase tracking-wider",
+                    "appearance-none pl-2.5 pr-7 py-1.5 text-2xs font-bold rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm uppercase tracking-wider",
                     isActive ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-emerald-200" :
                     isCompleted ? "bg-green-50 text-green-700 hover:bg-green-100 border-green-200" :
                     "bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200"
@@ -157,7 +157,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
                 <span
                   key={skill}
                   className={cn(
-                    "inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold border transition-all hover:scale-105",
+                    "inline-flex items-center px-2.5 py-1 rounded-full text-2xs font-semibold border transition-all hover:scale-105",
                     isActive
                       ? "bg-linear-to-r from-emerald-50 to-teal-50 text-emerald-700 border-emerald-200/50 shadow-sm"
                       : "bg-linear-to-r from-gray-50 to-gray-100/50 text-gray-600 border-gray-200"
@@ -177,7 +177,7 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
           cycle={cycle}
           cycleIndex={cycleIndex}
           isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={closeEditModal}
           onSave={onEdit}
         />
       )}

@@ -1,9 +1,11 @@
 import { useMemo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { MultiWeekStats } from '../../utils/analytics'
-import { CATEGORY_COLORS_HEX } from '../../constants/colors'
+import { getCategoryColor } from '../../utils/colorHelpers'
 import { cn } from '../../utils/classNames'
 import { TrendingUp } from 'lucide-react'
+import CardHeader from '../shared/CardHeader'
+import { CHART_CONFIG } from '../../utils/chartConfig'
 
 interface MultiWeekTrendChartProps {
   multiWeekStats: MultiWeekStats
@@ -30,12 +32,10 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
 
   return (
     <div className={cn('rounded-xl p-6 min-w-0', 'bg-white shadow-sm')}>
-      <div className="flex items-center justify-between mb-4">
-        <div className={cn('text-base font-semibold', 'text-gray-900')}>
-          4-Week Trend
-        </div>
-        <TrendingUp className="w-4 h-4 text-gray-400" />
-      </div>
+      <CardHeader 
+        title="4-Week Trend" 
+        icon={TrendingUp}
+      />
 
       {chartData.length === 0 ? (
         <div className="text-gray-500 text-center py-8">
@@ -46,57 +46,53 @@ export default function MultiWeekTrendChart({ multiWeekStats }: MultiWeekTrendCh
           <div style={{ width: '100%', maxWidth: '700px', minWidth: 200 }}>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+          <CartesianGrid strokeDasharray={CHART_CONFIG.grid.strokeDasharray} stroke={CHART_CONFIG.grid.stroke} />
           <XAxis
             dataKey="week"
-            stroke="#6b7280"
-            tick={{ fill: '#6b7280' }}
+            stroke={CHART_CONFIG.axis.stroke}
+            tick={CHART_CONFIG.axis.tick}
           />
           <YAxis
-            stroke="#6b7280"
-            tick={{ fill: '#6b7280' }}
-            label={{ value: 'Hours', angle: -90, position: 'insideLeft', fill: '#6b7280' }}
+            stroke={CHART_CONFIG.axis.stroke}
+            tick={CHART_CONFIG.axis.tick}
+            label={{ value: 'Hours', angle: -90, position: 'insideLeft', fill: CHART_CONFIG.axis.label.fill }}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: '0.5rem'
-            }}
-            labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+            contentStyle={CHART_CONFIG.tooltip.contentStyle}
+            labelStyle={CHART_CONFIG.tooltip.labelStyle}
           />
           <Line
             type="monotone"
             dataKey="Rest"
-            stroke={CATEGORY_COLORS_HEX['R'].bg}
+            stroke={getCategoryColor('R').bg}
             strokeWidth={4}
             dot={{ r: 4 }}
           />
           <Line
             type="monotone"
             dataKey="Work"
-            stroke={CATEGORY_COLORS_HEX['W'].bg}
+            stroke={getCategoryColor('W').bg}
             strokeWidth={4}
             dot={{ r: 4 }}
           />
           <Line
             type="monotone"
             dataKey="Play"
-            stroke={CATEGORY_COLORS_HEX['G'].bg}
+            stroke={getCategoryColor('G').bg}
             strokeWidth={4}
             dot={{ r: 4 }}
           />
           <Line
             type="monotone"
             dataKey="Procrastination"
-            stroke={CATEGORY_COLORS_HEX['P'].bg}
+            stroke={getCategoryColor('P').bg}
             strokeWidth={4}
             dot={{ r: 4 }}
           />
           <Line
             type="monotone"
             dataKey="Mandatory"
-            stroke={CATEGORY_COLORS_HEX['M'].bg}
+            stroke={getCategoryColor('M').bg}
             strokeWidth={4}
             dot={{ r: 4 }}
           />

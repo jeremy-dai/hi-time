@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { YTDStats } from '../../utils/analytics'
-import { CATEGORY_COLORS_HEX, CATEGORY_LABELS } from '../../constants/colors'
+import { getCategoryColor, getCategoryLabel } from '../../utils/colorHelpers'
 import { CATEGORY_KEYS } from '../../types/time'
 import { cn } from '../../utils/classNames'
 import { BarChart3 } from 'lucide-react'
+import CardHeader from '../shared/CardHeader'
+import { CHART_CONFIG } from '../../utils/chartConfig'
 
 interface AnnualWeeklyBreakdownProps {
   ytdStats: YTDStats
@@ -76,7 +78,7 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
           y={0}
           dy={16}
           textAnchor="middle"
-          fill="#6b7280"
+          fill={CHART_CONFIG.axis.tick.fill}
           fontSize="11"
         >
           {payload.value}
@@ -125,12 +127,10 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
 
   return (
     <div className={cn('rounded-xl p-6 min-w-0', 'bg-white shadow-sm')}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
-          Weekly Breakdown
-        </h3>
-        <BarChart3 className="w-4 h-4 text-gray-400" />
-      </div>
+      <CardHeader 
+        title="Weekly Breakdown" 
+        icon={BarChart3}
+      />
 
       {chartData.length === 0 ? (
         <div className="text-gray-500 text-center py-8">
@@ -141,38 +141,34 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
           <div style={{ width: needsScroll ? '100%' : chartWidth, minWidth: needsScroll ? chartWidth : 200 }}>
             <ResponsiveContainer width="100%" height={400}>
               <BarChart data={chartData} barCategoryGap="15%" maxBarSize={50}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray={CHART_CONFIG.grid.strokeDasharray} stroke={CHART_CONFIG.grid.stroke} />
               <XAxis
                 dataKey="week"
-                stroke="#6b7280"
+                stroke={CHART_CONFIG.axis.stroke}
                 tick={<CustomXAxisTick />}
                 height={60}
               />
               <YAxis
-                stroke="#6b7280"
-                tick={{ fill: '#6b7280' }}
+                stroke={CHART_CONFIG.axis.stroke}
+                tick={CHART_CONFIG.axis.tick}
                 width={40}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'white',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.5rem'
-                }}
-                labelStyle={{ color: '#111827', fontWeight: 'bold' }}
+                contentStyle={CHART_CONFIG.tooltip.contentStyle}
+                labelStyle={CHART_CONFIG.tooltip.labelStyle}
               />
               {CATEGORY_KEYS.filter(k => k !== '').map((cat) => (
                 <Bar
                   key={cat}
-                  dataKey={CATEGORY_LABELS[cat]}
+                  dataKey={getCategoryLabel(cat)}
                   stackId="a"
-                  fill={CATEGORY_COLORS_HEX[cat].bg}
+                  fill={getCategoryColor(cat).bg}
                   label={(props: any) => {
                     const { x, y, width, height, index } = props
 
                     // Get the actual individual value from the data
                     const dataPoint = chartData[index]
-                    const actualValue = dataPoint?.[CATEGORY_LABELS[cat]] || 0
+                    const actualValue = (dataPoint as any)?.[getCategoryLabel(cat)] || 0
 
                     // Only show label if segment is tall enough (at least 20px) and value >= 10 pomodoros
                     if (!actualValue || actualValue < 10 || height < 20) return null

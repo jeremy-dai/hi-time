@@ -1,7 +1,8 @@
 import type { TopActivity } from '../../types/insights'
 import { cn } from '../../utils/classNames'
-import { CATEGORY_COLORS_HEX, CATEGORY_LABELS } from '../../constants/colors'
+import { getCategoryColor, getCategoryLabel } from '../../utils/colorHelpers'
 import { Trophy } from 'lucide-react'
+import CardHeader from '../shared/CardHeader'
 
 interface TopActivitiesBreakdownProps {
   activities: TopActivity[]
@@ -11,27 +12,20 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
   if (activities.length === 0) {
     return (
       <div className={cn(
-        'rounded-xl p-6',
-        'bg-white shadow-sm'
+        'rounded-xl p-5',
+        'glass-card'
       )}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className={cn(
-            'text-lg font-semibold',
-            'text-gray-900'
-          )}>
-            Top Activities
-          </h2>
-          <Trophy className="w-5 h-5 text-emerald-600" />
-        </div>
-        <div className={cn(
-          'p-6 rounded-xl text-center',
-          'bg-gray-50',
-          'border border-gray-200'
-        )}>
-          <p className="text-sm text-gray-600 mb-2">
+        <CardHeader 
+          title="Top Activities" 
+          icon={Trophy}
+          titleClassName="text-lg"
+          iconClassName="w-5 h-5 text-emerald-600"
+        />
+        <div className="py-8 text-center">
+          <p className="text-sm text-gray-500 mb-1">
             No detailed activity data available
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-400">
             Add subcategories or notes to your time blocks for more detailed insights
           </p>
         </div>
@@ -41,18 +35,14 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
 
   return (
     <div className={cn(
-      'rounded-xl p-4',
-      'bg-white shadow-sm'
+      'rounded-xl p-5',
+      'glass-card'
     )}>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className={cn(
-          'text-base font-semibold',
-          'text-gray-900'
-        )}>
-          Top {activities.length} Activities
-        </h2>
-        <Trophy className="w-4 h-4 text-gray-400" />
-      </div>
+      <CardHeader 
+        title={`Top ${activities.length} Activities`} 
+        icon={Trophy}
+        className="mb-3"
+      />
 
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -79,8 +69,8 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
           </thead>
           <tbody>
             {activities.map((activity, index) => {
-              const categoryColors = CATEGORY_COLORS_HEX[activity.type]
-              const categoryLabel = CATEGORY_LABELS[activity.type] || activity.type
+              const categoryColors = getCategoryColor(activity.type)
+              const categoryLabel = getCategoryLabel(activity.type) || activity.type
 
               return (
                 <tr
@@ -121,8 +111,8 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                     <span
                       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
                       style={{
-                        backgroundColor: categoryColors?.bg || '#f3f4f6',
-                        color: categoryColors?.text || '#4b5563'
+                        backgroundColor: categoryColors.bg,
+                        color: categoryColors.text
                       }}
                     >
                       {categoryLabel}
@@ -147,7 +137,7 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
                           className="h-full rounded-full transition-all"
                           style={{
                             width: `${Math.min(100, activity.percentage)}%`,
-                            backgroundColor: categoryColors?.bg || '#9ca3af'
+                            backgroundColor: categoryColors.bg
                           }}
                         />
                       </div>
@@ -164,17 +154,13 @@ export default function TopActivitiesBreakdown({ activities }: TopActivitiesBrea
       </div>
 
       {/* Summary Footer */}
-      <div className={cn(
-        'mt-2 p-2 rounded-xl',
-        'bg-gray-50',
-        'border border-gray-200'
-      )}>
-        <p className="text-xs text-gray-600">
-          <span className="font-semibold">
+      <div className="mt-3 pt-3 border-t border-zinc-100">
+        <p className="text-xs text-gray-500">
+          <span className="font-medium text-gray-700">
             Top {activities.length}
           </span>{' '}
           ={' '}
-          <span className="font-semibold">
+          <span className="font-medium text-gray-700">
             {activities.reduce((sum, a) => sum + a.percentage, 0).toFixed(1)}%
           </span>{' '}
           of tracked time

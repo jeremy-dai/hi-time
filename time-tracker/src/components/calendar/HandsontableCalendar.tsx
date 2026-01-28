@@ -1173,7 +1173,7 @@ export function HandsontableCalendar({
             </colgroup>
             <thead>
               <tr className="border-b-2 border-gray-300">
-                <th className="text-left py-3 px-1 font-bold text-gray-800 text-[10px] uppercase tracking-tight" style={{ width: '45px' }}></th>
+                <th className="text-left py-3 px-1 font-bold text-gray-800 text-2xs uppercase tracking-tight" style={{ width: '45px' }}></th>
                 {DAYS_SHORT.map((day) => (
                   <th key={day} className="text-center py-3 px-2 font-bold text-gray-800 text-xs uppercase tracking-wide">
                     {day}

@@ -145,7 +145,7 @@ export default function WeekNavigator({
         <button
           onClick={() => setIsPickerOpen(!isPickerOpen)}
           className={cn(
-            'px-4 py-2 font-bold text-base min-w-[110px] text-center transition-colors',
+            'px-4 py-2 font-bold text-base w-navigator-md text-center transition-colors',
             styles.week,
             styles.weekButton
           )}

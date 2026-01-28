@@ -17,8 +17,7 @@ import type {
   CategoryTrendData
 } from '../types/insights'
 import { CATEGORY_LABELS } from '../constants/colors'
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+import { DAYS_FULL } from '../constants/timesheet'
 
 /**
  * Extract activity name from a TimeBlock
@@ -288,7 +287,7 @@ export function analyzeProcrastination(weekData: TimeBlock[][]): Procrastination
       peakDay = d
     }
   }
-  const peakProcrastinationDay = maxDayBlocks > 0 ? DAY_NAMES[peakDay] : null
+  const peakProcrastinationDay = maxDayBlocks > 0 ? DAYS_FULL[peakDay] : null
 
   // Find peak time slot
   let peakTimeSlot: string | null = null
@@ -341,7 +340,7 @@ export function generateDailyBreakdown(weekData: TimeBlock[][]): DailyBreakdown[
     }
 
     breakdown.push({
-      dayName: DAY_NAMES[d],
+      dayName: DAYS_FULL[d],
       dayIndex: d,
       totalHours,
       categoryHours: categoryHours as Record<CategoryKey, number>,
@@ -728,7 +727,7 @@ export function calculateAverageDailyPattern(
     }
 
     breakdown.push({
-      dayName: DAY_NAMES[d],
+      dayName: DAYS_FULL[d],
       dayIndex: d,
       totalHours,
       categoryHours,

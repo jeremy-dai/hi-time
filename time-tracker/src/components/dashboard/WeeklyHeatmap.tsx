@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { YTDStats } from '../../utils/analytics'
 import { cn } from '../../utils/classNames'
 import { Calendar } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 
 interface WeeklyHeatmapProps {
   ytdStats: YTDStats
@@ -16,8 +17,6 @@ interface DayData {
 }
 
 export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
-  const [hoveredDay, setHoveredDay] = useState<DayData | null>(null)
-
   // Transform weekly data to daily data using actual daily hours
   const { maxWorkHours, dailyData } = useMemo(() => {
     const days: DayData[] = []
@@ -109,21 +108,27 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
       weeks.push(week)
     }
 
-    // Calculate month labels (only show when month changes)
+    // Calculate month labels (only show when month changes and has enough space)
     const monthLabels: { weekIndex: number; label: string }[] = []
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     let lastMonth = -1
+    let lastLabelWeekIndex = -4 // Ensure first label always shows
 
     weeks.forEach((week, index) => {
       // Check the middle day of the week for more stable month detection
       const midDay = week[3] || week.find(d => d !== null)
       if (midDay) {
         const month = midDay.date.getMonth()
-        if (month !== lastMonth) {
+        // Only add label if month changed AND we have enough space (at least 4 weeks apart)
+        if (month !== lastMonth && index - lastLabelWeekIndex >= 4) {
           monthLabels.push({
             weekIndex: index,
             label: monthNames[month]
           })
+          lastMonth = month
+          lastLabelWeekIndex = index
+        } else if (month !== lastMonth) {
+          // Month changed but not enough space, update lastMonth but don't add label
           lastMonth = month
         }
       }
@@ -156,7 +161,7 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
                 <span
                   key={`${weekIndex}-${label}`}
                   className="absolute text-xs font-medium text-gray-700"
-                  style={{ left: `${48 + weekIndex * 16}px` }}
+                  style={{ left: `${48 + weekIndex * 16}px`, minWidth: '32px' }}
                 >
                   {label}
                 </span>
@@ -166,7 +171,7 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
             {/* GitHub-style grid */}
             <div className="flex gap-1">
             {/* Day labels */}
-            <div className="flex flex-col gap-1 pr-2">
+            <div className="flex flex-col gap-1 pr-2" style={{ width: '40px' }}>
               {dayLabels.map((label, index) => (
                 <div
                   key={label}
@@ -184,33 +189,33 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
             <div className="flex gap-1">
               {gridData.weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className="flex flex-col gap-1">
-                  {week.map((day, dayIndex) => (
-                    <div
-                      key={`${weekIndex}-${dayIndex}`}
-                      className="relative"
-                      onMouseEnter={() => day && setHoveredDay(day)}
-                      onMouseLeave={() => setHoveredDay(null)}
-                    >
-                      <div
-                        className={cn(
-                          'w-3 h-3 rounded-sm cursor-pointer',
-                          'transition-all duration-150',
-                          'hover:ring-2 hover:ring-gray-400 hover:ring-offset-1',
-                          day ? getContributionColor(day.workHours) : 'bg-gray-50',
-                          !day && 'cursor-default'
-                        )}
-                        title={day ? `${day.dateStr}: ${day.workHours.toFixed(1)}h work` : ''}
-                      />
+                  {week.map((day, dayIndex) => {
+                    if (!day) {
+                      return (
+                        <div
+                          key={`${weekIndex}-${dayIndex}`}
+                          className="w-3 h-3 rounded-sm bg-gray-50 cursor-default"
+                        />
+                      )
+                    }
 
-                      {/* Tooltip */}
-                      {hoveredDay && day && hoveredDay.dateStr === day.dateStr && (
-                        <div className={cn(
-                          'absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2',
-                          'w-40 p-2 rounded-xl shadow-xl',
-                          'bg-gray-900 text-white',
-                          'text-xs pointer-events-none whitespace-nowrap'
-                        )}>
-                          <div className="font-semibold mb-1">
+                    return (
+                      <Tooltip key={`${weekIndex}-${dayIndex}`}>
+                        <TooltipTrigger asChild>
+                          <div
+                            className={cn(
+                              'w-3 h-3 rounded-sm cursor-pointer',
+                              'transition-all duration-150',
+                              'hover:ring-2 hover:ring-gray-400 hover:ring-offset-1',
+                              getContributionColor(day.workHours)
+                            )}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          className="bg-gray-900 text-white border-gray-800 rounded-lg shadow-xl px-3 py-2 whitespace-nowrap"
+                          sideOffset={5}
+                        >
+                          <div className="font-semibold text-xs mb-1">
                             {day.date.toLocaleDateString('en-US', {
                               weekday: 'short',
                               month: 'short',
@@ -218,16 +223,15 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
                               year: 'numeric'
                             })}
                           </div>
-                          <div>
-                            Work: {day.workHours.toFixed(1)}h
+                          <div className="text-sm">
+                            <span className="font-bold text-white">{day.workHours.toFixed(1)}</span>
+                            <span className="text-gray-500 mx-1">/</span>
+                            <span className="text-gray-400 font-medium">{day.totalHours.toFixed(1)}h</span>
                           </div>
-                          <div className="text-gray-300 text-[10px]">
-                            Total: {day.totalHours.toFixed(1)}h
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  })}
                 </div>
               ))}
             </div>

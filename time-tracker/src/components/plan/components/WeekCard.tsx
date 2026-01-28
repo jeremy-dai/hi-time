@@ -4,6 +4,7 @@ import { cn } from '../../../utils/classNames'
 import { CheckCircle2, Circle, Edit2, FileText, Target, HelpCircle, Layout, ChevronDown, ChevronUp } from 'lucide-react'
 import { WeekEditModal } from './WeekEditModal'
 import { TemplateModal } from './TemplateModal'
+import { useEditModal } from '../../../hooks/useEditModal'
 
 interface WeekCardProps {
   week: PlanWeek
@@ -31,8 +32,8 @@ const STATUS_CONFIG: Record<PlanWeek['status'], { label: string, color: string, 
 export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdit, onDelete, className }: WeekCardProps) {
   const isDone = week.status === 'completed'
   const isCurrent = week.status === 'current'
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [templateModalOpen, setTemplateModalOpen] = useState(false)
+  const { isOpen: isEditModalOpen, open: openEditModal, close: closeEditModal } = useEditModal()
+  const { isOpen: templateModalOpen, open: openTemplateModal, close: closeTemplateModal } = useEditModal()
   const [selectedTemplate, setSelectedTemplate] = useState<{ title: string; markdown: string } | null>(null)
   const [showAllTodos, setShowAllTodos] = useState(false)
 
@@ -47,7 +48,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
         title: todoTitle,
         markdown: templates[templateId]
       })
-      setTemplateModalOpen(true)
+      openTemplateModal()
     }
   }
 
@@ -71,13 +72,13 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                 <h4 className="text-base font-bold text-zinc-900 leading-snug">
-                  <span className="mr-2 inline-block px-1.5 py-0.5 text-[10px] font-mono font-medium bg-zinc-100 text-zinc-600 rounded align-middle relative -top-0.5">
+                  <span className="mr-2 inline-block px-1.5 py-0.5 text-2xs font-mono font-medium bg-zinc-100 text-zinc-600 rounded align-middle relative -top-0.5">
                     Week {week.weekNumber}
                   </span>
                   {week.name}
                 </h4>
                 <span className={cn(
-                  "px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border",
+                  "px-1.5 py-0.5 text-2xs font-bold uppercase tracking-wider rounded border",
                   statusStyle.bg, statusStyle.color, statusStyle.border
                 )}>
                   {statusStyle.label}
@@ -98,7 +99,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
 
             {onEdit && (
               <button
-                onClick={() => setIsEditModalOpen(true)}
+                onClick={() => openEditModal()}
                 className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                 title="Edit week"
               >
@@ -117,7 +118,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-emerald-700">
                     <Target className="w-3.5 h-3.5" />
-                    <h5 className="text-[10px] font-bold uppercase tracking-wider">Goals</h5>
+                    <h5 className="text-2xs font-bold uppercase tracking-wider">Goals</h5>
                   </div>
                   <ul className="space-y-1.5 pl-1">
                     {week.goals.map((goal, index) => (
@@ -135,7 +136,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-purple-700">
                     <HelpCircle className="w-3.5 h-3.5" />
-                    <h5 className="text-[10px] font-bold uppercase tracking-wider">Reflections</h5>
+                    <h5 className="text-2xs font-bold uppercase tracking-wider">Reflections</h5>
                   </div>
                   <ul className="space-y-1.5 pl-1">
                     {week.reflectionQuestions.map((question, index) => (
@@ -153,7 +154,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
           {/* Todos Section */}
           <div className="bg-gray-50/50 rounded-lg border border-gray-100 overflow-hidden">
             <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <h5 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+              <h5 className="text-2xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
                 <Layout className="w-3 h-3" />
                 Todos
               </h5>
@@ -164,7 +165,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-[10px] font-medium text-gray-500">
+                <span className="text-2xs font-medium text-gray-500">
                   {completedTodos}/{totalTodos}
                 </span>
               </div>
@@ -241,7 +242,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
                   {week.todos.length > 5 && (
                     <button
                       onClick={() => setShowAllTodos(!showAllTodos)}
-                      className="w-full px-3 py-1.5 text-[10px] font-medium text-gray-500 hover:text-emerald-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+                      className="w-full px-3 py-1.5 text-2xs font-medium text-gray-500 hover:text-emerald-600 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
                     >
                       {showAllTodos ? (
                         <>Show less <ChevronUp className="w-3 h-3" /></>
@@ -261,7 +262,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
           <WeekEditModal
             week={week}
             isOpen={isEditModalOpen}
-            onClose={() => setIsEditModalOpen(false)}
+            onClose={closeEditModal}
             onSave={onEdit}
             onDelete={onDelete}
             workTypes={workTypes}
@@ -274,7 +275,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
           <TemplateModal
             isOpen={templateModalOpen}
             onClose={() => {
-              setTemplateModalOpen(false)
+              closeTemplateModal()
               setSelectedTemplate(null)
             }}
             title={selectedTemplate.title}

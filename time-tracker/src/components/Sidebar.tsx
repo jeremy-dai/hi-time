@@ -97,7 +97,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
       aria-label="Primary"
       className="h-full bg-transparent pb-4 pr-4 flex flex-col"
     >
-      {/* Week Display */}
+      {/* Season Display */}
       {currentDate && (() => {
         const info = getWeekInfo(currentDate)
         const style = getSeasonStyle(info.season)
@@ -106,10 +106,12 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         const progress = Math.round((info.weekInSeason / 13) * 100)
 
         return (
-          <div className="mb-2 px-5 pt-4 pb-1">
-            <div className="flex items-center gap-2.5">
-              <SeasonIcon size={18} className={style.accentColor} strokeWidth={2.5} />
-              <span className="text-sm font-bold text-zinc-800 tracking-tight">
+          <div className="mx-2 mt-3 mb-4 p-3 rounded-xl bg-white/60 border border-zinc-200/50">
+            <div className="flex items-center gap-2">
+              <div className={cn("p-1.5 rounded-lg", style.badgeBg)}>
+                <SeasonIcon size={16} className={style.accentColor} strokeWidth={2} />
+              </div>
+              <span className="text-sm font-semibold text-zinc-700">
                 {info.season}
               </span>
               <span className={cn(
@@ -130,8 +132,8 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         )
       })()}
 
-      <div className="flex-1 space-y-0.5 pl-2 pr-2">
-        <div className="text-2xs font-bold uppercase tracking-wider text-zinc-400 mb-2 px-2 mt-2">Menu</div>
+      <div className="flex-1 space-y-1 px-2">
+        <div className="text-2xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5 px-3">Menu</div>
         <SidebarItem
           icon={<Target size={20} />}
           label="Today"
@@ -174,7 +176,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           active={active === 'learning'}
           onClick={() => onNavigate('learning')}
         />
-        <div className="mt-6 text-2xs font-bold uppercase tracking-wider text-zinc-400 mb-2 px-2">System</div>
+        <div className="mt-5 text-2xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5 px-3">System</div>
         <SidebarItem
           icon={<Settings size={20} />}
           label="Settings"
@@ -183,26 +185,17 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         />
       </div>
 
-      <div className={cn(
-        'mt-4 pt-4 border-t pl-3',
-        'border-gray-200'
-      )}>
+      <div className="mt-4 pt-4 border-t border-zinc-200/60 mx-2 px-1">
         {userEmail && (
-          <div className={cn(
-            'text-xs mb-3 px-2 py-1 truncate font-medium',
-            'text-gray-500'
-          )}>
+          <div className="text-xs mb-2 px-3 truncate font-medium text-zinc-400">
             {userEmail}
           </div>
         )}
         <button
           onClick={onLogout}
-          className={cn(
-            'w-full flex items-center gap-2 px-4 py-3 rounded-full text-sm font-bold transition-all',
-            'text-gray-400 hover:bg-red-500/10 hover:text-red-400'
-          )}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all text-zinc-400 hover:bg-red-50 hover:text-red-500"
         >
-          <LogOut size={20} />
+          <LogOut size={18} />
           <span>Logout</span>
         </button>
       </div>

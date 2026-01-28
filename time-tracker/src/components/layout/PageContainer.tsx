@@ -94,13 +94,13 @@ export function PageContainer({
         {/* Desktop sidebar */}
         <div
           className={cn(
-            'hidden md:flex flex-col border-r border-gray-200 transition-all duration-300 shrink-0',
+            'hidden md:flex flex-col border-r border-gray-200 transition-all duration-300 shrink-0 relative',
             sidebarCollapsible && sidebarCollapsed ? collapsedWidth : widthClasses[sidebarWidth]
           )}
         >
           {/* Collapse toggle button */}
           {sidebarCollapsible && (
-            <div className="p-2 border-b border-gray-200 flex justify-end shrink-0">
+            <div className="absolute top-3 right-3 z-10">
               <button
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"

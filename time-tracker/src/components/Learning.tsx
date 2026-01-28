@@ -380,7 +380,7 @@ export function Learning() {
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white">
       {/* Search Bar - Pro Feature */}
-      <div className="p-3 pb-0">
+      <div className="p-3 pb-0 md:pr-12">
         <div className="relative group">
           <input 
             type="text" 

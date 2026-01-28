@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getSettings, saveSettings, exportBulkCSV, type UserSettings, type SubcategoryDef } from '../api'
-import { CATEGORY_LABELS, SUBCATEGORY_SHADES_HEX, CATEGORY_COLORS_HEX } from '../constants/colors'
+import { SUBCATEGORY_SHADES_HEX } from '../constants/colors'
+import { getCategoryLabel, getCategoryColor } from '../utils/colorHelpers'
 import { CATEGORY_KEYS } from '../types/time'
 import Card from './shared/Card'
 import { useLocalStorageSync } from '../hooks/useLocalStorageSync'
@@ -312,22 +313,21 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
       </div>
 
       <Card>
-        <div className="p-6">
-          {/* Categories Tab */}
-          {activeTab === 'categories' && (
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 mb-1">Categories & Subcategories</h2>
-                  <p className="text-xs text-gray-500">Define up to 5 subcategories for each category</p>
-                </div>
-                <button
-                  onClick={() => setShowClearConfirm(true)}
-                  className="px-3 py-1.5 bg-red-50 text-red-600 font-medium text-xs rounded-xl hover:bg-red-100 transition-colors"
-                >
-                  Clear All
-                </button>
+        {/* Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div>
+                <h2 className="text-base font-semibold text-gray-900 mb-1">Categories & Subcategories</h2>
+                <p className="text-xs text-gray-500">Define up to 5 subcategories for each category</p>
               </div>
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                className="px-3 py-1.5 bg-red-50 text-red-600 font-medium text-xs rounded-xl hover:bg-red-100 active:scale-[0.98] transition-all"
+              >
+                Clear All
+              </button>
+            </div>
 
               <div className="space-y-4">
                 {CATEGORY_KEYS.filter(k => k !== '').map(cat => {
@@ -340,13 +340,13 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                         <span
                           className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shadow-sm"
                           style={{
-                            backgroundColor: CATEGORY_COLORS_HEX[cat].bg,
-                            color: CATEGORY_COLORS_HEX[cat].text
+                            backgroundColor: getCategoryColor(cat).bg,
+                            color: getCategoryColor(cat).text
                           }}
                         >
                           {cat}
                         </span>
-                        <span className="font-semibold text-sm text-gray-900">{CATEGORY_LABELS[cat]}</span>
+                        <span className="font-semibold text-sm text-gray-900">{getCategoryLabel(cat)}</span>
                         {hasSubcategories && (
                           <span className="text-xs text-gray-400">({savedSubs.length})</span>
                         )}
@@ -376,16 +376,16 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                   )
                 })}
               </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {/* Display Tab */}
-          {activeTab === 'display' && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-1">Display Preferences</h2>
-                <p className="text-xs text-gray-500">Customize how your timesheet is displayed</p>
-              </div>
+        {/* Display Tab */}
+        {activeTab === 'display' && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 mb-1">Display Preferences</h2>
+              <p className="text-xs text-gray-500">Customize how your timesheet is displayed</p>
+            </div>
 
               <div className="space-y-4">
                 <div className="flex items-start justify-between py-3 border-b border-gray-100">
@@ -445,7 +445,7 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                     ))}
                     <button
                       onClick={addTimeDivider}
-                      className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 transition-colors inline-flex items-center gap-1"
+                      className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 active:scale-[0.98] transition-all inline-flex items-center gap-1"
                     >
                       <span>+</span>
                       <span>Add</span>
@@ -453,71 +453,68 @@ export function Settings({ onSettingsSaved }: SettingsProps) {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {/* Data Tab */}
-          {activeTab === 'data' && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 mb-1">Data Management</h2>
-                <p className="text-xs text-gray-500">Export and manage your timesheet data</p>
+        {/* Data Tab */}
+        {activeTab === 'data' && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900 mb-1">Data Management</h2>
+              <p className="text-xs text-gray-500">Export and manage your timesheet data</p>
+            </div>
+
+            <div className="py-3">
+              <div className="mb-3">
+                <label className="block text-sm font-semibold text-gray-900 mb-1">
+                  Bulk Export
+                </label>
+                <p className="text-xs text-gray-500">
+                  Export timesheet data for a range of weeks as CSV
+                </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="py-3">
-                  <div className="mb-3">
-                    <label className="block text-sm font-semibold text-gray-900 mb-1">
-                      Bulk Export
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      Export timesheet data for a range of weeks as CSV
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-3 items-end">
-                    <div className="w-full sm:flex-1">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Start Week</label>
-                      <input
-                        type="week"
-                        value={exportStartWeek}
-                        onChange={(e) => setExportStartWeek(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
-                      />
-                    </div>
-                    <div className="w-full sm:flex-1">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">End Week</label>
-                      <input
-                        type="week"
-                        value={exportEndWeek}
-                        onChange={(e) => setExportEndWeek(e.target.value)}
-                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
-                      />
-                    </div>
-                    <button
-                      onClick={handleBulkExport}
-                      disabled={exporting}
-                      className="w-full sm:w-auto px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
-                    >
-                      {exporting && (
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                      )}
-                      {exporting ? 'Exporting...' : 'Export CSV'}
-                    </button>
-                  </div>
-                  {exportStartWeek && exportEndWeek && exportStartWeek <= exportEndWeek && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Exporting {calculateWeekDiff(exportStartWeek, exportEndWeek)} weeks of data
-                    </p>
-                  )}
+              <div className="flex flex-col sm:flex-row gap-3 items-end">
+                <div className="w-full sm:flex-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">Start Week</label>
+                  <input
+                    type="week"
+                    value={exportStartWeek}
+                    onChange={(e) => setExportStartWeek(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+                  />
                 </div>
+                <div className="w-full sm:flex-1">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5">End Week</label>
+                  <input
+                    type="week"
+                    value={exportEndWeek}
+                    onChange={(e) => setExportEndWeek(e.target.value)}
+                    className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+                  />
+                </div>
+                <button
+                  onClick={handleBulkExport}
+                  disabled={exporting}
+                  className="w-full sm:w-auto px-5 py-2 bg-emerald-500 text-white font-semibold text-sm rounded-xl hover:bg-emerald-600 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
+                >
+                  {exporting && (
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                  )}
+                  {exporting ? 'Exporting...' : 'Export CSV'}
+                </button>
               </div>
+              {exportStartWeek && exportEndWeek && exportStartWeek <= exportEndWeek && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Exporting {calculateWeekDiff(exportStartWeek, exportEndWeek)} weeks of data
+                </p>
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </Card>
 
       {/* Clear All Confirmation Modal */}

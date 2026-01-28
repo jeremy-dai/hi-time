@@ -151,7 +151,7 @@ function WeeklyShipping() {
           >
             <ChevronLeft className="h-4 w-4 text-gray-600" />
           </button>
-          <span className="text-sm text-gray-600 min-w-[140px] text-center">{weekLabel}</span>
+          <span className="text-sm text-gray-600 w-navigator-lg text-center">{weekLabel}</span>
           <button
             onClick={() => setWeekOffset(w => w + 1)}
             disabled={weekOffset >= 0}

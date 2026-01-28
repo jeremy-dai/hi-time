@@ -1,7 +1,9 @@
 import type { EnhancedAnalysis } from '../types/insights'
-import type { TimeBlock, WeekReview, DailyShipping, DailyMemory } from '../types/time'
+import type { WeekReview, DailyShipping, DailyMemory } from '../types/time'
 import { CATEGORY_KEYS } from '../types/time'
-import { CATEGORY_LABELS } from '../constants/colors'
+import { getCategoryLabel } from './colorHelpers'
+import { DAYS_SHORT } from '../constants/timesheet'
+import { extractActivityName } from './enhancedAnalytics'
 
 /**
  * Generate complete markdown report with dual perspective:
@@ -161,7 +163,7 @@ function formatLatestWeekCategories(analysis: EnhancedAnalysis): string {
     .sort(([, a], [, b]) => b - a)
 
   for (const [category, hours] of categories) {
-    const label = CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category
+    const label = getCategoryLabel(category as any) || category
     const blocks = Math.round(hours * 2)
     const percentage = weekStats.totalHours > 0 ? ((hours / weekStats.totalHours) * 100).toFixed(1) : '0.0'
     lines.push(`| ${label} | ${hours.toFixed(1)} | ${blocks} | ${percentage}% |`)
@@ -190,7 +192,7 @@ function formatLatestWeekDaily(analysis: EnhancedAnalysis): string {
       .sort(([, a], [, b]) => b - a)
 
     for (const [category, hours] of categories) {
-      const label = CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category
+      const label = getCategoryLabel(category as any) || category
       const percentage = day.totalHours > 0 ? ((hours / day.totalHours) * 100).toFixed(0) : '0'
       lines.push(`- **${label}:** ${hours.toFixed(1)} hours (${percentage}%)`)
     }
@@ -219,7 +221,7 @@ function formatLatestWeekActivities(analysis: EnhancedAnalysis): string {
 
   topActivities.forEach((activity, index) => {
     const rank = index + 1
-    const label = CATEGORY_LABELS[activity.type] || activity.type
+    const label = getCategoryLabel(activity.type) || activity.type
     lines.push(
       `| ${rank} | ${activity.activity} | ${label} | ${activity.hours.toFixed(1)} | ${activity.percentage.toFixed(1)}% |`
     )
@@ -294,7 +296,7 @@ function formatTimeSlotPeriod(patterns: Array<{
 
   for (const pattern of patterns) {
     for (const [category, count] of Object.entries(pattern.activityCounts)) {
-      const label = CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category
+      const label = getCategoryLabel(category as any) || category
       activityCounts[label] = (activityCounts[label] || 0) + (count as number)
     }
   }
@@ -363,7 +365,7 @@ function formatMultiWeekComparison(analysis: EnhancedAnalysis): string {
   lines.push('## Week-by-Week Comparison')
   lines.push('')
 
-  const categoryHeaders = CATEGORY_KEYS.filter(k => k !== '').map(k => CATEGORY_LABELS[k])
+  const categoryHeaders = CATEGORY_KEYS.filter(k => k !== '').map(k => getCategoryLabel(k))
   lines.push(`| Week | ${categoryHeaders.join(' | ')} | Total |`)
   lines.push(`|------|${categoryHeaders.map(() => '------').join('|')}|-------|`)
 
@@ -386,7 +388,6 @@ function formatFourWeeksRawData(analysis: EnhancedAnalysis): string {
   lines.push('### Detailed Time Table by Week')
   lines.push('')
 
-  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   // Map display order (Sun..Sat) to day indices (6, 0, 1, 2, 3, 4, 5)
   const dayIndices = [6, 0, 1, 2, 3, 4, 5]
 
@@ -403,8 +404,8 @@ function formatFourWeeksRawData(analysis: EnhancedAnalysis): string {
     if (timeSlots.length === 0) continue
 
     // Create header row
-    lines.push('| Time | ' + DAY_NAMES.join(' | ') + ' |')
-    lines.push('|------|' + DAY_NAMES.map(() => '------').join('|') + '|')
+    lines.push('| Time | ' + DAYS_SHORT.join(' | ') + ' |')
+    lines.push('|------|' + DAYS_SHORT.map(() => '------').join('|') + '|')
 
     // For each time slot, show activities for each day
     for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
@@ -420,7 +421,7 @@ function formatFourWeeksRawData(analysis: EnhancedAnalysis): string {
           let cell = block.category + ':'
           
           // Add activity name (subcategory or notes)
-          const activityName = extractActivityNameFromBlock(block)
+          const activityName = extractActivityName(block) || block.notes || ''
           if (activityName) {
             cell += activityName
           }
@@ -450,24 +451,6 @@ function formatFourWeeksRawData(analysis: EnhancedAnalysis): string {
   return lines.join('\n')
 }
 
-function extractActivityNameFromBlock(block: TimeBlock): string {
-  // Try subcategory first
-  if (block.subcategory) {
-    if (typeof block.subcategory === 'object' && 'name' in block.subcategory) {
-      return block.subcategory.name
-    }
-    if (typeof block.subcategory === 'string' && block.subcategory.trim()) {
-      return block.subcategory
-    }
-  }
-  
-  // Fall back to notes if no subcategory
-  if (block.notes && block.notes.trim()) {
-    return block.notes
-  }
-  
-  return ''
-}
 
 function formatCategoryTrends(analysis: EnhancedAnalysis): string {
   const { categoryTrends } = analysis.trends
@@ -480,7 +463,7 @@ function formatCategoryTrends(analysis: EnhancedAnalysis): string {
     const trend = categoryTrends[cat]
     if (!trend) continue
 
-    const label = CATEGORY_LABELS[cat]
+    const label = getCategoryLabel(cat)
     const trendIcon = trend.trend === 'increasing' ? '📈' : trend.trend === 'decreasing' ? '📉' : '➡️'
 
     lines.push(`### ${trendIcon} ${label}`)
@@ -532,7 +515,7 @@ function formatWeeklyRhythmSummary(analysis: EnhancedAnalysis): string {
     lines.push('')
     for (const slot of sorted) {
       const dominant = slot.dominantCategory
-        ? CATEGORY_LABELS[slot.dominantCategory as keyof typeof CATEGORY_LABELS]
+        ? getCategoryLabel(slot.dominantCategory as any)
         : 'Mixed'
       lines.push(`- **${slot.day}, ${slot.timeSlot}:** ${slot.averageHours.toFixed(2)}h average (${dominant})`)
     }
@@ -563,7 +546,7 @@ function formatAverageDailyPattern(analysis: EnhancedAnalysis): string {
       .sort(([, a], [, b]) => b - a)
 
     for (const [category, hours] of categories) {
-      const label = CATEGORY_LABELS[category as keyof typeof CATEGORY_LABELS] || category
+      const label = getCategoryLabel(category as any) || category
       const percentage = day.totalHours > 0 ? ((hours / day.totalHours) * 100).toFixed(0) : '0'
       lines.push(`- **${label}:** ${hours.toFixed(1)} hours (${percentage}%)`)
     }
@@ -822,7 +805,7 @@ function formatInsightsContext(analysis: EnhancedAnalysis): string {
       },
       category_trends: Object.fromEntries(
         Object.entries(analysis.trends.categoryTrends).map(([cat, trend]) => [
-          CATEGORY_LABELS[cat as keyof typeof CATEGORY_LABELS],
+          getCategoryLabel(cat as any),
           {
             average: trend.average,
             trend: trend.trend,

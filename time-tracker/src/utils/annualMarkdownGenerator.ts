@@ -2,6 +2,8 @@ import type { YTDStats } from './analytics'
 import type { TimeBlock, DailyMemory, WeekReview, DailyShipping } from '../types/time'
 import { CATEGORY_KEYS } from '../types/time'
 import { CATEGORY_LABELS } from '../constants/colors'
+import { DAYS_SHORT, DAYS_FULL, MONTHS_SHORT } from '../constants/timesheet'
+import { extractActivityName } from './enhancedAnalytics'
 
 /**
  * Data structure for annual export
@@ -337,7 +339,6 @@ function formatWeeklyBreakdown(
 
 function formatFullYearRawData(ytdStats: YTDStats, weeksStore: Record<string, TimeBlock[][]>): string {
   const lines: string[] = []
-  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const dayIndices = [6, 0, 1, 2, 3, 4, 5] // Map display order to day indices
 
   // Group weeks by month
@@ -374,8 +375,8 @@ function formatFullYearRawData(ytdStats: YTDStats, weeksStore: Record<string, Ti
       if (timeSlots.length === 0) continue
 
       // Create header row
-      lines.push('| Time | ' + DAY_NAMES.join(' | ') + ' |')
-      lines.push('|------|' + DAY_NAMES.map(() => '------').join('|') + '|')
+      lines.push('| Time | ' + DAYS_SHORT.join(' | ') + ' |')
+      lines.push('|------|' + DAYS_SHORT.map(() => '------').join('|') + '|')
 
       // For each time slot, show activities for each day
       for (let timeIndex = 0; timeIndex < timeSlots.length; timeIndex++) {
@@ -389,7 +390,7 @@ function formatFullYearRawData(ytdStats: YTDStats, weeksStore: Record<string, Ti
           if (block && block.category) {
             let cell = block.category + ':'
 
-            const activityName = extractActivityNameFromBlock(block)
+            const activityName = extractActivityName(block) || block.notes || ''
             if (activityName) {
               cell += activityName
             }
@@ -426,22 +427,6 @@ function getMonthFromWeek(year: number, week: number): string {
   return `${monthNames[date.getMonth()]} ${date.getFullYear()}`
 }
 
-function extractActivityNameFromBlock(block: TimeBlock): string {
-  if (block.subcategory) {
-    if (typeof block.subcategory === 'object' && 'name' in block.subcategory) {
-      return block.subcategory.name
-    }
-    if (typeof block.subcategory === 'string' && block.subcategory.trim()) {
-      return block.subcategory
-    }
-  }
-
-  if (block.notes && block.notes.trim()) {
-    return block.notes
-  }
-
-  return ''
-}
 
 // ========== SECTION 5: DAILY HEATMAP ==========
 
@@ -456,7 +441,6 @@ function formatDailyHeatmap(ytdStats: YTDStats, weeksStore: Record<string, TimeB
 
   const dayTotals = [0, 0, 0, 0, 0, 0, 0]
   const dayCounts = [0, 0, 0, 0, 0, 0, 0]
-  const DAY_NAMES_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
   for (const week of ytdStats.weeklyData) {
     const weekData = weeksStore[week.weekKey]
@@ -473,7 +457,7 @@ function formatDailyHeatmap(ytdStats: YTDStats, weeksStore: Record<string, TimeB
 
   for (let i = 0; i < 7; i++) {
     const avg = dayCounts[i] > 0 ? dayTotals[i] / dayCounts[i] : 0
-    lines.push(`- **${DAY_NAMES_FULL[i]}:** ${avg.toFixed(2)} hours`)
+    lines.push(`- **${DAYS_FULL[i]}:** ${avg.toFixed(2)} hours`)
   }
 
   lines.push('')
@@ -627,12 +611,11 @@ function formatDailyShipping(dailyShipping: Record<string, DailyShipping>): stri
   // Monthly breakdown
   lines.push('### Monthly Shipping Count')
   lines.push('')
-  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   for (let month = 1; month <= 12; month++) {
     const count = byMonth[month]?.length || 0
     const completed = byMonth[month]?.filter(s => s.completed).length || 0
     if (count > 0) {
-      lines.push(`- **${MONTHS[month - 1]}:** ${count} entries (${completed} completed)`)
+      lines.push(`- **${MONTHS_SHORT[month - 1]}:** ${count} entries (${completed} completed)`)
     }
   }
   lines.push('')

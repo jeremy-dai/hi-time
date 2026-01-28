@@ -212,7 +212,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete, workTyp
                     <div className="grid grid-cols-2 gap-2">
                       {/* Work Type */}
                       <div>
-                        <label className="block text-[10px] font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                        <label className="block text-2xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
                           Work Type
                         </label>
                         <select
@@ -231,7 +231,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete, workTyp
 
                       {/* Priority */}
                       <div>
-                        <label className="block text-[10px] font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                        <label className="block text-2xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
                           Priority
                         </label>
                         <select
@@ -248,7 +248,7 @@ export function WeekEditModal({ week, isOpen, onClose, onSave, onDelete, workTyp
 
                     {/* Template */}
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-600 mb-1 uppercase tracking-wide">
+                      <label className="block text-2xs font-medium text-gray-600 mb-1 uppercase tracking-wide">
                         Template
                       </label>
                       <div className="flex gap-2">

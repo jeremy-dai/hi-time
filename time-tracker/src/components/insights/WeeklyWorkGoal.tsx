@@ -1,6 +1,8 @@
 import { cn } from '../../utils/classNames'
 import type { WorkGoalMetrics } from '../../types/insights'
 import { Target } from 'lucide-react'
+import CardHeader from '../shared/CardHeader'
+import ProgressBar from '../shared/ProgressBar'
 
 interface WeeklyWorkGoalProps {
   metrics: WorkGoalMetrics
@@ -27,14 +29,14 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
   }
 
   return (
-    <div className="glass-card rounded-xl p-6">
+    <div className="glass-card rounded-xl p-5">
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="text-sm font-semibold text-zinc-900">
-          Weekly Work Goal
-        </h3>
-        <Target className="w-4 h-4 text-gray-400" />
-      </div>
+      <CardHeader 
+        title="Weekly Work Goal" 
+        icon={Target}
+        titleClassName="text-sm text-zinc-900"
+        className="mb-5"
+      />
 
       {/* Main Display - Horizontal Layout */}
       <div className="flex items-end justify-between mb-4">
@@ -59,12 +61,11 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden mb-3">
-        <div
-          className={cn('h-full transition-all duration-500', getProgressColor())}
-          style={{ width: `${Math.min(100, goalPercentage)}%` }}
-        />
-      </div>
+      <ProgressBar 
+        value={goalPercentage} 
+        className="h-1.5 mb-3"
+        barClassName={getProgressColor()}
+      />
 
       {/* Bottom Stats - Horizontal Layout */}
       <div className="flex items-center justify-between text-sm">

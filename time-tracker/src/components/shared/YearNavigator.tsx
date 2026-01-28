@@ -112,7 +112,7 @@ export default function YearNavigator({
         <button
           onClick={() => setIsPickerOpen(!isPickerOpen)}
           className={cn(
-            'px-4 py-2 font-bold text-base min-w-[80px] text-center transition-colors',
+            'px-4 py-2 font-bold text-base w-navigator-sm text-center transition-colors',
             styles.year,
             styles.yearButton
           )}

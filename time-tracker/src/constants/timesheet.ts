@@ -44,6 +44,10 @@ export const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as c
 export const DAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const
 export const DAYS_PER_WEEK = 7
 
+// Month configuration
+export const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
+export const MONTHS_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const
+
 // Grid dimensions
 export const TOTAL_TIME_SLOTS = TIME_SLOTS.length
 export const TOTAL_BLOCKS_PER_WEEK = TOTAL_TIME_SLOTS * DAYS_PER_WEEK

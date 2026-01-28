@@ -20,6 +20,7 @@ import WeekNavigator from '../shared/WeekNavigator'
 import { PageHeader } from '../layout/PageHeader'
 import { cn } from '../../utils/classNames'
 import { TrendingUp, BarChart3 } from 'lucide-react'
+import CardHeader from '../shared/CardHeader'
 
 interface CurrentWeekDashboardProps {
   weeksStore: Record<string, TimeBlock[][]>
@@ -136,10 +137,10 @@ export default function CurrentWeekDashboard({
 
       {/* LATEST WEEK SECTION */}
       <div>
-        <h2 className={cn('text-base font-semibold mb-4', 'text-gray-900')}>
+        <h2 className="text-base font-semibold mb-4 text-gray-900">
           Latest Week Overview
         </h2>
-        <div className="space-y-6">
+        <div className="space-y-6 stagger-reveal">
           {/* Category Summary and Weekly Work Goal - Side by Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <CategoryBreakdown
@@ -154,20 +155,18 @@ export default function CurrentWeekDashboard({
       </div>
 
       {/* TRENDS & DETAILED ANALYSIS SECTION */}
-      <div className="space-y-6">
+      <div className="space-y-6 stagger-reveal">
         {/* 4-Week Trend and Average Daily Breakdown - Side by Side */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {/* 4-Week Trend Chart - Shows progression over time */}
           <MultiWeekTrendChart multiWeekStats={multiWeekStats} />
 
           {/* Average Daily Breakdown - Pattern across week */}
-          <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className={cn('text-base font-semibold', 'text-gray-900')}>
-                Average Daily Breakdown (4 Weeks)
-              </h2>
-              <BarChart3 className="w-4 h-4 text-gray-400" />
-            </div>
+          <div className={cn('rounded-xl p-5', 'glass-card')}>
+            <CardHeader 
+              title="Average Daily Breakdown (4 Weeks)" 
+              icon={BarChart3}
+            />
             <WeeklyBreakdownChart dailyPattern={enhancedAnalysis.trends.averageDailyPattern} />
           </div>
         </div>
