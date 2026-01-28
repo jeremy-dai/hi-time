@@ -67,21 +67,6 @@ export default function CurrentWeekDashboard({
     return generateEnhancedAnalysis(displayWeekData, currentStats, weeksStore, weekKeys)
   }, [displayWeekData, currentStats, weeksStore, weekKeys])
 
-  // Calculate 4-week average for KPI cards
-  const fourWeekAverage = useMemo(() => {
-    const avg: Record<string, number> = {}
-    for (const comparison of enhancedAnalysis.trends.multiWeekComparison) {
-      for (const [cat, hours] of Object.entries(comparison.categoryHours)) {
-        avg[cat] = (avg[cat] || 0) + hours
-      }
-    }
-    // Divide by number of weeks to get average
-    for (const cat in avg) {
-      avg[cat] = avg[cat] / weekKeys.length
-    }
-    return avg
-  }, [enhancedAnalysis.trends.multiWeekComparison, weekKeys.length])
-
   // Week range for export filename
   const weekRange = weekKeys.length > 1
     ? `${weekKeys[0]}-to-${weekKeys[weekKeys.length - 1]}`

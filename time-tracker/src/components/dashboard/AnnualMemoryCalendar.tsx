@@ -91,8 +91,6 @@ export default function AnnualMemoryCalendar({
     }
   }
 
-  const totalMemories = Object.keys(memories).length
-
   return (
     <div className="w-full overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0 rounded-xl">
         <table className="w-full border-collapse text-xs min-w-[640px] rounded-xl overflow-hidden">
@@ -103,7 +101,7 @@ export default function AnnualMemoryCalendar({
                   <span className="text-2xs text-zinc-400 font-medium uppercase tracking-wider">Day</span>
                 </div>
               </th>
-              {calendarData.map((monthData, idx) => (
+              {calendarData.map((monthData) => (
                 <th
                   key={monthData.month}
                   className={cn(
@@ -131,7 +129,7 @@ export default function AnnualMemoryCalendar({
                   )}>
                     {day}
                   </td>
-                  {calendarData.map((monthData, idx) => {
+                  {calendarData.map((monthData) => {
                     const dayData = monthData.days.find(d => d.day === day)
                     if (!dayData) {
                       return (

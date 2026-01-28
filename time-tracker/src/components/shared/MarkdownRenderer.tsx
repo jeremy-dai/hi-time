@@ -11,30 +11,30 @@ export function MarkdownRenderer({ content }: { content: string }) {
         rehypePlugins={[rehypeHighlight]}
         components={{
           // Headings
-          h1: ({ children }) => (
+          h1: ({ children }: any) => (
             <h1 className="text-xl md:text-2xl font-bold mt-6 md:mt-8 mb-3 md:mb-4 text-gray-900 first:mt-0 tracking-tight leading-tight">{children}</h1>
           ),
-          h2: ({ children }) => (
+          h2: ({ children }: any) => (
             <h2 className="text-lg md:text-xl font-bold mt-6 md:mt-7 mb-3 text-gray-900 first:mt-0 tracking-tight leading-tight">{children}</h2>
           ),
-          h3: ({ children }) => (
+          h3: ({ children }: any) => (
             <h3 className="text-base md:text-lg font-semibold mt-5 md:mt-6 mb-2 text-gray-900 first:mt-0 tracking-tight">{children}</h3>
           ),
-          h4: ({ children }) => (
+          h4: ({ children }: any) => (
             <h4 className="text-base font-semibold mt-4 mb-2 text-gray-900 tracking-tight">{children}</h4>
           ),
           // Paragraphs
-          p: ({ children }) => (
+          p: ({ children }: any) => (
             <p className="text-sm md:text-base text-gray-700 leading-relaxed mb-3 md:mb-4">{children}</p>
           ),
           // Lists
-          ul: ({ children }) => (
+          ul: ({ children }: any) => (
             <ul className="list-disc ml-5 md:ml-6 mb-3 md:mb-4 space-y-1.5 text-sm md:text-base text-gray-700">{children}</ul>
           ),
-          ol: ({ children }) => (
+          ol: ({ children }: any) => (
             <ol className="list-decimal ml-5 md:ml-6 mb-3 md:mb-4 space-y-1.5 text-sm md:text-base text-gray-700">{children}</ol>
           ),
-          li: ({ children, className }) => {
+          li: ({ children, className }: any) => {
             // Task list items have a "task-list-item" class from remark-gfm
             const isTaskItem = className?.includes('task-list-item')
             return (
@@ -44,7 +44,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
             )
           },
           // Task list checkboxes
-          input: ({ checked, disabled }) => (
+          input: ({ checked, disabled }: any) => (
             <input
               type="checkbox"
               checked={checked}
@@ -53,10 +53,10 @@ export function MarkdownRenderer({ content }: { content: string }) {
             />
           ),
           // Code blocks
-          pre: ({ children }) => (
+          pre: ({ children }: any) => (
             <pre className="bg-gray-900 text-gray-100 p-3 md:p-4 rounded-xl overflow-x-auto my-3 md:my-4 text-xs md:text-sm">{children}</pre>
           ),
-          code: ({ className, children }) => {
+          code: ({ className, children }: any) => {
             const isInline = !className
             if (isInline) {
               return (
@@ -69,34 +69,34 @@ export function MarkdownRenderer({ content }: { content: string }) {
             return <code className={className}>{children}</code>
           },
           // Tables
-          table: ({ children }) => (
+          table: ({ children }: any) => (
             <div className="overflow-x-auto my-4">
               <table className="min-w-full border-collapse border border-gray-300 rounded-xl overflow-hidden">
                 {children}
               </table>
             </div>
           ),
-          thead: ({ children }) => (
+          thead: ({ children }: any) => (
             <thead className="bg-gray-100">{children}</thead>
           ),
-          tbody: ({ children }) => (
+          tbody: ({ children }: any) => (
             <tbody className="divide-y divide-gray-200">{children}</tbody>
           ),
-          tr: ({ children }) => (
+          tr: ({ children }: any) => (
             <tr className="hover:bg-gray-50">{children}</tr>
           ),
-          th: ({ children }) => (
+          th: ({ children }: any) => (
             <th className="border border-gray-300 px-3 md:px-4 py-2 text-left font-semibold text-gray-900 text-xs md:text-sm">
               {children}
             </th>
           ),
-          td: ({ children }) => (
+          td: ({ children }: any) => (
             <td className="border border-gray-300 px-3 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
               {children}
             </td>
           ),
           // Blockquotes
-          blockquote: ({ children }) => (
+          blockquote: ({ children }: any) => (
             <blockquote className="border-l-4 border-emerald-500 pl-3 md:pl-4 py-2 my-3 md:my-4 italic text-gray-600 bg-emerald-50 rounded-r-xl text-sm md:text-base">
               {children}
             </blockquote>
@@ -106,7 +106,7 @@ export function MarkdownRenderer({ content }: { content: string }) {
             <hr className="my-6 md:my-8 border-t-2 border-gray-200" />
           ),
           // Links
-          a: ({ href, children }) => (
+          a: ({ href, children }: any) => (
             <a
               href={href}
               target="_blank"
@@ -117,11 +117,11 @@ export function MarkdownRenderer({ content }: { content: string }) {
             </a>
           ),
           // Strong/Bold
-          strong: ({ children }) => (
+          strong: ({ children }: any) => (
             <strong className="font-semibold text-gray-900">{children}</strong>
           ),
           // Emphasis/Italic
-          em: ({ children }) => (
+          em: ({ children }: any) => (
             <em className="italic">{children}</em>
           ),
         }}
