@@ -59,7 +59,7 @@ export function PageContainer({
   // Layout without sidebar - simple white card
   if (!sidebar) {
     return (
-      <div className={cn('glass-card rounded-xl shadow-elevated p-3 sm:p-6', className)}>
+      <div className={cn('glass-card rounded-2xl shadow-elevated p-3 sm:p-6', className)}>
         {header && <div className="mb-3 sm:mb-6">{header}</div>}
         {children}
       </div>
@@ -68,7 +68,7 @@ export function PageContainer({
 
   // Layout with sidebar - white card containing sidebar + content
   return (
-    <div className={cn('glass-card rounded-xl shadow-elevated overflow-hidden', className)}>
+    <div className={cn('glass-card rounded-2xl shadow-elevated overflow-hidden', className)}>
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <div

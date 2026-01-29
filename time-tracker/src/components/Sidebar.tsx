@@ -95,7 +95,7 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
   return (
     <nav
       aria-label="Primary"
-      className="h-full bg-transparent pb-4 pr-4 flex flex-col"
+      className="h-full bg-transparent pb-6 pr-4 flex flex-col gap-6"
     >
       {/* Season Display */}
       {currentDate && (() => {
@@ -106,34 +106,43 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         const progress = Math.round((info.weekInSeason / 13) * 100)
 
         return (
-          <div className="mx-2 mt-3 mb-4 p-3 rounded-xl bg-white/60 border border-zinc-200/50">
-            <div className="flex items-center gap-2">
-              <div className={cn("p-1.5 rounded-lg", style.badgeBg)}>
-                <SeasonIcon size={16} className={style.accentColor} strokeWidth={2} />
+          <div className="mx-2 mt-4 p-4 rounded-2xl bg-white/40 backdrop-blur-xl border border-white/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden group hover:shadow-lg hover:shadow-emerald-900/5 transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="flex items-center gap-3 relative z-10">
+              <div className={cn("p-2 rounded-xl shadow-sm ring-1 ring-black/5", style.badgeBg)}>
+                <SeasonIcon size={18} className={style.accentColor} strokeWidth={2.5} />
               </div>
-              <span className="text-sm font-semibold text-zinc-700">
-                {info.season}
-              </span>
-              <span className={cn(
-                "ml-auto text-2xs font-bold px-2 py-0.5 rounded-full",
-                style.badgeBg,
-                style.badgeText
-              )}>
-                W{info.weekInSeason}
-              </span>
+              <div>
+                <div className="text-[15px] font-bold text-zinc-800 leading-none mb-1">
+                  {info.season}
+                </div>
+                <div className={cn(
+                  "text-[10px] font-bold px-2 py-0.5 rounded-full inline-block",
+                  style.badgeBg,
+                  style.badgeText
+                )}>
+                  Week {info.weekInSeason}
+                </div>
+              </div>
             </div>
-            <div className={cn("mt-2.5 h-1 rounded-full overflow-hidden", style.barTrack)}>
-              <div
-                className={cn("h-full rounded-full transition-all", style.barColor)}
-                style={{ width: `${progress}%` }}
-              />
+            <div className="mt-4 relative z-10">
+              <div className="flex justify-between text-2xs font-medium text-zinc-400 mb-1.5 px-0.5">
+                <span>Progress</span>
+                <span>{progress}%</span>
+              </div>
+              <div className={cn("h-1.5 rounded-full overflow-hidden shadow-inner", style.barTrack)}>
+                <div
+                  className={cn("h-full rounded-full transition-all duration-1000 ease-out shadow-sm", style.barColor)}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
           </div>
         )
       })()}
 
-      <div className="flex-1 space-y-1 px-2">
-        <div className="text-2xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5 px-3">Menu</div>
+      <div className="flex-1 space-y-1.5 px-2 overflow-y-auto scrollbar-thin min-h-0">
+        <div className="text-xs font-bold uppercase tracking-widest text-zinc-400/80 mb-3 px-4 py-1">Menu</div>
         <SidebarItem
           icon={<Target size={20} />}
           label="Today"
@@ -178,18 +187,18 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
         />
       </div>
 
-      <div className="mt-4 pt-4 border-t border-zinc-200/60 mx-2 px-1">
-        {userEmail && (
-          <div className="text-xs mb-2 px-3 truncate font-medium text-zinc-400">
-            {userEmail}
-          </div>
-        )}
+      <div className="mt-auto pt-4 border-t border-zinc-200/60 mx-2 px-1">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all text-zinc-400 hover:bg-red-50 hover:text-red-500"
+          className="group w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-300 ease-out text-left text-zinc-500 hover:bg-white/40 hover:text-zinc-900 hover:shadow-sm hover:shadow-zinc-200/20"
         >
-          <LogOut size={18} />
-          <span>Logout</span>
+          {userEmail && (
+            <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-bold ring-1 ring-white/60 shadow-sm flex-shrink-0 -ml-0.5" title={userEmail}>
+              {userEmail[0].toUpperCase()}
+            </div>
+          )}
+          <span className="text-[15px] font-medium flex-1">Logout</span>
+          <LogOut size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" strokeWidth={1.5} />
         </button>
       </div>
     </nav>

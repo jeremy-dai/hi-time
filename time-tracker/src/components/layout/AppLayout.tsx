@@ -13,9 +13,21 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
-    <div className="min-h-screen app-background font-sans text-gray-900 transition-colors duration-200">
+    <div className="min-h-screen app-background font-sans text-gray-900 transition-colors duration-200 relative">
+      {/* Aurora Background - Ambient Glow */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Top Right - Emerald - Darker/More Opaque for Visibility */}
+        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-emerald-300/30 blur-3xl animate-aurora-1 opacity-70 mix-blend-multiply" />
+        
+        {/* Bottom Left - Teal - Stronger */}
+        <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-teal-200/40 blur-3xl animate-aurora-2 opacity-70 mix-blend-multiply" />
+        
+        {/* Center - Zinc/White Glow - Changed to slight cool gray for contrast */}
+        <div className="absolute top-[20%] left-[30%] w-[400px] h-[400px] rounded-full bg-slate-200/40 blur-3xl animate-aurora-3 opacity-50 mix-blend-multiply" />
+      </div>
+
       {/* Mobile Header */}
-      <div className="md:hidden glass-card px-4 py-3 flex items-center justify-between sticky top-0 z-30 mb-3">
+      <div className="md:hidden glass-card px-4 py-3 flex items-center justify-between sticky top-0 z-30 mb-3 relative">
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
             <button 
@@ -39,7 +51,7 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
         <div className="w-10" /> {/* Spacer for balance */}
       </div>
 
-      <div className="max-w-[1920px] mx-auto p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4">
+      <div className="max-w-[1920px] mx-auto p-3 md:p-4 flex flex-col md:flex-row gap-3 md:gap-4 relative z-10">
         
         {/* Desktop Sidebar */}
         <aside className="hidden md:block w-sidebar md:sticky md:top-4 md:self-start md:h-[calc(100vh-2rem)] shrink-0 z-10">
@@ -50,7 +62,7 @@ export default function AppLayout({ sidebar, header, children }: AppLayoutProps)
           {header && (
             <div className={cn(
             'mb-3',
-            'glass-card rounded-xl p-3 md:p-4'
+            'glass-card rounded-2xl p-3 md:p-4'
           )}>
               {header}
             </div>

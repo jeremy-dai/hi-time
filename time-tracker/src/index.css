@@ -84,22 +84,39 @@
   }
 
   .app-background {
-    @apply bg-zinc-50 min-h-screen;
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(5, 150, 105, 0.08) 0px, transparent 50%), /* Emerald 600 tint */
-      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%); /* Emerald 500 tint */
-    background-attachment: fixed;
+    @apply bg-zinc-50 min-h-screen relative overflow-hidden;
+    /* Aurora background will be handled by AppLayout components */
   }
+
+  /* .bg-noise definition removed as it's now applied directly */
   
   .glass-card {
-    background-color: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(24px); /* backdrop-blur-xl */
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.04); /* Soft diffused shadow */
-    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-    --tw-ring-color: rgba(0, 0, 0, 0.05);
+    @apply bg-white/60 backdrop-blur-2xl border border-white/50 shadow-xl shadow-emerald-900/5 relative overflow-hidden;
+    box-shadow: 
+      0 4px 6px -1px rgba(0, 0, 0, 0.02), 
+      0 2px 4px -1px rgba(0, 0, 0, 0.02),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5); /* Inner light ring */
+  }
+  
+  .glass-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    opacity: 0.05;
+    pointer-events: none;
+  }
+
+  /* Top highlight for 3D feel */
+  .glass-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+    top: 0;
+    pointer-events: none;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -361,4 +378,32 @@
 @keyframes glow-pulse {
   0%, 100% { box-shadow: 0 0 15px -3px hsla(var(--color-brand-primary), 0.3); }
   50% { box-shadow: 0 0 25px -5px hsla(var(--color-brand-primary), 0.6); }
+}
+
+@keyframes aurora-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+@keyframes aurora-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 40px) scale(1.1); }
+  66% { transform: translate(20px, -30px) scale(0.9); }
+}
+
+@keyframes aurora-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -20px) scale(1.1); }
+  66% { transform: translate(-10px, 20px) scale(0.9); }
+}
+
+.animate-aurora-1 {
+  animation: aurora-1 15s infinite ease-in-out;
+}
+.animate-aurora-2 {
+  animation: aurora-2 20s infinite ease-in-out;
+}
+.animate-aurora-3 {
+  animation: aurora-3 25s infinite ease-in-out;
 }
