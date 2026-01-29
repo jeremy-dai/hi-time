@@ -116,7 +116,7 @@ function DayRow({ date, entry, onUpdate, isToday }: DayRowProps) {
       {/* Date */}
       <div className="flex items-center gap-2 w-navigator-lg">
         <span className={cn(
-          'text-sm font-medium',
+          'text-sm font-medium font-mono',
           isToday ? 'text-emerald-700' : 'text-gray-700'
         )}>
           {dayName}, {monthName} {day}

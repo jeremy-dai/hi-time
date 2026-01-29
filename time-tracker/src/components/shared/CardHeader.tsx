@@ -21,7 +21,7 @@ export default function CardHeader({
 }: CardHeaderProps) {
   return (
     <div className={cn("flex items-center justify-between mb-4", className)}>
-      <h3 className={cn("text-base font-semibold text-gray-900", titleClassName)}>
+      <h3 className={cn("text-base font-bold tracking-tight text-gray-900", titleClassName)}>
         {title}
       </h3>
       <div className="flex items-center gap-2">

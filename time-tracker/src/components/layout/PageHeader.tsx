@@ -112,7 +112,7 @@ export function PageHeader({
           )}
           <div className="min-w-0">
             <h1 className={cn(
-              "font-bold",
+              "font-bold tracking-tight",
               subtitle ? "text-lg sm:text-xl" : "text-xl sm:text-2xl",
               useGradientTitle ? "text-gradient" : "text-gray-900"
             )}>{title}</h1>

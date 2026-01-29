@@ -1,14 +1,18 @@
 import { useState, useMemo } from 'react'
 import { useYearMemories } from '../hooks/useYearMemories'
 import AnnualMemoryCalendar from './dashboard/AnnualMemoryCalendar'
+import MasonryMemoryGrid from './dashboard/MasonryMemoryGrid'
+import { SegmentedTabs } from './shared/SegmentedTabs'
 import { SkeletonLoader } from './shared/SkeletonLoader'
-import { CalendarRange } from 'lucide-react'
+import { CalendarRange, LayoutGrid, List, Info, Sparkles } from 'lucide-react'
 import { PageContainer } from './layout/PageContainer'
 import { PageHeader } from './layout/PageHeader'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip'
 
 export default function Memories() {
   const currentYear = new Date().getFullYear()
   const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [viewMode, setViewMode] = useState<'list' | 'masonry'>('list')
   const { memories, updateMemory, deleteMemory, syncStatus, lastSynced, hasUnsavedChanges, syncNow, isLoading } = useYearMemories(selectedYear)
 
   // Calculate date range for the selected year
@@ -55,19 +59,72 @@ export default function Memories() {
             year: selectedYear,
             onYearChange: setSelectedYear
           }}
+          actions={
+            <div className="flex items-center gap-3">
+              {viewMode === 'masonry' && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button className="p-2 text-zinc-400 hover:text-emerald-600 transition-colors rounded-full hover:bg-emerald-50">
+                        <Info size={18} />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs p-4 bg-white/90 backdrop-blur-md border border-zinc-200 shadow-xl text-zinc-700">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-emerald-600 font-semibold">
+                          <Sparkles size={14} />
+                          <span>Magic Styling</span>
+                        </div>
+                        <p className="text-xs leading-relaxed">
+                          The Bento Grid automatically styles your memories based on keywords. Try starting your memories with:
+                        </p>
+                        <ul className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono text-zinc-500">
+                          <li>• Movie / 电影</li>
+                          <li>• Code / 代码</li>
+                          <li>• Travel / 旅行</li>
+                          <li>• Love / 约会</li>
+                          <li>• Idea / 想法</li>
+                          <li>• Food / 聚餐</li>
+                          <li>• Music / 音乐</li>
+                          <li>• Game / 游戏</li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              <SegmentedTabs
+                activeTab={viewMode}
+                onChange={(id) => setViewMode(id as 'list' | 'masonry')}
+                tabs={[
+                  { id: 'list', label: 'List', icon: <List size={16} /> },
+                  { id: 'masonry', label: 'Grid', icon: <LayoutGrid size={16} /> }
+                ]}
+              />
+            </div>
+          }
         />
       }
     >
-      {/* Memory Calendar */}
+      {/* Memory Content */}
       {isLoading ? (
         <SkeletonLoader variant="card" height="600px" />
       ) : (
-        <AnnualMemoryCalendar
-          year={selectedYear}
-          memories={memories}
-          onUpdateMemory={updateMemory}
-          onDeleteMemory={deleteMemory}
-        />
+        <>
+          {viewMode === 'list' ? (
+            <AnnualMemoryCalendar
+              year={selectedYear}
+              memories={memories}
+              onUpdateMemory={updateMemory}
+              onDeleteMemory={deleteMemory}
+            />
+          ) : (
+            <MasonryMemoryGrid
+              year={selectedYear}
+              memories={filteredMemories}
+            />
+          )}
+        </>
       )}
     </PageContainer>
   )

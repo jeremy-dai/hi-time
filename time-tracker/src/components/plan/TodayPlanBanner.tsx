@@ -53,17 +53,17 @@ export default function TodayPlanBanner({ planData }: TodayPlanBannerProps) {
             {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
             <Sparkles size={20} className="text-purple-600" />
             <div className="text-left">
-              <h2 className="text-base font-semibold text-gray-900">
+              <h2 className="text-base font-bold tracking-tight text-gray-900">
                 Week {currentWeek.weekNumber}: {currentWeek.name}
               </h2>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-gray-600 font-mono">
                 {currentCycle.name} • {formatDate(currentWeek.startDate)} - {formatDate(currentWeek.endDate)}
               </p>
             </div>
           </button>
 
           {isExpanded && (
-            <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-3 text-sm font-mono">
               <div className="flex items-center gap-1">
                 <CheckCircle2 size={16} className="text-green-600" />
                 <span className="text-gray-700">

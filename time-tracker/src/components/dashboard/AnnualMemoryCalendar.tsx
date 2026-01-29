@@ -124,7 +124,7 @@ export default function AnnualMemoryCalendar({
                   className="transition-all duration-150 hover:bg-zinc-50/50"
                 >
                   <td className={cn(
-                    "border-b border-zinc-100/50 bg-zinc-50 px-1 sm:px-2 py-0.5 text-center text-2xs font-medium sticky left-0 z-10 h-6 sm:h-7 text-zinc-400",
+                    "border-b border-zinc-100/50 bg-zinc-50 px-1 sm:px-2 py-0.5 text-center text-2xs font-medium font-mono sticky left-0 z-10 h-6 sm:h-7 text-zinc-400",
                     "backdrop-blur-sm"
                   )}>
                     {day}

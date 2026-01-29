@@ -96,12 +96,22 @@ export function useYearMemories(year: number) {
 
   // Save to both localStorage and database (debounced)
   const saveMemories = useCallback((newMemories: Record<string, DailyMemory>) => {
+    // Safeguard: Ensure we only save memories for the current year
+    const yearPrefix = `${year}-`
+    const filteredMemories: Record<string, DailyMemory> = {}
+    
+    Object.entries(newMemories).forEach(([date, memory]) => {
+      if (date.startsWith(yearPrefix)) {
+        filteredMemories[date] = memory
+      }
+    })
+
     const key = `year-memories-${year}`
-    const data: YearMemories = { year, memories: newMemories }
+    const data: YearMemories = { year, memories: filteredMemories }
 
     // Save to localStorage immediately
     localStorage.setItem(key, JSON.stringify(data))
-    setMemories(newMemories)
+    setMemories(filteredMemories)
 
     // Debounce database sync (5 seconds)
     setSyncStatus('pending')
@@ -110,7 +120,7 @@ export function useYearMemories(year: number) {
     }
 
     syncTimeoutRef.current = setTimeout(() => {
-      syncToDatabase(newMemories)
+      syncToDatabase(filteredMemories)
     }, 5000)
   }, [year, syncToDatabase])
 
