@@ -1,4 +1,4 @@
-import { TrendingUp, Calendar, Settings, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, CalendarRange, Sparkles, Target, BookOpen } from 'lucide-react'
+import { TrendingUp, LogOut, CalendarDays, Sun, CloudRain, Snowflake, Leaf, CalendarRange, Sparkles, BookOpen, Target, Calendar } from 'lucide-react'
 import SidebarItem from './layout/SidebarItem'
 import { cn } from '../utils/classNames'
 import { getISOWeekYear } from '../utils/date'
@@ -175,13 +175,6 @@ export default function Sidebar({ active, onNavigate, userEmail, onLogout, curre
           label="Learning"
           active={active === 'learning'}
           onClick={() => onNavigate('learning')}
-        />
-        <div className="mt-5 text-2xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5 px-3">System</div>
-        <SidebarItem
-          icon={<Settings size={20} />}
-          label="Settings"
-          active={active === 'settings'}
-          onClick={() => onNavigate('settings')}
         />
       </div>
 

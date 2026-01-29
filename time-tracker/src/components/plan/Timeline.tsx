@@ -143,7 +143,7 @@ export function Timeline({ data }: TimelineProps) {
       {/* Left Sidebar - Hidden on mobile, fixed height on desktop */}
       <div className={cn(
         "h-full overflow-y-auto border-r border-gray-200 bg-gray-50/95 transition-all duration-300 shrink-0 hidden md:block",
-        isSidebarCollapsed ? "w-16" : "w-64"
+        isSidebarCollapsed ? "w-16" : "w-80"
       )}>
         <WeekNavigation
           cycles={cycles}

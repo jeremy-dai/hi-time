@@ -125,6 +125,8 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
   const progress = range > 0 ? Math.min(100, Math.max(0, ((current - baseline) / range) * 100)) : 0
 
   const isNumeric = typeof tracker.baseline === 'number' && typeof tracker.target === 'number'
+  const isEmpty = current === 0 && target === 0
+  const isNotStarted = current === 0 && target > 0
 
   // Get color classes using helper function
   const borderColorClass = getColorClass(tracker.color, 'border', 'border-emerald-100')
@@ -198,8 +200,8 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
         'group relative rounded-xl overflow-hidden transition-all duration-300',
         compact ? 'p-4' : 'p-5',
         'bg-white border shadow-sm',
-        borderColorClass,
-        !isEditing && 'hover:scale-[1.02]',
+        isEmpty ? 'border-gray-200 opacity-60' : borderColorClass,
+        !isEditing && !isEmpty && 'hover:scale-[1.02]',
         isEditing && `ring-2 border-transparent shadow-lg ${ringColorClass}`,
         isClickable && 'cursor-pointer',
         className
@@ -262,15 +264,23 @@ export function KPICard({ tracker, className, onUpdate, compact = false, weeks }
               <X size={compact ? 14 : 16} />
             </button>
           </div>
+        ) : isEmpty ? (
+          <div className="text-sm text-gray-500 italic mt-1">
+            Not started
+          </div>
         ) : (
           <div className="flex items-baseline gap-1">
             <div className={cn(
-              "font-bold tracking-tight text-zinc-900",
-              compact ? "text-4xl" : "text-3xl"
+              "font-bold tracking-tight",
+              compact ? "text-4xl" : "text-3xl",
+              isNotStarted ? "text-gray-400" : "text-zinc-900"
             )}>
               {tracker.current}
             </div>
-            <div className="text-xs font-medium text-zinc-400">
+            <div className={cn(
+              "text-xs font-medium",
+              isNotStarted ? "text-gray-400" : "text-zinc-500"
+            )}>
               {tracker.unit && <span>{tracker.unit} </span>}
               {tracker.target !== undefined && (
                 <span>/ {tracker.target}</span>

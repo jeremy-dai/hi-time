@@ -151,7 +151,7 @@ function WeeklyShipping() {
           >
             <ChevronLeft className="h-4 w-4 text-gray-600" />
           </button>
-          <span className="text-sm text-gray-600 w-navigator-lg text-center">{weekLabel}</span>
+          <span className="text-sm text-gray-700 font-medium w-navigator-lg text-center">{weekLabel}</span>
           <button
             onClick={() => setWeekOffset(w => w + 1)}
             disabled={weekOffset >= 0}
@@ -195,13 +195,13 @@ function WeeklyShipping() {
               <div className="w-12 shrink-0 text-center">
                 <div className={cn(
                   'text-xs font-medium',
-                  isToday(date) ? 'text-emerald-700' : 'text-gray-500'
+                  isToday(date) ? 'text-emerald-700' : 'text-gray-600'
                 )}>
                   {dayLabel}
                 </div>
                 <div className={cn(
                   'text-lg font-bold',
-                  isToday(date) ? 'text-emerald-700' : 'text-gray-700'
+                  isToday(date) ? 'text-emerald-700' : 'text-gray-800'
                 )}>
                   {dateLabel}
                 </div>
@@ -240,20 +240,21 @@ function WeeklyShipping() {
                     }
                   }}
                   onBlur={() => saveEdit(date)}
-                  placeholder="What did you ship?"
-                  className="flex-1 px-2 py-1 text-sm border border-emerald-300 rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder={isToday(date) ? 'What will you ship today?' : 'What did you ship?'}
+                  className="flex-1 px-2 py-1 text-sm border border-emerald-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white"
                 />
               ) : (
                 <div
                   onClick={() => startEditing(date)}
                   className={cn(
-                    'flex-1 px-2 py-1 text-sm rounded cursor-pointer transition-colors min-h-[28px]',
+                    'flex-1 px-2 py-1 text-sm rounded-lg cursor-pointer transition-all min-h-[28px] flex items-center',
                     entry?.completed && 'line-through text-gray-500',
-                    hasContent && !entry?.completed && 'text-gray-900 hover:bg-white/50',
-                    !hasContent && 'text-gray-400 italic hover:bg-white/50'
+                    hasContent && !entry?.completed && 'text-gray-900 hover:bg-white/80 hover:shadow-sm',
+                    !hasContent && !isPast(date) && 'text-gray-400 hover:bg-white/80 hover:border hover:border-emerald-200',
+                    !hasContent && isPast(date) && 'text-gray-300'
                   )}
                 >
-                  {entry?.shipped || (isToday(date) ? 'What will you ship today?' : 'What did you ship?')}
+                  {entry?.shipped || (isToday(date) || isPast(date) ? '' : '')}
                 </div>
               )}
             </div>
@@ -413,35 +414,32 @@ export function MissionControl({ data }: MissionControlProps) {
 
       {/* Upcoming Trajectory (Full Width) */}
       {upcomingWeeks.length > 0 && (
-        <div className="space-y-3 md:space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="h-6 w-1 bg-linear-to-b from-purple-500 to-indigo-600 rounded-full" />
             <h3 className="text-base sm:text-lg font-bold text-gray-900">Upcoming Trajectory</h3>
           </div>
-          <div className="relative pl-6 space-y-4">
+          <div className="relative pl-6 space-y-2">
             {/* Connector line */}
-            <div className="absolute left-6 top-2 bottom-4 w-0.5 bg-linear-to-b from-purple-200 via-indigo-200 to-transparent" />
+            <div className="absolute left-6 top-2 bottom-2 w-0.5 bg-linear-to-b from-purple-200 via-indigo-200 to-transparent" />
 
             {upcomingWeeks.map((w) => (
               <div key={w.weekNumber} className="relative pl-8 group">
                 {/* Node */}
-                <div className="absolute left-[-4px] top-2 w-4 h-4 rounded-full border-2 border-white bg-linear-to-br from-purple-400 to-indigo-500 shadow-md shadow-purple-200 ring-2 ring-purple-50 transition-all group-hover:scale-125" />
+                <div className="absolute left-[-4px] top-2 w-3 h-3 rounded-full border-2 border-white bg-linear-to-br from-purple-400 to-indigo-500 shadow-sm transition-all group-hover:scale-125" />
 
-                <div className="bg-linear-to-br from-white to-purple-50/20 rounded-xl border border-purple-100 p-4 hover:border-purple-300 hover:shadow-md hover:shadow-purple-100/50 transition-all">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-linear-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                        Week {w.weekNumber}
-                      </span>
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-500 font-medium">
-                        {w.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </span>
-                    </div>
+                <div className="bg-linear-to-br from-white to-purple-50/20 rounded-xl border border-purple-100 p-3 hover:border-purple-300 hover:shadow-sm transition-all">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="px-2 py-0.5 bg-linear-to-r from-purple-100 to-indigo-100 text-purple-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                      Week {w.weekNumber}
+                    </span>
+                    <span className="text-xs text-gray-600 font-medium">
+                      {w.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
                   </div>
-                  <h4 className="font-semibold text-gray-900 mb-1">{w.theme || w.name}</h4>
+                  <h4 className="font-semibold text-gray-900 text-sm">{w.theme || w.name}</h4>
                   {w.goals && w.goals.length > 0 && (
-                    <p className="text-sm text-gray-600">{w.goals.join(' · ')}</p>
+                    <p className="text-xs text-gray-600 mt-1">{w.goals.join(' · ')}</p>
                   )}
                 </div>
               </div>

@@ -12,6 +12,14 @@ export function normalizeSubcategories(subs: unknown): SubcategoryDef[] {
       const candidate = sub as { index?: unknown; name?: unknown }
       return typeof candidate.index === 'number' && typeof candidate.name === 'string'
     })
+    .map(sub => {
+      // Preserve icon if it exists
+      const icon = (sub as any).icon
+      if (typeof icon === 'string') {
+        return { ...sub, icon }
+      }
+      return sub
+    })
     .filter(sub => sub.name.trim().length > 0)
 }
 

@@ -221,6 +221,19 @@ export function useLocalStorageSync<T>(
     };
   }, [checkForUpdates]);
 
+  // Listen for same-tab updates (e.g. Settings component updating user-settings)
+  useEffect(() => {
+    const handleLocalSync = (e: Event) => {
+      const customEvent = e as CustomEvent<T>;
+      if (customEvent.detail) {
+        setDataState(customEvent.detail);
+      }
+    };
+    
+    window.addEventListener(`local-sync-${storageKey}`, handleLocalSync);
+    return () => window.removeEventListener(`local-sync-${storageKey}`, handleLocalSync);
+  }, [storageKey]);
+
   // Save to localStorage immediately when data changes
   const setData = useCallback((newData: T) => {
     setDataState(newData);
@@ -231,6 +244,9 @@ export function useLocalStorageSync<T>(
       timestamp: Date.now()
     };
     localStorage.setItem(storageKey, JSON.stringify(cached));
+    
+    // Notify other hooks in the same tab
+    window.dispatchEvent(new CustomEvent(`local-sync-${storageKey}`, { detail: newData }));
 
     // Check if data has changed since last sync
     const currentDataStr = JSON.stringify(newData);

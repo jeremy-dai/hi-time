@@ -97,7 +97,8 @@ export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick
                           className={cn(
                             "w-full text-left px-4 py-2 transition-colors group",
                             isActive && "bg-emerald-100 border-l-4 border-emerald-600",
-                            !isActive && "hover:bg-gray-100 border-l-4 border-transparent"
+                            !isActive && isCurrent && "bg-emerald-50/50 border-l-4 border-emerald-200",
+                            !isActive && !isCurrent && "hover:bg-gray-100 border-l-4 border-transparent"
                           )}
                         >
                           <div className="flex items-center gap-2 mb-0.5">
@@ -108,7 +109,7 @@ export function WeekNavigation({ cycles, allWeeks, activeWeekNumber, onWeekClick
                               W{week.weekNumber}
                             </span>
                             <span className={cn(
-                              "text-sm font-semibold truncate",
+                              "text-sm font-semibold break-words line-clamp-2",
                               isActive ? "text-emerald-900" : "text-gray-700",
                               isDone && !isActive && "text-gray-500"
                             )}>

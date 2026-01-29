@@ -86,12 +86,12 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
               </div>
 
               {/* Date range */}
-              <p className="text-xs text-zinc-500 mt-1 ml-1">
+              <p className="text-xs text-gray-600 font-medium mt-1 ml-1">
                 {week.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {week.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
-              
+
               {week.theme && (
-                <p className="text-xs text-zinc-500 italic mt-1 ml-1">
+                <p className="text-xs text-gray-600 italic mt-1 ml-1">
                   "{week.theme}"
                 </p>
               )}
@@ -152,20 +152,20 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
           )}
 
           {/* Todos Section */}
-          <div className="bg-gray-50/50 rounded-lg border border-gray-100 overflow-hidden">
-            <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
-              <h5 className="text-2xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="bg-gray-50/50 rounded-lg border border-gray-200 overflow-hidden">
+            <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <h5 className="text-2xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
                 <Layout className="w-3 h-3" />
                 Todos
               </h5>
               <div className="flex items-center gap-2">
                 <div className="h-1 w-12 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-emerald-500 transition-all duration-500"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <span className="text-2xs font-medium text-gray-500">
+                <span className="text-2xs font-medium text-gray-600">
                   {completedTodos}/{totalTodos}
                 </span>
               </div>
@@ -216,7 +216,7 @@ export function WeekCard({ week, templates, workTypes, onTodoStatusChange, onEdi
                             {todo.name || todo.title}
                           </p>
                           {todo.typeId && (
-                            <span className="shrink-0 px-1 py-0.5 text-[9px] font-medium bg-blue-50 text-blue-600 rounded border border-blue-100 uppercase tracking-wide">
+                            <span className="shrink-0 px-1 py-0.5 text-[9px] font-medium bg-blue-50 text-blue-700 rounded border border-blue-100 uppercase tracking-wide">
                               {todo.typeId}
                             </span>
                           )}

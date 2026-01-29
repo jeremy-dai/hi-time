@@ -107,16 +107,41 @@ The application uses **Inter** as the primary font family, providing excellent r
 font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 ```
 
-### Typography Scale
+### Typography Scale & Contrast Requirements
 
-| Purpose | Tailwind Class | Style |
-|---------|----------------|-------|
-| **Primary Data** | `text-4xl font-bold tracking-tight` | Key KPI values |
-| Page Title | `text-2xl font-bold tracking-tight` | Tight tracking for headings |
-| Section Heading | `text-lg font-semibold tracking-tight` |  |
-| Body | `text-sm font-normal text-zinc-600` | Relaxed readability |
-| Caption | `text-xs font-medium text-zinc-500` |  |
-| **Data Label** | `text-2xs font-bold uppercase tracking-wider` | **10px Pro SaaS Label** |
+| Purpose | Tailwind Class | Style | Notes |
+|---------|----------------|-------|-------|
+| **Primary Data** | `text-4xl font-bold tracking-tight text-zinc-900` | Key KPI values | Always use zinc-900 for maximum contrast |
+| Page Title | `text-2xl font-bold tracking-tight text-zinc-900` | Tight tracking for headings | Dark text for readability |
+| Section Heading | `text-lg font-semibold tracking-tight text-gray-900` |  | Use gray-900, not gray-600 |
+| Body | `text-sm font-normal text-zinc-600` | Relaxed readability | Minimum contrast: zinc-600 |
+| Secondary Text | `text-sm text-gray-600` | Descriptions, dates | Use gray-600 minimum, avoid gray-500 or lighter |
+| Caption | `text-xs font-medium text-gray-500` | Small labels | Only for non-critical info |
+| **Data Label** | `text-2xs font-bold uppercase tracking-wider` | **10px Pro SaaS Label** | Use with semantic color (emerald-700, zinc-600) |
+
+### Accessibility & Contrast Guidelines
+
+**WCAG AA Compliance**: All text must meet WCAG AA contrast standards (4.5:1 for normal text, 3:1 for large text).
+
+#### Text Color Standards
+
+| Context | Color Class | Hex | Contrast Ratio | Usage |
+|---------|-------------|-----|----------------|-------|
+| **Primary Text** | `text-zinc-900` or `text-gray-900` | `#18181b` / `#111827` | ~16:1 | Headings, important content |
+| **Body Text** | `text-zinc-600` or `text-gray-600` | `#52525b` / `#4b5563` | ~7:1 | Regular content, descriptions |
+| **Secondary Text** | `text-gray-500` | `#6b7280` | ~4.5:1 | Dates, metadata (use sparingly) |
+| **Disabled/Subtle** | `text-gray-400` | `#9ca3af` | ~3:1 | Only for disabled states, placeholders |
+
+**Anti-patterns** (DO NOT USE):
+- ❌ Light grey text on white backgrounds (`text-gray-400` or lighter on white)
+- ❌ Light green text on white backgrounds (fails contrast)
+- ❌ Very faint borders (`border-gray-100`) as primary separators
+
+**Best practices**:
+- ✅ Use `text-zinc-600` or darker for all readable content
+- ✅ Use `border-gray-200` or darker for visible borders
+- ✅ Reserve light colors (gray-400, gray-300) only for disabled states
+- ✅ Test readability on non-retina screens and in bright lighting
 
 ---
 
@@ -508,6 +533,31 @@ Follows the **PageHeader Aesthetic**:
 - **Collapsible Sections**: Used for technical details (e.g., JSON Format) with chevron animation.
 - **Danger Zone**: Gradient background (`from-red-50 to-white`) with strong red border.
 - **Export/Import**: Large colored icons with better visual hierarchy.
+
+### 11. Empty States & Visual Hierarchy
+
+**Purpose**: Handle data that hasn't been populated yet without creating a demotivating experience.
+
+#### Empty State Patterns
+
+**The Zero Problem**: Large, bold zeros in KPI cards can feel discouraging.
+
+**Solutions**:
+- Use subtle backgrounds for empty states instead of bold zeros
+- Show "Not started" text instead of "0/0"
+- Hide KPI cards that haven't begun (if appropriate)
+- Use muted colors for uncompleted data
+
+**Placeholder Text**:
+- **DO NOT** repeat identical placeholder text multiple times in a list
+- Use contextual placeholders based on date (e.g., "What will you ship today?" for today, empty for future dates)
+- For past dates without data, show subtle empty state, not repeated prompts
+
+**Visual Weight & Focus**:
+- The most important action should have the strongest visual weight
+- Use hierarchy: Primary > Secondary > Tertiary
+- Active/current items should stand out (stronger border, accent color, background)
+- Upcoming/future items should be more subtle
 
 ### 11. Learning Page Patterns
 

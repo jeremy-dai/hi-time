@@ -46,36 +46,36 @@ export function ActiveMissionCard({
 
   return (
     <div className={cn("flex flex-col gap-3 h-full", className)}>
-      {/* Refined Header */}
-      <div className="relative bg-white rounded-xl border border-gray-200 p-6 shadow-sm overflow-hidden">
-        {/* Subtle decorative accent */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-emerald-400 to-emerald-500 opacity-60" />
+      {/* Enhanced Header with More Visual Weight */}
+      <div className="relative bg-white rounded-xl border-2 border-emerald-200 p-6 shadow-lg shadow-emerald-100/50 overflow-hidden">
+        {/* Bold decorative accent */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-linear-to-r from-emerald-500 to-emerald-600" />
 
         <div className="relative flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="p-2.5 bg-linear-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200/80 shadow-sm shrink-0">
-              <Target className="h-5 w-5 text-gray-700" />
+            <div className="p-3 bg-linear-to-br from-emerald-50 to-emerald-100 rounded-xl border-2 border-emerald-200 shadow-sm shrink-0">
+              <Target className="h-6 w-6 text-emerald-700" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-gray-900 text-lg leading-tight">Active Mission</h3>
-              <p className="text-gray-500 text-sm font-medium mt-0.5">Week {week.weekNumber}</p>
+              <h3 className="font-bold text-gray-900 text-xl leading-tight">Active Mission</h3>
+              <p className="text-gray-600 text-sm font-semibold mt-0.5">Week {week.weekNumber}</p>
             </div>
           </div>
 
-          {/* Compact Progress Badge */}
+          {/* Enhanced Progress Badge */}
           <div className="flex flex-col items-end gap-0.5 shrink-0">
-            <div className="bg-linear-to-br from-gray-50 to-gray-100 border border-gray-200 px-3 py-1.5 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900 leading-none">{progressPct}%</div>
+            <div className="bg-linear-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-200 px-4 py-2 rounded-xl shadow-sm">
+              <div className="text-3xl font-bold text-emerald-700 leading-none">{progressPct}%</div>
             </div>
-            <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-wide">Complete</span>
+            <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wide">Complete</span>
           </div>
         </div>
 
-        {/* Refined Progress Bar */}
+        {/* Enhanced Progress Bar */}
         <div className="relative mt-5">
-          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="h-2 bg-emerald-50 rounded-full overflow-hidden border border-emerald-100">
             <div
-              className="h-full bg-linear-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
+              className="h-full bg-linear-to-r from-emerald-500 to-emerald-600 rounded-full transition-all duration-500 shadow-sm"
               style={{ width: `${progressPct}%` }}
             />
           </div>

@@ -213,6 +213,7 @@ export async function exportBulkCSV(startWeek: string, endWeek: string): Promise
 export interface SubcategoryDef {
   index: number
   name: string
+  icon?: string
 }
 
 export interface UserSettings {
@@ -232,14 +233,14 @@ export async function getSettings(): Promise<UserSettings> {
     return {
       subcategories: settings.subcategories || {},
       timeDividers: settings.timeDividers || ['09:00', '12:00', '18:00'], // Default dividers
-      timezone: settings.timezone || 'Asia/Shanghai' // Default to Beijing time
+      timezone: settings.timezone || 'Asia/Shanghai', // Default to Beijing time
     }
   } catch (error) {
     console.error('Failed to get settings:', error)
     return {
       subcategories: {},
       timeDividers: ['09:00', '12:00', '18:00'],
-      timezone: 'Asia/Shanghai' // Default to Beijing time
+      timezone: 'Asia/Shanghai', // Default to Beijing time
     }
   }
 }

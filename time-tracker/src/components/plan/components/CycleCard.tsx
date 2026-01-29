@@ -122,9 +122,9 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
         </div>
 
         {/* Meta Row: Date & Theme */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mb-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 mb-3">
           <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5" />
+            <Calendar className="w-3.5 h-3.5 text-gray-500" />
             <span className="text-xs font-medium">
               Week {cycle.startWeek} - {cycle.endWeek}
               {cycle.weeks.length > 0 && (
@@ -137,8 +137,8 @@ export function CycleCard({ cycle, cycleIndex, className, onStatusChange, onEdit
           </div>
           {cycle.theme && (
             <div className="flex items-center gap-2">
-              <span className="w-1 h-1 rounded-full bg-gray-300" />
-              <span className="text-xs italic text-gray-600">"{cycle.theme}"</span>
+              <span className="w-1 h-1 rounded-full bg-gray-400" />
+              <span className="text-xs italic text-gray-700">"{cycle.theme}"</span>
             </div>
           )}
         </div>

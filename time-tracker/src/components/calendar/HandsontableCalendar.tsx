@@ -101,6 +101,23 @@ export function HandsontableCalendar({
     }
   }
 
+  // Memoize subcategory icons for fast lookup in renderer
+  const subcategoryIcons = useMemo(() => {
+    const icons: Record<string, Record<string, string>> = {} // category -> subcategoryName -> icon
+    if (!userSettings?.subcategories) return icons
+
+    Object.entries(userSettings.subcategories).forEach(([cat, subs]) => {
+      icons[cat] = {}
+      const normalized = normalizeSubcategories(subs)
+      normalized.forEach(sub => {
+        if (sub.icon) {
+          icons[cat][sub.name] = sub.icon
+        }
+      })
+    })
+    return icons
+  }, [userSettings?.subcategories])
+
   // Auto-scroll to current day on mobile load
   useEffect(() => {
     const scrollToCurrentDay = () => {
@@ -347,7 +364,7 @@ export function HandsontableCalendar({
     td.style.border = 'none' // Remove cell borders for cleaner look
 
     // Check if this row should have a time divider above it
-    const actualRowTime = weekData[0]?.[row]?.time
+    const actualRowTime = TIME_SLOTS[row]
     const timeDividers = userSettings?.timeDividers || []
     const hasDivider = actualRowTime && timeDividers.includes(actualRowTime)
 
@@ -453,15 +470,23 @@ export function HandsontableCalendar({
     content.style.zIndex = '2' // Text sits ON TOP of everything
     content.style.paddingLeft = (category && subcategory) ? '10px' : (category ? '8px' : '0')
 
+    // Display icon if available
+    let displaySubcategory = subcategory
+    const icon = subcategory ? subcategoryIcons[category]?.[subcategory] : undefined
+    
+    if (subcategory && icon) {
+      displaySubcategory = `${icon} ${subcategory}`
+    }
+
     if (subcategory && notes) {
       // Bold subcategory, normal notes
       const b = document.createElement('strong')
-      b.textContent = subcategory
+      b.textContent = displaySubcategory
       content.appendChild(b)
       content.appendChild(document.createTextNode(` - ${notes}`))
     } else if (subcategory) {
       const b = document.createElement('strong')
-      b.textContent = subcategory
+      b.textContent = displaySubcategory
       content.appendChild(b)
     } else if (notes) {
       content.textContent = notes
@@ -512,7 +537,7 @@ export function HandsontableCalendar({
     }
 
     return cols
-  }, [dayHeaders])
+  }, [dayHeaders, userSettings])
 
   // Handle cell changes (from paste or fill)
   const handleAfterChange = (changes: any, source: string) => {
@@ -1407,7 +1432,9 @@ export function HandsontableCalendar({
                                   className="w-3 h-3 rounded flex-shrink-0"
                                   style={{ backgroundColor: shadeColor }}
                                 />
-                                <span className="truncate">{sub.name}</span>
+                                <span className="truncate">
+                                  {sub.icon ? `${sub.icon} ${sub.name}` : sub.name}
+                                </span>
                               </button>
                             )
                           })}

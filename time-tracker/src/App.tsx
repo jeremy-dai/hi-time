@@ -20,12 +20,15 @@ import { useHistory } from './hooks/useHistory'
 import { HistoryModal } from './components/shared/HistoryModal'
 import { Modal } from './components/shared/Modal'
 import { Toaster } from "@/components/ui/sonner"
+import { SegmentedTabs } from './components/shared/SegmentedTabs'
+import { Calendar, Tag, Monitor, Download } from 'lucide-react'
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, signOut } = useAuth()
   const [showStartingHourWarning, setShowStartingHourWarning] = useState(false)
   const [pendingStartingHour, setPendingStartingHour] = useState<number | null>(null)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [timesheetSubTab, setTimesheetSubTab] = useState('calendar')
 
   // Initialize activeTab from localStorage, default to 'timesheet' if not found
   const [activeTab, setActiveTab] = useState<'timesheet' | 'trends' | 'annual' | 'memories' | 'review' | 'today' | 'learning' | 'settings'>(() => {
@@ -128,15 +131,24 @@ function App() {
   const [, setWeekMetadataStore] = useState<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const weekMetadataStoreRef = useRef<Record<string, { startingHour: number; theme: string | null }>>(initialMetadata)
   const [referenceData, setReferenceData] = useState<TimeBlock[][] | null>(null)
-  // Initialize with default settings (timezone will be loaded from user-settings via useLocalStorageSync)
-  const [userSettings, setUserSettings] = useState<UserSettings>(() => {
-    return {
-      subcategories: {},
-      timezone: 'Asia/Shanghai' // Default, will be overridden by settings load
+
+  // Use the same hook as Settings component for real-time sync
+  const {
+    data: userSettings,
+  } = useLocalStorageSync({
+    storageKey: 'user-settings',
+    syncInterval: 30000,
+    syncToDatabase: async (_data: UserSettings) => {
+      // Settings component handles syncing, this is read-only
+      return true;
+    },
+    loadFromDatabase: async () => {
+      return await getSettings();
     }
   })
+
   const fetchingWeeks = useRef<Set<string>>(new Set())
-  
+
   // Get timezone from userSettings or default to Beijing
   const currentTimezone = userSettings?.timezone || 'Asia/Shanghai'
 
@@ -221,16 +233,7 @@ function App() {
     setCurrentDateState(newDate)
   }, [currentWeekKey, syncWeekNow, weekHasUnsavedChanges])
 
-  const loadUserSettings = async () => {
-    const s = await getSettings()
-    if (s) {
-      setUserSettings(s)
-    }
-  }
-
-  useEffect(() => {
-    loadUserSettings()
-  }, [])
+  // Settings are now loaded via useLocalStorageSync hook above
 
   // Persist activeTab to localStorage whenever it changes
   useEffect(() => {
@@ -723,18 +726,40 @@ function App() {
       <div className={activeTab === 'timesheet' ? 'block' : 'hidden'}>
         {currentWeekData && (
           <div className="flex flex-col h-full bg-white rounded-xl p-3 shadow-sm overflow-hidden animate-in fade-in duration-200">
+             <div className="mb-4">
+                <SegmentedTabs
+                  tabs={[
+                    { id: 'calendar', label: 'Calendar', icon: <Calendar size={16} /> },
+                    { id: 'categories', label: 'Categories', icon: <Tag size={16} /> },
+                    { id: 'display', label: 'Display', icon: <Monitor size={16} /> },
+                    { id: 'data', label: 'Data', icon: <Download size={16} /> }
+                  ]}
+                  activeTab={timesheetSubTab}
+                  onChange={setTimesheetSubTab}
+                />
+             </div>
+            
             {/* Timesheet Grid */}
-            <div className="flex-1 overflow-auto bg-white rounded-xl">
-              <HandsontableCalendar
-                weekData={currentWeekData}
-                currentDate={currentDateState}
-                onUpdateBlock={handleUpdateBlock}
-                onUpdateBlocks={handleUpdateBlocks}
-                referenceData={referenceData}
-                userSettings={userSettings}
-                timezone={currentTimezone}
-              />
-            </div>
+            {timesheetSubTab === 'calendar' && (
+              <div className="flex-1 overflow-auto bg-white rounded-xl">
+                <HandsontableCalendar
+                  weekData={currentWeekData}
+                  currentDate={currentDateState}
+                  onUpdateBlock={handleUpdateBlock}
+                  onUpdateBlocks={handleUpdateBlocks}
+                  referenceData={referenceData}
+                  userSettings={userSettings ?? undefined}
+                  timezone={currentTimezone}
+                />
+              </div>
+            )}
+
+            {/* Timesheet Settings Sections */}
+            {timesheetSubTab !== 'calendar' && (
+              <div className="flex-1 overflow-auto bg-white rounded-xl p-4">
+                 <Settings section={timesheetSubTab} />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -798,13 +823,6 @@ function App() {
       <div className={activeTab === 'learning' ? 'block' : 'hidden'}>
         <div className="animate-in fade-in duration-200">
           <Learning />
-        </div>
-      </div>
-
-      {/* Settings */}
-      <div className={activeTab === 'settings' ? 'block' : 'hidden'}>
-        <div className="animate-in fade-in duration-200">
-          <Settings onSettingsSaved={loadUserSettings} />
         </div>
       </div>
       </AppLayout>

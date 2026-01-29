@@ -143,22 +143,22 @@ export function PlanSettings({ data }: PlanSettingsProps) {
 
           {/* KPI Cards */}
           <div className="grid grid-cols-3 gap-3 md:gap-4 mb-6">
-            <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-4 border border-emerald-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-3 border border-emerald-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-1">
                 <Target className="h-4 w-4 text-emerald-600" />
                 <label className="text-2xs font-bold text-gray-500 uppercase tracking-wider">Cycles</label>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">{cycles.length}</p>
             </div>
-            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-4 border border-blue-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-xl p-3 border border-blue-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-1">
                 <Calendar className="h-4 w-4 text-blue-600" />
                 <label className="text-2xs font-bold text-gray-500 uppercase tracking-wider">Weeks</label>
               </div>
               <p className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">{totalWeeks}</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-4 border border-purple-100 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-2">
+            <div className="bg-gradient-to-br from-purple-50 to-white rounded-xl p-3 border border-purple-100 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-1">
                 <TrendingUp className="h-4 w-4 text-purple-600" />
                 <label className="text-2xs font-bold text-gray-500 uppercase tracking-wider">Trackers</label>
               </div>
@@ -196,7 +196,7 @@ export function PlanSettings({ data }: PlanSettingsProps) {
             <button
               onClick={handleExport}
               disabled={!planData}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/70 backdrop-blur-sm border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-white hover:border-emerald-300 hover:text-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white font-semibold text-sm rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-emerald-200"
             >
               <Download size={16} />
               Export JSON
@@ -227,7 +227,7 @@ export function PlanSettings({ data }: PlanSettingsProps) {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white font-semibold text-sm rounded-xl hover:bg-gray-800 transition-all shadow-sm"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white border border-gray-200 text-gray-700 font-semibold text-sm rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all shadow-sm"
               >
                 <Upload size={16} />
                 Upload JSON File
@@ -378,26 +378,25 @@ export function PlanSettings({ data }: PlanSettingsProps) {
       )}
 
       {/* Danger Zone */}
-      <div className="bg-gradient-to-br from-red-50 to-white rounded-xl border-2 border-red-200 p-4 md:p-6 shadow-sm">
-        <div className="flex items-center gap-2 mb-6">
-          <div className="p-2 bg-red-100 text-red-600 rounded-xl">
-            <AlertTriangle className="h-5 w-5" />
+      <div className="mt-4 border-t border-gray-200/50 pt-8 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+          <div className="flex items-start gap-3">
+             <div className="p-2 bg-red-50 text-red-600 rounded-xl">
+               <AlertTriangle className="h-5 w-5" />
+             </div>
+             <div>
+               <h2 className="text-base font-bold text-gray-900 tracking-tight">Danger Zone</h2>
+               <p className="text-xs text-gray-500 mt-0.5">
+                 Remove all plan data. This cannot be undone.
+               </p>
+             </div>
           </div>
-          <h2 className="text-lg font-bold text-red-700 tracking-tight">Danger Zone</h2>
-        </div>
 
-        <div className="space-y-4">
-          {/* Clear All */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white/70 backdrop-blur-sm rounded-xl border border-red-200">
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">Clear Plan</h3>
-              <p className="text-sm text-gray-600">Remove all plan data from local storage. This cannot be undone.</p>
-            </div>
-            {showConfirmClear ? (
-              <div className="flex gap-2 sm:flex-shrink-0">
+          {showConfirmClear ? (
+              <div className="flex gap-2 sm:flex-shrink-0 w-full sm:w-auto">
                 <button
                   onClick={() => setShowConfirmClear(false)}
-                  className="flex-1 sm:flex-none px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold text-sm"
+                  className="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-semibold text-xs"
                 >
                   Cancel
                 </button>
@@ -406,22 +405,21 @@ export function PlanSettings({ data }: PlanSettingsProps) {
                     clearPlan()
                     setShowConfirmClear(false)
                   }}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-sm font-semibold text-sm"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-sm font-semibold text-xs"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                   Confirm Delete
                 </button>
               </div>
-            ) : (
-              <button
-                onClick={() => setShowConfirmClear(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-sm font-semibold text-sm"
-              >
-                <Trash2 className="h-4 w-4" />
-                Clear Plan
-              </button>
-            )}
-          </div>
+          ) : (
+             <button
+               onClick={() => setShowConfirmClear(true)}
+               className="w-full sm:w-auto px-4 py-2 bg-white border border-red-200 text-red-600 font-semibold text-xs rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm flex items-center justify-center gap-2"
+             >
+               <Trash2 className="h-3.5 w-3.5" />
+               Clear Plan
+             </button>
+          )}
         </div>
       </div>
     </div>
