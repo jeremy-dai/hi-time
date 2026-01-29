@@ -116,7 +116,7 @@ export function PageHeader({
               subtitle ? "text-lg sm:text-xl" : "text-xl sm:text-2xl",
               useGradientTitle ? "text-gradient" : "text-gray-900"
             )}>{title}</h1>
-            {subtitle && <p className="text-gray-500 text-xs sm:text-sm">{subtitle}</p>}
+            {subtitle && <div className="text-gray-500 text-xs sm:text-sm">{subtitle}</div>}
           </div>
         </div>
         <div className="flex items-center gap-2 md:gap-3">

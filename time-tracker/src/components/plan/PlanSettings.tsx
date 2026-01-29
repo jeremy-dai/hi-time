@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import type { UseQuarterlyPlanReturn } from '../../hooks/useQuarterlyPlan'
 import type { PlanJSON } from '../../api'
-import { Upload, Download, Trash2, AlertTriangle, RefreshCw, Calendar, Target, TrendingUp, ChevronDown, ChevronUp, FileJson } from 'lucide-react'
+import { Upload, Download, Trash2, AlertTriangle, Calendar, Target, TrendingUp, ChevronDown, ChevronUp, FileJson } from 'lucide-react'
 import { SyncStatusIndicator } from '../SyncStatusIndicator'
 
 interface PlanSettingsProps {
@@ -352,30 +352,6 @@ export function PlanSettings({ data }: PlanSettingsProps) {
         )}
       </div>
 
-      {/* Manual Sync */}
-      {planData && (
-        <div className="glass-card rounded-xl p-4 md:p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-              <RefreshCw size={20} />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-900 tracking-tight mb-1">Manual Sync</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Your plan is automatically synced to the database every 5 seconds after changes. You can also manually trigger a sync.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={syncNow}
-            disabled={syncStatus === 'syncing'}
-            className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm font-semibold text-sm w-full sm:w-auto"
-          >
-            <RefreshCw className={`h-4 w-4 ${syncStatus === 'syncing' ? 'animate-spin' : ''}`} />
-            {syncStatus === 'syncing' ? 'Syncing...' : 'Sync Now'}
-          </button>
-        </div>
-      )}
 
       {/* Danger Zone */}
       <div className="mt-4 border-t border-gray-200/50 pt-8 pb-4">

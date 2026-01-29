@@ -2,6 +2,8 @@ import { addWeeks, startOfISOWeek } from '../../utils/date'
 import { cn } from '../../utils/classNames'
 import { SyncStatusIndicator } from '../SyncStatusIndicator'
 import type { SyncStatus } from '../../hooks/useLocalStorageSync'
+import { PageHeader } from './PageHeader'
+import { Calendar } from 'lucide-react'
 
 interface HeaderProps {
   currentDate: Date
@@ -31,45 +33,8 @@ function toInputDate(d: Date): string {
 
 export default function Header({ currentDate, onChangeDate, syncStatus, lastSynced, hasUnsavedChanges, syncError, onSyncNow, startingHour = 8, onChangeStartingHour, weekTheme, onChangeWeekTheme, onOpenHistory, hasNewerVersion, onLoadNewerVersion }: HeaderProps) {
 
-  return (
-    <div className="flex flex-col gap-2">
-      {/* Newer Version Banner */}
-      {hasNewerVersion && (
-        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center gap-2 text-sm">
-            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-blue-900 font-medium">
-              A newer version is available from the database
-            </span>
-          </div>
-          <button
-            onClick={onLoadNewerVersion}
-            className="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Load Now
-          </button>
-        </div>
-      )}
-
-      <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-4">
-      {/* Left: Theme Input */}
-      <div className="order-2 md:order-1 flex-1 min-w-0 w-full md:w-auto md:max-w-xl">
-        {onChangeWeekTheme && (
-          <input
-            type="text"
-            value={weekTheme || ''}
-            onChange={(e) => onChangeWeekTheme(e.target.value)}
-            placeholder="welcome to new york! it's been waiting for you"
-            className="w-full text-base font-semibold bg-transparent border-none p-0 focus:outline-none focus:ring-0 text-gray-900 placeholder-gray-300 text-center md:text-left"
-          />
-        )}
-      </div>
-
-      {/* Right: Date Navigation + Sync Status + Start Time */}
-      <div className="order-1 md:order-2 w-full md:w-auto flex items-center justify-between md:justify-end gap-3 shrink-0">
-        <div className="flex items-center gap-2 md:gap-3">
+  const actions = (
+    <div className="flex items-center gap-2 md:gap-3">
         {syncStatus && (
           <SyncStatusIndicator
             status={syncStatus}
@@ -92,93 +57,133 @@ export default function Header({ currentDate, onChangeDate, syncStatus, lastSync
             </svg>
           </button>
         )}
-        </div>
 
         <div className="flex items-center gap-3">
-        <div className={cn(
-          'flex items-center gap-1 p-1 rounded-full shadow-sm',
-          'bg-white border border-gray-200'
-        )}>
-          <button
-            className={cn(
-              'w-10 h-10 flex items-center justify-center rounded-full transition-colors',
-              'text-gray-500 hover:bg-gray-100'
-            )}
-            onClick={() => onChangeDate(addWeeks(currentDate, -1))}
-            title="Previous Week"
-          >
-            ←
-          </button>
-
-          <div className="relative">
-            <input
-              type="date"
-              className={cn(
-                'text-sm font-medium px-2 py-1 bg-transparent outline-none cursor-pointer',
-                'text-gray-900 pointer-events-auto',
-                '[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:z-10'
-              )}
-              value={toInputDate(currentDate)}
-              onChange={(e) => {
-                const val = e.target.value
-                if (!val) return
-                const parts = val.split('-').map(Number)
-                if (parts.length === 3 && !parts.some(isNaN)) {
-                  // Create date in UTC (noon to avoid day boundary issues)
-                  const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 12))
-                  const sunday = startOfISOWeek(dt)
-                  onChangeDate(sunday)
-                }
-              }}
-              onClick={(e) => {
-                e.currentTarget.showPicker?.()
-              }}
-            />
-          </div>
-
-          <button
-            className={cn(
-              'w-10 h-10 flex items-center justify-center rounded-full transition-colors',
-              'text-gray-500 hover:bg-gray-100'
-            )}
-            onClick={() => onChangeDate(addWeeks(currentDate, 1))}
-            title="Next Week"
-          >
-            →
-          </button>
-
-          <div className="w-px h-4 bg-gray-200 mx-1" />
-
-          <button
-            className={cn(
-              'px-4 py-2 rounded-full text-sm font-bold transition-all ml-1',
-              'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
-            )}
-            onClick={() => onChangeDate(new Date())}
-          >
-            Today
-          </button>
-        </div>
-
-        {onChangeStartingHour && (
-          <div className="hidden sm:flex flex-col items-center gap-0.5">
-            <span className="text-[10px] text-gray-400 font-medium">Start</span>
-            <select
-              value={startingHour}
-              onChange={(e) => onChangeStartingHour(parseInt(e.target.value))}
-              className="text-xs bg-transparent border-none text-gray-500 focus:outline-none cursor-pointer hover:text-gray-700 font-medium -mt-0.5"
+            <div className={cn(
+            'flex items-center gap-1 p-1 rounded-full shadow-sm',
+            'bg-white border border-gray-200'
+            )}>
+            <button
+                className={cn(
+                'w-10 h-10 flex items-center justify-center rounded-full transition-colors',
+                'text-gray-500 hover:bg-gray-100'
+                )}
+                onClick={() => onChangeDate(addWeeks(currentDate, -1))}
+                title="Previous Week"
             >
-              {[5, 6, 7, 8, 9, 10].map(hour => (
-                <option key={hour} value={hour}>
-                  {hour} AM
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
+                ←
+            </button>
+
+            <div className="relative">
+                <input
+                type="date"
+                className={cn(
+                    'text-sm font-medium px-2 py-1 bg-transparent outline-none cursor-pointer',
+                    'text-gray-900 pointer-events-auto',
+                    '[&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:z-10'
+                )}
+                value={toInputDate(currentDate)}
+                onChange={(e) => {
+                    const val = e.target.value
+                    if (!val) return
+                    const parts = val.split('-').map(Number)
+                    if (parts.length === 3 && !parts.some(isNaN)) {
+                    // Create date in UTC (noon to avoid day boundary issues)
+                    const dt = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 12))
+                    const sunday = startOfISOWeek(dt)
+                    onChangeDate(sunday)
+                    }
+                }}
+                onClick={(e) => {
+                    e.currentTarget.showPicker?.()
+                }}
+                />
+            </div>
+
+            <button
+                className={cn(
+                'w-10 h-10 flex items-center justify-center rounded-full transition-colors',
+                'text-gray-500 hover:bg-gray-100'
+                )}
+                onClick={() => onChangeDate(addWeeks(currentDate, 1))}
+                title="Next Week"
+            >
+                →
+            </button>
+
+            <div className="w-px h-4 bg-gray-200 mx-1" />
+
+            <button
+                className={cn(
+                'px-4 py-2 rounded-full text-sm font-bold transition-all ml-1',
+                'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
+                )}
+                onClick={() => onChangeDate(new Date())}
+            >
+                Today
+            </button>
+            </div>
+
+            {onChangeStartingHour && (
+            <div className="hidden sm:flex flex-col items-center gap-0.5">
+                <span className="text-[10px] text-gray-400 font-medium">Start</span>
+                <select
+                value={startingHour}
+                onChange={(e) => onChangeStartingHour(parseInt(e.target.value))}
+                className="text-xs bg-transparent border-none text-gray-500 focus:outline-none cursor-pointer hover:text-gray-700 font-medium -mt-0.5"
+                >
+                {[5, 6, 7, 8, 9, 10].map(hour => (
+                    <option key={hour} value={hour}>
+                    {hour} AM
+                    </option>
+                ))}
+                </select>
+            </div>
+            )}
         </div>
-      </div>
     </div>
+  )
+
+  const subtitle = onChangeWeekTheme ? (
+     <input
+        type="text"
+        value={weekTheme || ''}
+        onChange={(e) => onChangeWeekTheme(e.target.value)}
+        placeholder="welcome to new york! it's been waiting for you"
+        className="w-full text-sm text-gray-500 bg-transparent border-none p-0 focus:outline-none focus:ring-0 placeholder-gray-300"
+      />
+  ) : null
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Newer Version Banner */}
+      {hasNewerVersion && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2 text-sm">
+            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-blue-900 font-medium">
+              A newer version is available from the database
+            </span>
+          </div>
+          <button
+            onClick={onLoadNewerVersion}
+            className="px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Load Now
+          </button>
+        </div>
+      )}
+
+      <PageHeader
+        title="Timesheet"
+        icon={Calendar}
+        subtitle={subtitle}
+        actions={actions}
+        useGradientTitle={true}
+        animateIcon={true}
+      />
     </div>
   )
 }

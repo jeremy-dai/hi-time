@@ -20,6 +20,7 @@ import { useHistory } from './hooks/useHistory'
 import { HistoryModal } from './components/shared/HistoryModal'
 import { Modal } from './components/shared/Modal'
 import { Toaster } from "@/components/ui/sonner"
+import { PageContainer } from './components/layout/PageContainer'
 import { SegmentedTabs } from './components/shared/SegmentedTabs'
 import { Calendar, Tag, Monitor, Download } from 'lucide-react'
 
@@ -692,75 +693,81 @@ function App() {
           currentDate={currentDateState}
         />
       }
-      header={activeTab === 'timesheet' ? (
-        <Header
-          currentDate={currentDateState}
-          onChangeDate={(d) => setCurrentDate(d)}
-          onImportCSVFile={handleImportCSVFile}
-          onExportCSV={() => {
-            apiExportCSV(currentWeekKey).then(csv => {
-              const blob = new Blob([csv], { type: 'text/csv' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url
-              a.download = `${currentWeekKey}.csv`
-              a.click()
-            })
-          }}
-          syncStatus={weekSyncStatus}
-          lastSynced={weekLastSynced}
-          hasUnsavedChanges={weekHasUnsavedChanges}
-          syncError={weekSyncError}
-          onSyncNow={syncWeekNow}
-          startingHour={currentWeekMetadata.startingHour}
-          onChangeStartingHour={(hour) => handleMetadataChange({ startingHour: hour })}
-          weekTheme={currentWeekMetadata.theme}
-          onChangeWeekTheme={(theme) => handleMetadataChange({ theme })}
-          onOpenHistory={() => setIsHistoryOpen(true)}
-          hasNewerVersion={hasNewerVersion}
-          onLoadNewerVersion={loadNewerVersion}
-        />
-      ) : undefined}
+
     >
       {/* Timesheet */}
-      <div className={activeTab === 'timesheet' ? 'block' : 'hidden'}>
+      <div className={activeTab === 'timesheet' ? 'block h-full' : 'hidden'}>
         {currentWeekData && (
-          <div className="flex flex-col h-full bg-white rounded-xl p-3 shadow-sm overflow-hidden animate-in fade-in duration-200">
-             <div className="mb-4">
-                <SegmentedTabs
-                  tabs={[
-                    { id: 'calendar', label: 'Calendar', icon: <Calendar size={16} /> },
-                    { id: 'categories', label: 'Categories', icon: <Tag size={16} /> },
-                    { id: 'display', label: 'Display', icon: <Monitor size={16} /> },
-                    { id: 'data', label: 'Data', icon: <Download size={16} /> }
-                  ]}
-                  activeTab={timesheetSubTab}
-                  onChange={setTimesheetSubTab}
-                />
-             </div>
-            
-            {/* Timesheet Grid */}
-            {timesheetSubTab === 'calendar' && (
-              <div className="flex-1 overflow-auto bg-white rounded-xl">
-                <HandsontableCalendar
-                  weekData={currentWeekData}
-                  currentDate={currentDateState}
-                  onUpdateBlock={handleUpdateBlock}
-                  onUpdateBlocks={handleUpdateBlocks}
-                  referenceData={referenceData}
-                  userSettings={userSettings ?? undefined}
-                  timezone={currentTimezone}
-                />
-              </div>
-            )}
+          <PageContainer>
+             <div className="flex flex-col h-full">
+               <div className="mb-6">
+                 <Header
+                    currentDate={currentDateState}
+                    onChangeDate={(d) => setCurrentDate(d)}
+                    onImportCSVFile={handleImportCSVFile}
+                    onExportCSV={() => {
+                      apiExportCSV(currentWeekKey).then(csv => {
+                        const blob = new Blob([csv], { type: 'text/csv' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `${currentWeekKey}.csv`
+                        a.click()
+                      })
+                    }}
+                    syncStatus={weekSyncStatus}
+                    lastSynced={weekLastSynced}
+                    hasUnsavedChanges={weekHasUnsavedChanges}
+                    syncError={weekSyncError}
+                    onSyncNow={syncWeekNow}
+                    startingHour={currentWeekMetadata.startingHour}
+                    onChangeStartingHour={(hour) => handleMetadataChange({ startingHour: hour })}
+                    weekTheme={currentWeekMetadata.theme}
+                    onChangeWeekTheme={(theme) => handleMetadataChange({ theme })}
+                    onOpenHistory={() => setIsHistoryOpen(true)}
+                    hasNewerVersion={hasNewerVersion}
+                    onLoadNewerVersion={loadNewerVersion}
+                  />
+               </div>
+               
+               <div className="mb-6">
+                  <SegmentedTabs
+                    tabs={[
+                      { id: 'calendar', label: 'Calendar', icon: <Calendar size={16} /> },
+                      { id: 'categories', label: 'Categories', icon: <Tag size={16} /> },
+                      { id: 'display', label: 'Display', icon: <Monitor size={16} /> },
+                      { id: 'data', label: 'Data', icon: <Download size={16} /> }
+                    ]}
+                    activeTab={timesheetSubTab}
+                    onChange={setTimesheetSubTab}
+                  />
+               </div>
+              
+              <div className="flex-1 min-h-0">
+                {/* Timesheet Grid */}
+                {timesheetSubTab === 'calendar' && (
+                  <div className="h-full overflow-hidden rounded-xl border border-gray-100">
+                    <HandsontableCalendar
+                      weekData={currentWeekData}
+                      currentDate={currentDateState}
+                      onUpdateBlock={handleUpdateBlock}
+                      onUpdateBlocks={handleUpdateBlocks}
+                      referenceData={referenceData}
+                      userSettings={userSettings ?? undefined}
+                      timezone={currentTimezone}
+                    />
+                  </div>
+                )}
 
-            {/* Timesheet Settings Sections */}
-            {timesheetSubTab !== 'calendar' && (
-              <div className="flex-1 overflow-auto bg-white rounded-xl p-4">
-                 <Settings section={timesheetSubTab} />
+                {/* Timesheet Settings Sections */}
+                {timesheetSubTab !== 'calendar' && (
+                  <div className="h-full overflow-auto bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                     <Settings section={timesheetSubTab} />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          </PageContainer>
         )}
       </div>
 
