@@ -37,7 +37,7 @@ export function Settings({ section }: { section?: string }) {
   const [loading, setLoading] = useState(true)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [activeTab, setActiveTab] = useState('categories')
-
+  
   // If section prop is provided, use it as activeTab
   const effectiveTab = section || activeTab
 
@@ -355,15 +355,18 @@ export function Settings({ section }: { section?: string }) {
               return (
                 <div key={cat} className="pb-4 border-b border-gray-100 last:border-0">
                   <div className="flex items-center gap-2 mb-3">
-                    <span
-                      className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold shadow-sm"
+                    <button
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-transform duration-200 active:scale-75 hover:shadow-md cursor-pointer select-none"
                       style={{
                         backgroundColor: getCategoryColor(cat).bg,
                         color: getCategoryColor(cat).text
                       }}
+                      onClick={() => {
+                        // Toy interaction: just a squish visual
+                      }}
                     >
                       {cat}
-                    </span>
+                    </button>
                     <span className="font-semibold text-sm text-gray-900">{getCategoryLabel(cat)}</span>
                     {hasSubcategories && (
                       <span className="text-xs text-gray-400">({savedSubs.length})</span>
@@ -422,79 +425,79 @@ export function Settings({ section }: { section?: string }) {
 
   function renderDisplayContent() {
     return (
-      <div className="space-y-4 max-w-3xl">
+      <div className="space-y-6 max-w-3xl">
         <div>
           <h2 className="text-base font-semibold text-gray-900 mb-1">Display Preferences</h2>
           <p className="text-xs text-gray-500">Customize how your timesheet is displayed</p>
         </div>
 
-          <div className="space-y-4">
-            <div className="flex items-start justify-between py-3 border-b border-gray-100">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-900 mb-1">
-                  Timezone
-                </label>
-                <p className="text-xs text-gray-500">
-                  Sets your local timezone for the current time indicator
-                </p>
-              </div>
-              <select
-                value={settings?.timezone || 'Asia/Shanghai'}
-                onChange={(e) => settings && setSettings({ ...settings, timezone: e.target.value })}
-                className="ml-4 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm hover:border-gray-300"
-              >
-                {TIMEZONE_OPTIONS.map(tz => (
-                  <option key={tz.value} value={tz.value}>{tz.label}</option>
-                ))}
-              </select>
+        <div className="space-y-6">
+          <div className="flex items-start justify-between py-4 border-b border-gray-100">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-900 mb-1">
+                Timezone
+              </label>
+              <p className="text-xs text-gray-500">
+                Sets your local timezone for the current time indicator
+              </p>
             </div>
+            <select
+              value={settings?.timezone || 'Asia/Shanghai'}
+              onChange={(e) => settings && setSettings({ ...settings, timezone: e.target.value })}
+              className="ml-4 bg-transparent border-b border-gray-200 px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:border-emerald-500 transition-colors hover:border-gray-400 cursor-pointer"
+            >
+              {TIMEZONE_OPTIONS.map(tz => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+            </select>
+          </div>
 
-            <div className="flex items-start justify-between py-3">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold text-gray-900 mb-0.5">
-                  Time Dividers
-                </label>
-                <p className="text-xs text-gray-500">
-                  Add visual dividers to mark different periods of the day
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {(settings?.timeDividers || []).length === 0 && (
-                  <p className="text-xs text-gray-400 italic">None</p>
-                )}
-                {(settings?.timeDividers || []).map((time, index) => (
-                  <div key={index} className="flex items-center gap-2 bg-gray-50 rounded-xl px-2 py-1.5 hover:border hover:border-gray-200 transition-colors">
-                    <span className="text-gray-400 text-xs cursor-move" title="Drag to reorder (coming soon)">⋮⋮</span>
-                    <input
-                      type="time"
-                      value={time}
-                      onChange={(e) => updateTimeDivider(index, e.target.value)}
-                      onBlur={sortTimeDividersOnBlur}
-                      className="bg-transparent border-none text-xs font-medium text-gray-900 focus:outline-none w-20"
-                    />
-                    <IconButton
-                      size="sm"
-                      variant="danger"
-                      icon={
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      }
-                      onClick={() => removeTimeDivider(index)}
-                      title="Remove divider"
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={addTimeDivider}
-                  className="px-2 py-1 bg-emerald-50 text-emerald-600 text-xs rounded-xl hover:bg-emerald-100 active:scale-[0.98] transition-all inline-flex items-center gap-1"
-                >
-                  <span>+</span>
-                  <span>Add</span>
-                </button>
-              </div>
+          <div className="flex items-start justify-between py-4">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-900 mb-0.5">
+                Time Dividers
+              </label>
+              <p className="text-xs text-gray-500">
+                Add visual dividers to mark different periods of the day
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {(settings?.timeDividers || []).length === 0 && (
+                <p className="text-xs text-gray-400 italic">None</p>
+              )}
+              {(settings?.timeDividers || []).map((time, index) => (
+                <div key={index} className="flex items-center gap-2 bg-gray-50 rounded-xl px-2 py-1.5 border border-transparent hover:border-gray-200 hover:shadow-sm transition-all">
+                  <span className="text-gray-400 text-xs cursor-move" title="Drag to reorder (coming soon)">⋮⋮</span>
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => updateTimeDivider(index, e.target.value)}
+                    onBlur={sortTimeDividersOnBlur}
+                    className="bg-transparent border-none text-xs font-medium text-gray-900 focus:outline-none w-20 cursor-pointer"
+                  />
+                  <IconButton
+                    size="sm"
+                    variant="danger"
+                    icon={
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    }
+                    onClick={() => removeTimeDivider(index)}
+                    title="Remove divider"
+                  />
+                </div>
+              ))}
+              <button
+                onClick={addTimeDivider}
+                className="px-3 py-1.5 bg-emerald-50 text-emerald-600 text-xs font-semibold rounded-xl hover:bg-emerald-100 active:scale-95 transition-all inline-flex items-center gap-1"
+              >
+                <span>+</span>
+                <span>Add</span>
+              </button>
             </div>
           </div>
+        </div>
       </div>
     )
   }
@@ -524,7 +527,7 @@ export function Settings({ section }: { section?: string }) {
                 type="week"
                 value={exportStartWeek}
                 onChange={(e) => setExportStartWeek(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+                className="w-full bg-transparent border-b border-gray-200 rounded-t-lg px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:shadow-[0_10px_20px_-5px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
               />
             </div>
             <div className="w-full sm:flex-1">
@@ -533,7 +536,7 @@ export function Settings({ section }: { section?: string }) {
                 type="week"
                 value={exportEndWeek}
                 onChange={(e) => setExportEndWeek(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all shadow-sm"
+                className="w-full bg-transparent border-b border-gray-200 rounded-t-lg px-3 py-2 text-sm font-medium text-gray-900 focus:outline-none focus:border-emerald-500 focus:shadow-[0_10px_20px_-5px_rgba(16,185,129,0.3)] transition-all cursor-pointer"
               />
             </div>
             <button
