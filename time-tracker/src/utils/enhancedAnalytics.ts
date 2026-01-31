@@ -145,6 +145,62 @@ export function extractTopActivities(weekData: TimeBlock[][], limit: number = 10
 }
 
 /**
+ * Extract and rank top activities across multiple weeks
+ */
+export function extractMultiWeekTopActivities(
+  weeksStore: Record<string, TimeBlock[][]>,
+  weekKeys: string[],
+  limit: number = 10
+): TopActivity[] {
+  const activityMap = new Map<string, { type: CategoryKey, blocks: number }>()
+
+  // Count blocks per activity across all weeks
+  for (const weekKey of weekKeys) {
+    const weekData = weeksStore[weekKey] || []
+    for (let d = 0; d < 7; d++) {
+      const dayBlocks = weekData[d] || []
+      for (const block of dayBlocks) {
+        if (!block || !block.category) continue
+
+        const activityName = extractActivityName(block)
+        if (!activityName) continue
+
+        const key = `${activityName}|${block.category}` // Unique key: name + category
+
+        if (!activityMap.has(key)) {
+          activityMap.set(key, { type: block.category, blocks: 0 })
+        }
+
+        activityMap.get(key)!.blocks += 1
+      }
+    }
+  }
+
+  // Calculate total blocks for percentages
+  const totalBlocks = Array.from(activityMap.values()).reduce((sum, data) => sum + data.blocks, 0)
+
+  // Convert to TopActivity array
+  const activities: TopActivity[] = []
+  for (const [key, data] of activityMap.entries()) {
+    const [activity] = key.split('|')
+    const hours = data.blocks * 0.5
+    const percentage = totalBlocks > 0 ? (data.blocks / totalBlocks) * 100 : 0
+
+    activities.push({
+      activity,
+      type: data.type,
+      hours,
+      blocks: data.blocks,
+      percentage
+    })
+  }
+
+  // Sort by hours descending and take top N
+  activities.sort((a, b) => b.hours - a.hours)
+  return activities.slice(0, limit)
+}
+
+/**
  * Generate executive summary
  */
 export function generateExecutiveSummary(
@@ -766,6 +822,9 @@ export function generateEnhancedAnalysis(
   const multiWeekComparison = generateMultiWeekComparison(weeksStore, weekKeys)
   const categoryTrends = analyzeCategoryTrends(multiWeekComparison)
 
+  // Extract top activities from all 4 weeks combined
+  const multiWeekTopActivities = extractMultiWeekTopActivities(weeksStore, weekKeys)
+
   return {
     latestWeek: {
       weekKey: latestWeekKey,
@@ -793,6 +852,7 @@ export function generateEnhancedAnalysis(
         latestWeekStats,
         { categoryHours: multiWeekCategoryHours, weeks: weekKeys.length }
       ),
+      topActivities: multiWeekTopActivities,
       rawWeekData: weeksStore
     },
     generatedAt: new Date()

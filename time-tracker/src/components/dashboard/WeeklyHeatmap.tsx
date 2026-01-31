@@ -3,6 +3,7 @@ import type { YTDStats } from '../../utils/analytics'
 import { cn } from '../../utils/classNames'
 import { Calendar } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
+import CardHeader from '../shared/CardHeader'
 
 interface WeeklyHeatmapProps {
   ytdStats: YTDStats
@@ -141,12 +142,10 @@ export default function WeeklyHeatmap({ ytdStats }: WeeklyHeatmapProps) {
 
   return (
     <div className={cn('rounded-xl p-6', 'bg-white shadow-sm')}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className={cn('text-base font-semibold', 'text-gray-900')}>
-          Weekly Activity Heatmap
-        </h3>
-        <Calendar className="w-4 h-4 text-gray-400" />
-      </div>
+      <CardHeader
+        title="Weekly Activity Heatmap"
+        icon={Calendar}
+      />
 
       {dailyData.length === 0 ? (
         <div className="text-gray-500 text-center py-8">

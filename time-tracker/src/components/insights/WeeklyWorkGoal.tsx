@@ -28,13 +28,27 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
     return 'text-red-600'
   }
 
+  const getStrokeColor = () => {
+    if (goalPercentage >= 100) return '#10b981'
+    if (goalPercentage >= 80) return '#34d399'
+    if (goalPercentage >= 60) return '#6366f1'
+    if (goalPercentage >= 40) return '#f59e0b'
+    return '#ef4444'
+  }
+
+  // Circular progress ring calculations
+  const size = 80
+  const strokeWidth = 6
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (Math.min(goalPercentage, 100) / 100) * circumference
+
   return (
     <div className="glass-card rounded-xl p-5">
       {/* Header */}
-      <CardHeader 
-        title="Weekly Work Goal" 
+      <CardHeader
+        title="Weekly Work Goal"
         icon={Target}
-        titleClassName="text-sm text-zinc-900"
         className="mb-5"
       />
 
@@ -52,10 +66,37 @@ export default function WeeklyWorkGoal({ metrics }: WeeklyWorkGoalProps) {
           </div>
         </div>
 
-        {/* Right: Percentage */}
-        <div className="text-right">
-          <div className={cn('text-2xl font-bold', getTextColor())}>
-            {goalPercentage.toFixed(0)}%
+        {/* Right: Circular Progress Ring with Percentage */}
+        <div className="text-right relative">
+          <svg width={size} height={size} className="transform -rotate-90">
+            {/* Background circle */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke="#e5e7eb"
+              strokeWidth={strokeWidth}
+              fill="none"
+            />
+            {/* Progress circle */}
+            <circle
+              cx={size / 2}
+              cy={size / 2}
+              r={radius}
+              stroke={getStrokeColor()}
+              strokeWidth={strokeWidth}
+              fill="none"
+              strokeDasharray={circumference}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+              className="transition-all duration-500"
+            />
+          </svg>
+          {/* Percentage text in center */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className={cn('text-xl font-bold', getTextColor())}>
+              {goalPercentage.toFixed(0)}%
+            </span>
           </div>
         </div>
       </div>

@@ -9,7 +9,6 @@ import CategoryBreakdown from '../shared/CategoryBreakdown'
 import WeeklyBreakdownChart from './WeeklyBreakdownChart'
 import MultiWeekTrendChart from './MultiWeekTrendChart'
 import {
-  TimeSlotAnalysis,
   TopActivitiesBreakdown,
   ExportButton,
   ExportInfo,
@@ -136,21 +135,13 @@ export default function CurrentWeekDashboard({
       />
 
       {/* LATEST WEEK SECTION */}
-      <div>
-        <h2 className="text-base font-semibold mb-4 text-gray-900">
-          Latest Week Overview
-        </h2>
-        <div className="space-y-6 stagger-reveal">
-          {/* Category Summary and Weekly Work Goal - Side by Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <CategoryBreakdown
-              categoryHours={currentStats.categoryHours}
-            />
-            <WeeklyWorkGoal metrics={enhancedAnalysis.latestWeek.workGoalMetrics} />
-          </div>
-
-          {/* Top Activities (latest week) - Most actionable insight */}
-          <TopActivitiesBreakdown activities={enhancedAnalysis.latestWeek.topActivities} />
+      <div className="space-y-6 stagger-reveal">
+        {/* Category Summary and Weekly Work Goal - Side by Side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <CategoryBreakdown
+            categoryHours={currentStats.categoryHours}
+          />
+          <WeeklyWorkGoal metrics={enhancedAnalysis.latestWeek.workGoalMetrics} />
         </div>
       </div>
 
@@ -171,10 +162,13 @@ export default function CurrentWeekDashboard({
           </div>
         </div>
 
-        {/* Weekly Rhythm Heatmap and Time Slot Patterns - Side by Side */}
+        {/* Weekly Rhythm Heatmap and Top Activities - Side by Side */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           <WeeklyRhythmHeatmap rhythmData={enhancedAnalysis.trends.weeklyRhythm} />
-          <TimeSlotAnalysis timeSlotData={enhancedAnalysis.latestWeek.timeSlotPatterns} />
+          <TopActivitiesBreakdown
+            activities={enhancedAnalysis.trends.topActivities}
+            title="Top 10 Activities (4 Weeks)"
+          />
         </div>
       </div>
     </div>

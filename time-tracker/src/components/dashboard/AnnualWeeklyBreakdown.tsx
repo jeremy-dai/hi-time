@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import type { YTDStats } from '../../utils/analytics'
-import { getCategoryColor, getCategoryLabel } from '../../utils/colorHelpers'
+import { getCategoryColor, getCategoryLabel, isDarkColor } from '../../utils/colorHelpers'
 import { CATEGORY_KEYS } from '../../types/time'
 import { cn } from '../../utils/classNames'
 import { BarChart3 } from 'lucide-react'
@@ -157,38 +157,43 @@ export default function AnnualWeeklyBreakdown({ ytdStats, weekThemes, onUpdateTh
                 contentStyle={CHART_CONFIG.tooltip.contentStyle}
                 labelStyle={CHART_CONFIG.tooltip.labelStyle}
               />
-              {CATEGORY_KEYS.filter(k => k !== '').map((cat) => (
-                <Bar
-                  key={cat}
-                  dataKey={getCategoryLabel(cat)}
-                  stackId="a"
-                  fill={getCategoryColor(cat).bg}
-                  label={(props: any) => {
-                    const { x, y, width, height, index } = props
+              {CATEGORY_KEYS.filter(k => k !== '').map((cat) => {
+                const categoryBgColor = getCategoryColor(cat).bg
+                const labelColor = isDarkColor(categoryBgColor) ? 'white' : '#1f2937'
 
-                    // Get the actual individual value from the data
-                    const dataPoint = chartData[index]
-                    const actualValue = (dataPoint as any)?.[getCategoryLabel(cat)] || 0
+                return (
+                  <Bar
+                    key={cat}
+                    dataKey={getCategoryLabel(cat)}
+                    stackId="a"
+                    fill={categoryBgColor}
+                    label={(props: any) => {
+                      const { x, y, width, height, index } = props
 
-                    // Only show label if segment is tall enough (at least 20px) and value >= 10 pomodoros
-                    if (!actualValue || actualValue < 10 || height < 20) return null
+                      // Get the actual individual value from the data
+                      const dataPoint = chartData[index]
+                      const actualValue = (dataPoint as any)?.[getCategoryLabel(cat)] || 0
 
-                    return (
-                      <text
-                        x={x + width / 2}
-                        y={y + height / 2}
-                        fill="white"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        fontSize="11"
-                        fontWeight="600"
-                      >
-                        {actualValue}
-                      </text>
-                    )
-                  }}
-                />
-              ))}
+                      // Only show label if segment is tall enough (at least 20px) and value >= 10 pomodoros
+                      if (!actualValue || actualValue < 10 || height < 20) return null
+
+                      return (
+                        <text
+                          x={x + width / 2}
+                          y={y + height / 2}
+                          fill={labelColor}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          fontSize="11"
+                          fontWeight="600"
+                        >
+                          {actualValue}
+                        </text>
+                      )
+                    }}
+                  />
+                )
+              })}
               </BarChart>
             </ResponsiveContainer>
           </div>

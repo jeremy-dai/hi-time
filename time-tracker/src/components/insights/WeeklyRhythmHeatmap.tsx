@@ -75,8 +75,8 @@ export default function WeeklyRhythmHeatmap({ rhythmData }: WeeklyRhythmHeatmapP
       'rounded-xl p-5',
       'glass-card'
     )}>
-      <CardHeader 
-        title="Weekly Activity Heatmap" 
+      <CardHeader
+        title="Weekly Activity Heatmap (4 Weeks)"
         icon={Calendar}
         className="mb-5"
         titleClassName="text-zinc-900"

@@ -26,10 +26,9 @@ export default function CategoryBreakdown({
       className
     )}>
       {/* Header */}
-      <CardHeader 
-        title="Category Breakdown" 
-        icon={BarChart3} 
-        titleClassName="text-sm"
+      <CardHeader
+        title="Category Breakdown"
+        icon={BarChart3}
       />
 
       {/* Bar chart */}
@@ -37,20 +36,27 @@ export default function CategoryBreakdown({
         {CATEGORY_KEYS.filter(k => k !== '').map((cat) => {
           const hours = categoryHours[cat] || 0
           const percentage = totalHours > 0 ? (hours / totalHours) * 100 : 0
+          const categoryColor = getCategoryColor(cat)
 
           if (hours === 0) return null
 
           return (
             <div key={cat} className="flex items-center gap-2 sm:gap-3 min-w-0">
-              {/* Label */}
-              <div className="w-16 sm:w-20 text-xs font-medium text-gray-600 shrink-0 truncate">
-                {getCategoryLabel(cat)}
+              {/* Label with color dot */}
+              <div className="w-16 sm:w-20 shrink-0 flex items-center gap-1.5">
+                <div
+                  className="w-2 h-2 rounded-full shrink-0"
+                  style={{ backgroundColor: categoryColor.bg }}
+                />
+                <span className="text-xs font-semibold text-gray-700 truncate">
+                  {getCategoryLabel(cat)}
+                </span>
               </div>
               {/* Bar */}
-              <ProgressBar 
-                value={percentage} 
+              <ProgressBar
+                value={percentage}
                 className="flex-1 min-w-0 h-2.5 bg-zinc-100/80 border border-zinc-200/50"
-                style={{ backgroundColor: getCategoryColor(cat).bg }}
+                style={{ backgroundColor: categoryColor.bg }}
               />
               {/* Stats */}
               <div className="flex items-center gap-2 text-2xs shrink-0">

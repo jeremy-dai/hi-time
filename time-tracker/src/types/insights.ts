@@ -104,6 +104,7 @@ export interface EnhancedAnalysis {
     averageDailyPattern: DailyBreakdown[]
     workLifeBalance: WorkLifeMetrics
     averageWorkGoal: WorkGoalMetrics
+    topActivities: TopActivity[] // Top activities across all 4 weeks
     rawWeekData: Record<string, import('./time').TimeBlock[][]> // Raw time blocks for each week
   }
 

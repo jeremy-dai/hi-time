@@ -92,11 +92,20 @@
   /* .bg-noise definition removed as it's now applied directly */
   
   .glass-card {
-    @apply bg-white/60 backdrop-blur-2xl border border-white/50 shadow-xl shadow-emerald-900/5 relative overflow-hidden;
-    box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.02), 
+    @apply bg-white/70 backdrop-blur-2xl border border-white/60 shadow-xl shadow-emerald-900/5 relative overflow-hidden;
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.03),
       0 2px 4px -1px rgba(0, 0, 0, 0.02),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.5); /* Inner light ring */
+      inset 0 0 0 1px rgba(255, 255, 255, 0.6); /* Inner light ring */
+    transition: all 0.2s ease-out;
+  }
+
+  .glass-card:hover {
+    @apply bg-white/75 border-white/70;
+    box-shadow:
+      0 6px 8px -1px rgba(0, 0, 0, 0.04),
+      0 4px 6px -1px rgba(0, 0, 0, 0.03),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.7);
   }
   
   .glass-card::before {

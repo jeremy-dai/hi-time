@@ -36,23 +36,22 @@ export default function ProductivityStreak({
 
   return (
     <div className={cn('rounded-xl p-5', 'glass-card', className)}>
-      <CardHeader 
-        title="Productivity Streak" 
+      <CardHeader
+        title="Productivity Streak"
         icon={Flame}
-        titleClassName={cn(variant === 'compact' ? 'text-sm' : 'text-base')}
         iconClassName={streakColor}
       />
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         {/* Current Streak */}
-        <div className="relative group">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="relative group bg-orange-50/50 rounded-lg p-3 border border-orange-100/50">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-            <div className="text-2xs font-semibold uppercase tracking-wider text-zinc-500">Current</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Current</div>
           </div>
           <div className="flex items-baseline gap-1">
             <div className={cn(
-              'font-bold tracking-tight text-zinc-900',
+              'font-bold tracking-tight text-orange-600',
               variant === 'compact' ? 'text-3xl' : 'text-2xl'
             )}>
               {currentStreak}
@@ -64,14 +63,14 @@ export default function ProductivityStreak({
         </div>
 
         {/* Longest Streak */}
-        <div className="relative group">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="relative group bg-purple-50/50 rounded-lg p-3 border border-purple-100/50">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-1.5 h-1.5 rounded-full bg-purple-400" />
-            <div className="text-2xs font-semibold uppercase tracking-wider text-zinc-500">Best</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Best</div>
           </div>
           <div className="flex items-baseline gap-1">
             <div className={cn(
-              'font-bold tracking-tight text-zinc-900',
+              'font-bold tracking-tight text-purple-600',
               variant === 'compact' ? 'text-3xl' : 'text-2xl'
             )}>
               {longestStreak}
@@ -83,14 +82,14 @@ export default function ProductivityStreak({
         </div>
 
         {/* Productive Days */}
-        <div className="relative group">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="relative group bg-emerald-50/50 rounded-lg p-3 border border-emerald-100/50">
+          <div className="flex items-center gap-2 mb-2">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            <div className="text-2xs font-semibold uppercase tracking-wider text-zinc-500">Rate</div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-zinc-600">Rate</div>
           </div>
           <div className="flex items-baseline gap-1">
             <div className={cn(
-              'font-bold tracking-tight text-zinc-900',
+              'font-bold tracking-tight text-emerald-600',
               variant === 'compact' ? 'text-3xl' : 'text-2xl'
             )}>
               {productivePercentage.toFixed(0)}%

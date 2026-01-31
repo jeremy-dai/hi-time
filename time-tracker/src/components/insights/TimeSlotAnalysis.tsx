@@ -96,6 +96,7 @@ export default function TimeSlotAnalysis({ timeSlotData }: TimeSlotAnalysisProps
             <BarChart
             data={chartData}
             margin={{ top: 10, right: 0, left: -10, bottom: 5 }}
+            barCategoryGap="8%"
           >
           <XAxis
             dataKey="time"

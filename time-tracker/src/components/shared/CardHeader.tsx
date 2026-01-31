@@ -11,22 +11,22 @@ interface CardHeaderProps {
   children?: ReactNode
 }
 
-export default function CardHeader({ 
-  title, 
-  icon: Icon, 
+export default function CardHeader({
+  title,
+  icon: Icon,
   className,
   titleClassName,
   iconClassName,
   children
 }: CardHeaderProps) {
   return (
-    <div className={cn("flex items-center justify-between mb-4", className)}>
-      <h3 className={cn("text-base font-bold tracking-tight text-gray-900", titleClassName)}>
+    <div className={cn("flex items-center justify-between mb-4 pb-3 border-l-2 border-emerald-500 pl-3 -ml-3", className)}>
+      <h3 className={cn("text-base font-semibold tracking-tight text-gray-900", titleClassName)}>
         {title}
       </h3>
       <div className="flex items-center gap-2">
         {children}
-        {Icon && <Icon className={cn("w-4 h-4 text-gray-400", iconClassName)} />}
+        {Icon && <Icon className={cn("w-5 h-5 text-emerald-500/60", iconClassName)} />}
       </div>
     </div>
   )
