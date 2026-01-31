@@ -1,23 +1,20 @@
 import { useMemo } from 'react'
 import type { DailyMemory } from '../../types/time'
 import { cn } from '../../utils/classNames'
-import { 
-  Clapperboard, 
-  Code, 
-  MapPin, 
-  Heart, 
-  Star, 
-  Calendar, 
-  Lightbulb, 
-  Dumbbell, 
-  Music, 
-  Utensils, 
-  Briefcase, 
-  BookOpen, 
+import {
+  Clapperboard,
+  Code,
+  Heart,
+  Calendar,
+  Lightbulb,
+  Dumbbell,
+  Music,
+  Utensils,
+  Briefcase,
+  BookOpen,
   Gamepad2,
   Sparkles,
   PartyPopper,
-  Coffee,
   Plane
 } from 'lucide-react'
 
