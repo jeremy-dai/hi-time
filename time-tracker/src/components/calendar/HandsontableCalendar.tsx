@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useRef, useMemo, useState, useEffect, Fragment } from 'react'
+import { createPortal } from 'react-dom'
 import { HotTable } from '@handsontable/react-wrapper'
 import { registerAllModules } from 'handsontable/registry'
 import Handsontable from 'handsontable'
@@ -168,33 +169,64 @@ export function HandsontableCalendar({
   }, [weekData])
 
   // Reposition context menu if it overflows the viewport
+  const repositionedRef = useRef(false)
   useEffect(() => {
     if (!contextMenu || !contextMenuRef.current) return
-    const el = contextMenuRef.current
-    const rect = el.getBoundingClientRect()
-    const vw = window.innerWidth
-    const vh = window.innerHeight
-    const padding = 8
 
-    let x = contextMenu.x
-    let y = contextMenu.y
-    let submenuOnLeft = contextMenu.submenuOnLeft ?? false
+    // Only reposition once per menu open to avoid infinite loops
+    if (repositionedRef.current) return
 
-    if (rect.right > vw - padding) {
-      x = vw - rect.width - padding
-    }
-    if (rect.bottom > vh - padding) {
-      y = vh - rect.height - padding
-    }
-    if (x < padding) x = padding
-    if (y < padding) y = padding
+    // Use requestAnimationFrame to ensure menu is rendered and measurable
+    requestAnimationFrame(() => {
+      if (!contextMenuRef.current || !contextMenu) return
+      const el = contextMenuRef.current
+      const rect = el.getBoundingClientRect()
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const padding = 8
 
-    // Re-check submenu direction based on actual menu width
-    const submenuWidth = 250
-    submenuOnLeft = x + rect.width + submenuWidth > vw
+      let x = contextMenu.x
+      let y = contextMenu.y
+      let submenuOnLeft = contextMenu.submenuOnLeft ?? false
+      let needsUpdate = false
 
-    if (x !== contextMenu.x || y !== contextMenu.y || submenuOnLeft !== contextMenu.submenuOnLeft) {
-      setContextMenu({ ...contextMenu, x, y, submenuOnLeft })
+      // Clamp to viewport edges using actual rendered dimensions
+      if (rect.right > vw - padding) {
+        x = vw - rect.width - padding
+        needsUpdate = true
+      }
+      if (rect.bottom > vh - padding) {
+        y = vh - rect.height - padding
+        needsUpdate = true
+      }
+      if (x < padding) {
+        x = padding
+        needsUpdate = true
+      }
+      if (y < padding) {
+        y = padding
+        needsUpdate = true
+      }
+
+      // Re-check submenu direction based on actual menu width
+      const submenuWidth = 250
+      const newSubmenuOnLeft = x + rect.width + submenuWidth > vw
+      if (newSubmenuOnLeft !== submenuOnLeft) {
+        submenuOnLeft = newSubmenuOnLeft
+        needsUpdate = true
+      }
+
+      if (needsUpdate) {
+        repositionedRef.current = true
+        setContextMenu({ ...contextMenu, x, y, submenuOnLeft })
+      }
+    })
+  }, [contextMenu])
+
+  // Reset repositioned flag when menu closes
+  useEffect(() => {
+    if (!contextMenu) {
+      repositionedRef.current = false
     }
   }, [contextMenu])
 
@@ -515,7 +547,7 @@ export function HandsontableCalendar({
       const b = document.createElement('strong')
       b.textContent = displaySubcategory
       content.appendChild(b)
-      content.appendChild(document.createTextNode(` - ${notes}`))
+      content.appendChild(document.createTextNode(` ${notes}`))
     } else if (subcategory) {
       const b = document.createElement('strong')
       b.textContent = displaySubcategory
@@ -625,7 +657,7 @@ export function HandsontableCalendar({
   }
 
   // Context menu on right-click
-  const handleContextMenu = (event: any, coords: any) => {
+  const handleContextMenu = (event: any, coords: any, td: HTMLTableCellElement) => {
     if (coords.row < 0 || coords.col <= 0) return
 
     event.preventDefault()
@@ -662,29 +694,15 @@ export function HandsontableCalendar({
       savedSelectionRef.current = selected
     }
 
-    // Get viewport dimensions to prevent overflow
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-    const menuWidth = 220 // Approximate menu width
-    const submenuWidth = 250 // Approximate subcategory submenu width
-    const menuHeight = 300 // Approximate menu height
-
-    let x = event.clientX
-    let y = event.clientY
-
-    // Adjust x if menu would overflow right edge
-    if (x + menuWidth > viewportWidth) {
-      x = viewportWidth - menuWidth - 10
-    }
-
-    // Adjust y if menu would overflow bottom edge
-    if (y + menuHeight > viewportHeight) {
-      y = viewportHeight - menuHeight - 10
-    }
+    // Position menu anchored to the clicked cell using the TD element from the callback
+    const cellRect = td.getBoundingClientRect()
+    let x = cellRect.right
+    let y = cellRect.top
 
     // Determine if submenu should appear on the left
-    // If there's not enough space on the right for the submenu, position it on the left
-    const shouldSubmenuBeOnLeft = x + menuWidth + submenuWidth > viewportWidth
+    const menuWidth = 220
+    const submenuWidth = 250
+    const shouldSubmenuBeOnLeft = x + menuWidth + submenuWidth > window.innerWidth
 
     setContextMenu({
       x,
@@ -1190,8 +1208,8 @@ export function HandsontableCalendar({
         </div>
       </div>
 
-      {/* Custom Tooltip */}
-      {tooltipState && (
+      {/* Custom Tooltip - portaled to body to avoid ancestor transform issues */}
+      {tooltipState && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -1204,7 +1222,8 @@ export function HandsontableCalendar({
           className="px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg"
         >
           {tooltipState.content}
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Summary Table */}
@@ -1399,8 +1418,8 @@ export function HandsontableCalendar({
         <span className="inline-block">🔍 Hover for full text</span>
       </div>
 
-      {/* Custom Context Menu */}
-      {contextMenu && (
+      {/* Custom Context Menu - portaled to body to avoid ancestor transform issues */}
+      {contextMenu && createPortal(
         <>
           {/* Backdrop to close menu */}
           <div
@@ -1479,7 +1498,8 @@ export function HandsontableCalendar({
               })}
             </div>
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   )
