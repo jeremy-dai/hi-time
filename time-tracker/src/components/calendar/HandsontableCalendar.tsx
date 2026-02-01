@@ -73,6 +73,7 @@ export function HandsontableCalendar({
     col: number
     submenuOnLeft?: boolean
   } | null>(null)
+  const contextMenuRef = useRef<HTMLDivElement>(null)
   const savedSelectionRef = useRef<number[][] | null>(null)
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(null)
   const [currentTimeString, setCurrentTimeString] = useState<string>('')
@@ -165,6 +166,37 @@ export function HandsontableCalendar({
 
     return () => clearTimeout(timer)
   }, [weekData])
+
+  // Reposition context menu if it overflows the viewport
+  useEffect(() => {
+    if (!contextMenu || !contextMenuRef.current) return
+    const el = contextMenuRef.current
+    const rect = el.getBoundingClientRect()
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const padding = 8
+
+    let x = contextMenu.x
+    let y = contextMenu.y
+    let submenuOnLeft = contextMenu.submenuOnLeft ?? false
+
+    if (rect.right > vw - padding) {
+      x = vw - rect.width - padding
+    }
+    if (rect.bottom > vh - padding) {
+      y = vh - rect.height - padding
+    }
+    if (x < padding) x = padding
+    if (y < padding) y = padding
+
+    // Re-check submenu direction based on actual menu width
+    const submenuWidth = 250
+    submenuOnLeft = x + rect.width + submenuWidth > vw
+
+    if (x !== contextMenu.x || y !== contextMenu.y || submenuOnLeft !== contextMenu.submenuOnLeft) {
+      setContextMenu({ ...contextMenu, x, y, submenuOnLeft })
+    }
+  }, [contextMenu])
 
   // Calculate current time indicator position
   useEffect(() => {
@@ -475,7 +507,7 @@ export function HandsontableCalendar({
     const icon = subcategory ? subcategoryIcons[category]?.[subcategory] : undefined
     
     if (subcategory && icon) {
-      displaySubcategory = `${icon} ${subcategory}`
+      displaySubcategory = icon
     }
 
     if (subcategory && notes) {
@@ -1378,6 +1410,7 @@ export function HandsontableCalendar({
 
           {/* Menu */}
           <div
+            ref={contextMenuRef}
             style={{
               position: 'fixed',
               top: contextMenu.y,
