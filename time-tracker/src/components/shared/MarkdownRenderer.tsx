@@ -12,27 +12,27 @@ export function MarkdownRenderer({ content }: { content: string }) {
         components={{
           // Headings
           h1: ({ children }: any) => (
-            <h1 className="text-xl md:text-2xl font-bold mt-6 md:mt-8 mb-3 md:mb-4 text-gray-900 first:mt-0 tracking-tight leading-tight">{children}</h1>
+            <h1 className="text-lg md:text-xl font-bold mt-6 md:mt-8 mb-3 md:mb-4 text-gray-900 first:mt-0 tracking-tight leading-tight">{children}</h1>
           ),
           h2: ({ children }: any) => (
-            <h2 className="text-lg md:text-xl font-bold mt-6 md:mt-7 mb-3 text-gray-900 first:mt-0 tracking-tight leading-tight">{children}</h2>
+            <h2 className="text-base md:text-lg font-bold mt-6 md:mt-7 mb-3 text-gray-900 first:mt-0 tracking-tight leading-tight">{children}</h2>
           ),
           h3: ({ children }: any) => (
-            <h3 className="text-base md:text-lg font-semibold mt-5 md:mt-6 mb-2 text-gray-900 first:mt-0 tracking-tight">{children}</h3>
+            <h3 className="text-sm md:text-base font-semibold mt-5 md:mt-6 mb-2 text-gray-900 first:mt-0 tracking-tight">{children}</h3>
           ),
           h4: ({ children }: any) => (
-            <h4 className="text-base font-semibold mt-4 mb-2 text-gray-900 tracking-tight">{children}</h4>
+            <h4 className="text-sm font-semibold mt-4 mb-2 text-gray-900 tracking-tight">{children}</h4>
           ),
           // Paragraphs
           p: ({ children }: any) => (
-            <p className="text-sm md:text-base text-gray-700 leading-relaxed mb-3 md:mb-4">{children}</p>
+            <p className="text-xs md:text-sm text-gray-700 leading-relaxed mb-3 md:mb-4">{children}</p>
           ),
           // Lists
           ul: ({ children }: any) => (
-            <ul className="list-disc ml-5 md:ml-6 mb-3 md:mb-4 space-y-1.5 text-sm md:text-base text-gray-700">{children}</ul>
+            <ul className="list-disc ml-5 md:ml-6 mb-3 md:mb-4 space-y-1.5 text-xs md:text-sm text-gray-700">{children}</ul>
           ),
           ol: ({ children }: any) => (
-            <ol className="list-decimal ml-5 md:ml-6 mb-3 md:mb-4 space-y-1.5 text-sm md:text-base text-gray-700">{children}</ol>
+            <ol className="list-decimal ml-5 md:ml-6 mb-3 md:mb-4 space-y-1.5 text-xs md:text-sm text-gray-700">{children}</ol>
           ),
           li: ({ children, className }: any) => {
             // Task list items have a "task-list-item" class from remark-gfm
@@ -54,13 +54,13 @@ export function MarkdownRenderer({ content }: { content: string }) {
           ),
           // Code blocks
           pre: ({ children }: any) => (
-            <pre className="bg-gray-900 text-gray-100 p-3 md:p-4 rounded-xl overflow-x-auto my-3 md:my-4 text-xs md:text-sm">{children}</pre>
+            <pre className="bg-gray-900 text-gray-100 p-3 md:p-4 rounded-xl overflow-x-auto my-3 md:my-4 text-2xs md:text-xs">{children}</pre>
           ),
           code: ({ className, children }: any) => {
             const isInline = !className
             if (isInline) {
               return (
-                <code className="bg-emerald-50 text-emerald-700 px-1.5 md:px-2 py-0.5 rounded text-xs md:text-sm font-mono">
+                <code className="bg-emerald-50 text-emerald-700 px-1.5 md:px-2 py-0.5 rounded text-2xs md:text-xs font-mono">
                   {children}
                 </code>
               )
@@ -86,18 +86,18 @@ export function MarkdownRenderer({ content }: { content: string }) {
             <tr className="hover:bg-gray-50">{children}</tr>
           ),
           th: ({ children }: any) => (
-            <th className="border border-gray-300 px-3 md:px-4 py-2 text-left font-semibold text-gray-900 text-xs md:text-sm">
+            <th className="border border-gray-300 px-3 md:px-4 py-2 text-left font-semibold text-gray-900 text-2xs md:text-xs">
               {children}
             </th>
           ),
           td: ({ children }: any) => (
-            <td className="border border-gray-300 px-3 md:px-4 py-2 text-gray-700 text-xs md:text-sm">
+            <td className="border border-gray-300 px-3 md:px-4 py-2 text-gray-700 text-2xs md:text-xs">
               {children}
             </td>
           ),
           // Blockquotes
           blockquote: ({ children }: any) => (
-            <blockquote className="border-l-4 border-emerald-500 pl-3 md:pl-4 py-2 my-3 md:my-4 italic text-gray-600 bg-emerald-50 rounded-r-xl text-sm md:text-base">
+            <blockquote className="border-l-4 border-emerald-500 pl-3 md:pl-4 py-2 my-3 md:my-4 italic text-gray-600 bg-emerald-50 rounded-r-xl text-xs md:text-sm">
               {children}
             </blockquote>
           ),
