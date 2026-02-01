@@ -116,9 +116,9 @@ export function MarkdownRenderer({ content }: { content: string }) {
               {children}
             </a>
           ),
-          // Strong/Bold
+          // Strong/Bold (highlighter marker style)
           strong: ({ children }: any) => (
-            <strong className="font-semibold text-gray-900">{children}</strong>
+            <strong className="bg-green-200/60 px-1 py-0.5 rounded-sm font-normal text-gray-900 decoration-clone">{children}</strong>
           ),
           // Emphasis/Italic
           em: ({ children }: any) => (
