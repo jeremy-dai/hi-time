@@ -588,6 +588,7 @@ export function Learning() {
             </div>
           ) : selectedDoc && !isCreating ? (
             <DocumentView
+              key={selectedDoc.id}
               doc={selectedDoc}
               onUpdate={updateDocument}
               onDelete={handleDeleteDoc}
